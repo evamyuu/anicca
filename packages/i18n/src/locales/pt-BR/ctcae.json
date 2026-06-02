@@ -1,0 +1,90 @@
+{
+  "symptoms": {
+    "nausea": {
+      "label": "Náusea",
+      "emoji": "🤢",
+      "grades": {
+        "0": "Sem náusea",
+        "1": "Náusea leve. Você ainda consegue comer normalmente.",
+        "2": "Náusea moderada. Você come menos do que o normal.",
+        "3": "Náusea forte. Você não consegue comer quase nada. Pode precisar de ajuda médica.",
+        "4": "Náusea muito grave. Precisa de cuidado médico urgente."
+      }
+    },
+    "fatigue": {
+      "label": "Fadiga",
+      "emoji": "😴",
+      "grades": {
+        "0": "Sem cansaço além do normal",
+        "1": "Cansaço leve. Você consegue fazer suas atividades do dia a dia.",
+        "2": "Cansaço moderado. Algumas atividades do dia a dia ficam mais difíceis.",
+        "3": "Cansaço forte. Você não consegue fazer a maioria das atividades do dia a dia.",
+        "4": "Cansaço muito grave. Você precisa de ajuda para as atividades básicas."
+      }
+    },
+    "pain": {
+      "label": "Dor",
+      "emoji": "⚡",
+      "grades": {
+        "0": "Sem dor",
+        "1": "Dor leve. Não interfere nas suas atividades.",
+        "2": "Dor moderada. Interfere um pouco nas suas atividades.",
+        "3": "Dor forte. Interfere muito nas suas atividades do dia a dia.",
+        "4": "Dor muito intensa. Você precisa de cuidado médico urgente."
+      }
+    },
+    "mucositis": {
+      "label": "Mucosite",
+      "emoji": "👄",
+      "grades": {
+        "0": "Sem feridas ou irritação na boca",
+        "1": "Irritação leve na boca. Você consegue comer e beber normalmente.",
+        "2": "Feridas na boca. Você precisa mudar o que come.",
+        "3": "Feridas fortes. Você não consegue comer direito. Pode precisar de soro.",
+        "4": "Feridas muito graves. Risco de vida. Procure atendimento urgente."
+      }
+    },
+    "peripheral_neuropathy": {
+      "label": "Neuropatia Periférica",
+      "emoji": "🖐️",
+      "grades": {
+        "0": "Sem dormência ou formigamento",
+        "1": "Dormência ou formigamento leve. Não atrapalha o dia a dia.",
+        "2": "Dormência ou formigamento moderado. Atrapalha um pouco o dia a dia.",
+        "3": "Dormência ou formigamento forte. Atrapalha muito o dia a dia.",
+        "4": "Dormência muito grave. Perigo de se machucar. Procure atendimento."
+      }
+    },
+    "diarrhea": {
+      "label": "Diarreia",
+      "emoji": "🌀",
+      "grades": {
+        "0": "Sem diarreia",
+        "1": "Diarreia leve (até 3 idas ao banheiro a mais do que o normal por dia).",
+        "2": "Diarreia moderada (4 a 6 idas a mais por dia). Pode interferir no dia a dia.",
+        "3": "Diarreia forte (mais de 7 idas a mais por dia). Precisa de cuidado médico.",
+        "4": "Diarreia muito grave. Risco de desidratação séria. Procure atendimento urgente."
+      }
+    },
+    "appetite_loss": {
+      "label": "Falta de Apetite",
+      "emoji": "🍽️",
+      "grades": {
+        "0": "Apetite normal",
+        "1": "Pouca vontade de comer. Você come um pouco menos.",
+        "2": "Falta de apetite moderada. Você perdeu peso sem querer.",
+        "3": "Pouca ou nenhuma vontade de comer. Você precisa de suplemento.",
+        "4": "Você não consegue comer nada. Precisa de cuidado médico urgente."
+      }
+    }
+  },
+  "grades": {
+    "0": "Sem sintoma",
+    "1": "Leve",
+    "2": "Moderado",
+    "3": "Grave",
+    "4": "Risco de vida"
+  },
+  "disclaimer": "⚠️ Esta classificação é apenas informativa. Sempre consulte sua equipe médica.",
+  "emergency": "Se você estiver com sintoma grave (grau 3 ou 4), procure atendimento médico imediatamente ou ligue para sua equipe de saúde."
+}

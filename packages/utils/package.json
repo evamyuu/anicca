@@ -1,0 +1,16 @@
+{
+  "name": "@anicca/utils",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Pure utility functions — no platform dependencies",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:unit": "jest"
+  },
+  "devDependencies": {
+    "@anicca/config": "workspace:*",
+    "typescript": "^5.5.3"
+  }
+}

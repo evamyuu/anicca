@@ -1,0 +1,86 @@
+{
+  "steps": {
+    "1": {
+      "title": "Olá! Eu sou a Ani 🐱",
+      "subtitle": "Sua guia na jornada contra o câncer",
+      "body": "Estou aqui para te ajudar a entender seu diagnóstico, cuidar da sua rotina e conhecer seus direitos.",
+      "cta_start": "Vamos começar",
+      "cta_explore": "Quero explorar sozinho(a)"
+    },
+    "2": {
+      "title": "Como você quer usar a Anicca?",
+      "patient": "Sou o paciente",
+      "caregiver": "Sou o cuidador(a)",
+      "doctor": "Sou médico(a) ou enfermeiro(a)"
+    },
+    "3": {
+      "title_patient": "Me conta um pouco sobre você",
+      "cancer_type_label": "Tipo de câncer",
+      "cancer_type_placeholder": "Ex: mama, próstata, pulmão...",
+      "treatment_phase_label": "Fase do tratamento",
+      "modality_label": "Como você se trata?",
+      "modality_sus": "SUS",
+      "modality_convenio": "Convênio",
+      "modality_particular": "Particular",
+      "title_caregiver": "Conecte-se ao paciente",
+      "caregiver_invite_code": "Código de convite",
+      "caregiver_invite_code_placeholder": "Digite o código do paciente"
+    },
+    "4": {
+      "title": "Como você quer que eu seja?",
+      "subtitle": "Escolha como prefere que eu me comunique com você",
+      "mentor": {
+        "name": "Mentora",
+        "description": "Encorajadora e empática. Celebra cada passo da sua jornada.",
+        "example": "\"Você está indo muito bem! Cada dia conta.\""
+      },
+      "realist": {
+        "name": "Realista",
+        "description": "Direta e honesta. Dá informações claras sem rodeios.",
+        "example": "\"Aqui está o que você precisa saber sobre esse resultado.\""
+      },
+      "optimist": {
+        "name": "Otimista",
+        "description": "Positiva e esperançosa. Foca no que você pode controlar.",
+        "example": "\"Hoje é um novo começo. Você consegue!\""
+      },
+      "specialist": {
+        "name": "Especialista",
+        "description": "Técnica e detalhada. Prefere informações completas.",
+        "example": "\"Segundo o INCA, o protocolo indica...\""
+      }
+    },
+    "5": {
+      "title": "Personalize seu avatar",
+      "subtitle": "Opcional — pode fazer depois nas configurações",
+      "skin_tone": "Tom de pele",
+      "head_accessory": "Cabelo e acessórios",
+      "expression": "Expressão",
+      "medical_accessory": "Acessório médico",
+      "preview": "Pré-visualização"
+    },
+    "6": {
+      "title": "Seus dados são seus",
+      "notifications_label": "Notificações",
+      "notifications_desc": "Lembretes de medicamentos e consultas",
+      "camera_label": "Câmera",
+      "camera_desc": "Para enviar laudos e exames",
+      "calendar_label": "Calendário",
+      "calendar_desc": "Para registrar consultas e ciclos",
+      "terms_prefix": "Ao continuar, você concorda com nossos",
+      "terms_link": "Termos de Uso",
+      "and": "e",
+      "privacy_link": "Política de Privacidade",
+      "terms_simple": "Seus dados de saúde são protegidos pela LGPD. Você pode excluí-los a qualquer momento."
+    },
+    "7": {
+      "title": "Pronto! Bem-vindo(a) ao seu hub",
+      "subtitle": "O que você gostaria de fazer agora?",
+      "suggestion_understand_diagnosis": "Entender meu laudo",
+      "suggestion_rights": "Conhecer meus direitos",
+      "suggestion_body_map": "Registrar como estou me sentindo",
+      "suggestion_routine": "Ver minha rotina de hoje"
+    }
+  },
+  "progress": "Etapa {{current}} de {{total}}"
+}

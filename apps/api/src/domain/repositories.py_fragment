@@ -1,0 +1,35 @@
+class AbstractDocumentRepository(ABC):
+    """Port: persistence contract for :class:`~src.domain.entities.Document` records."""
+
+    @abstractmethod
+    async def save(self, document: Document) -> Document:
+        """Persist a medical document.
+
+        Args:
+            document: The :class:`Document` to persist.
+
+        Returns:
+            The persisted document with any server-generated fields populated.
+        """
+
+    @abstractmethod
+    async def get_by_id(self, document_id: str) -> Optional[Document]:
+        """Retrieve a document by identifier.
+
+        Args:
+            document_id: The document's UUID string.
+
+        Returns:
+            The :class:`Document`, or ``None`` if not found.
+        """
+
+    @abstractmethod
+    async def list_by_patient(self, patient_id: str) -> List[Document]:
+        """List all documents for a patient.
+
+        Args:
+            patient_id: The patient's pseudonymized identifier.
+
+        Returns:
+            A list of :class:`Document` objects, ordered by creation date descending.
+        """

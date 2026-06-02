@@ -1,0 +1,17 @@
+import httpx
+import os
+
+async def _download_media(url: str, message_id: str) -> str:
+    """Download media from URL to a local uploads directory."""
+    os.makedirs("/app/uploads", exist_ok=True)
+    filepath = f"/app/uploads/{message_id}"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+        return filepath
+    except Exception as e:
+        print(f"Failed to download media: {e}")
+        return ""

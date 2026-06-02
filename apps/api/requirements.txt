@@ -1,0 +1,36 @@
+fastapi==0.115.0
+uvicorn[standard]==0.31.0
+pydantic==2.9.2
+pydantic-settings==2.6.1
+httpx==0.27.2
+python-multipart==0.0.12
+
+# ── Database ──────────────────────────────────────────────────────────────────
+asyncpg==0.29.0
+sqlalchemy[asyncio]==2.0.35
+alembic==1.13.3
+
+# ── Cache ─────────────────────────────────────────────────────────────────────
+redis[asyncio]==5.1.1
+
+# ── AWS ───────────────────────────────────────────────────────────────────────
+boto3==1.35.0
+
+# ── AI / LLM ─────────────────────────────────────────────────────────────────
+langchain==0.3.7
+langchain-google-genai
+langgraph==0.2.39
+langchain-community==0.3.7
+pgvector==0.3.5
+
+# ── Auth ─────────────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# ── OCR (AWS Textract) ────────────────────────────────────────────────────────
+amazon-textract-caller==0.2.0
+
+# ── Monitoring ────────────────────────────────────────────────────────────────
+sentry-sdk[fastapi]==2.17.0
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi

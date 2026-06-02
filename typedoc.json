@@ -1,0 +1,20 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Anicca",
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "packages/types",
+    "packages/utils",
+    "packages/ui",
+    "packages/i18n",
+    "packages/api-client"
+  ],
+  "out": "docs/api",
+  "theme": "default",
+  "readme": "README.md",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "excludePrivate": false,
+  "excludeInternal": false,
+  "searchInComments": true
+}

@@ -1,0 +1,54 @@
+{
+  "title": "Rotina de Hoje",
+  "temperature": {
+    "title": "Temperatura",
+    "label": "°C",
+    "placeholder": "Ex: 36,8",
+    "alert_threshold": "⚠️ Temperatura acima de 37,8°C pode indicar febre. Entre em contato com sua equipe médica.",
+    "alert_disclaimer": "Esta informação é educativa. Não é um diagnóstico."
+  },
+  "medication": {
+    "title": "Medicamentos",
+    "periods": {
+      "morning": "Manhã",
+      "afternoon": "Tarde",
+      "evening": "Noite",
+      "night": "Madrugada",
+      "as_needed": "Se necessário"
+    },
+    "status": {
+      "pending": "Pendente",
+      "taken": "Tomado ✓",
+      "skipped": "Pulou",
+      "late": "Atrasado"
+    },
+    "mark_taken": "Marcar como tomado",
+    "no_medications": "Nenhum medicamento cadastrado para hoje.",
+    "add_medication": "Adicionar medicamento"
+  },
+  "hydration": {
+    "title": "Hidratação",
+    "goal": "8 copos por dia",
+    "glasses_count": "{{count}} de {{goal}} copos",
+    "great": "Ótimo! Você está bem hidratado(a) 💧",
+    "good": "Bom! Continue assim.",
+    "low": "Beba mais água. Hidratação ajuda no tratamento."
+  },
+  "sleep": {
+    "title": "Sono",
+    "duration_label": "Horas dormidas",
+    "quality_label": "Qualidade do sono",
+    "quality_options": {
+      "great": "Ótimo",
+      "good": "Bom",
+      "fair": "Regular",
+      "poor": "Ruim"
+    },
+    "auto_sync": "Sincronizado com o smartwatch"
+  },
+  "symptoms_cta": {
+    "title": "Como você está se sentindo?",
+    "body_map": "Abrir Body Map",
+    "ctcae": "Registrar Sintoma CTCAE"
+  }
+}

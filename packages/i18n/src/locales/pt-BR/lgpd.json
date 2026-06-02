@@ -1,0 +1,50 @@
+{
+  "consent": {
+    "title": "Seus dados são seus",
+    "subtitle": "Usamos seus dados apenas para te ajudar. Você pode revogar o consentimento a qualquer momento.",
+    "terms_of_service": {
+      "title": "Termos de Uso",
+      "short": "Você concorda com as regras de uso da Anicca."
+    },
+    "privacy_policy": {
+      "title": "Política de Privacidade",
+      "short": "Você entende como seus dados são usados."
+    },
+    "data_processing": {
+      "title": "Uso dos seus dados de saúde",
+      "short": "Você permite que a Anicca use seus dados de saúde para te ajudar na jornada."
+    },
+    "whatsapp_notifications": {
+      "title": "Mensagens pelo WhatsApp",
+      "short": "A Ani pode te enviar lembretes e atualizações pelo WhatsApp."
+    },
+    "push_notifications": {
+      "title": "Notificações no celular",
+      "short": "A Ani pode te mandar lembretes de medicamentos e consultas."
+    },
+    "camera_access": {
+      "title": "Usar a câmera",
+      "short": "Para você fotografar laudos e exames."
+    },
+    "calendar_access": {
+      "title": "Acessar o calendário",
+      "short": "Para registrar consultas e ciclos de tratamento."
+    },
+    "doctor_data_share": {
+      "title": "Compartilhar com meu médico(a)",
+      "short": "Seu médico(a) pode ver seu Body Map, rotina e documentos que você autorizar."
+    },
+    "research_data_share": {
+      "title": "Contribuir com a pesquisa (opcional)",
+      "short": "Dados anônimos da sua jornada (sem nome ou CPF) podem ajudar pesquisadores a entender melhor o câncer no Brasil. Você pode mudar isso quando quiser."
+    },
+    "revoke": "Revogar",
+    "grant": "Autorizar",
+    "revoked_at": "Revogado em {{date}}",
+    "granted_at": "Autorizado em {{date}}"
+  },
+  "dpo": {
+    "title": "Encarregado de Dados (DPO)",
+    "contact": "Para dúvidas sobre seus dados, entre em contato: privacidade@anicca.app.br"
+  }
+}

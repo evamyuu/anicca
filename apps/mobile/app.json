@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "ANICCA",
+    "slug": "anicca",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.anicca.app"
+    },
+    "android": {
+      "package": "com.anicca.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "scheme": "anicca",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "app": {
+    "name": "Anicca",
+    "tagline": "Navegando com você na jornada contra o câncer",
+    "mascot": "Ani"
+  },
+  "actions": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "continue": "Continuar",
+    "back": "Voltar",
+    "close": "Fechar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "share": "Compartilhar",
+    "send": "Enviar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "more": "Ver mais",
+    "less": "Ver menos",
+    "done": "Pronto",
+    "skip": "Pular",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "retry": "Tentar novamente",
+    "refresh": "Atualizar",
+    "logout": "Sair"
+  },
+  "status": {
+    "loading": "Carregando...",
+    "error": "Algo deu errado",
+    "errorRetry": "Não foi possível carregar. Toque para tentar novamente.",
+    "empty": "Nada aqui ainda",
+    "offline": "Sem conexão com a internet",
+    "success": "Feito!"
+  },
+  "navigation": {
+    "hub": "Início",
+    "ani": "Falar com Ani",
+    "routine": "Rotina",
+    "documents": "Documentos"
+  },
+  "greeting": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite",
+    "night": "Boa noite"
+  },
+  "time": {
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "tomorrow": "Amanhã",
+    "daysAgo": "{{n}} dias atrás",
+    "hoursAgo": "{{n}} horas atrás",
+    "minutesAgo": "{{n}} minutos atrás"
+  },
+  "profile": {
+    "patient": "Paciente",
+    "caregiver": "Cuidador(a)",
+    "doctor": "Médico(a)"
+  }
+}

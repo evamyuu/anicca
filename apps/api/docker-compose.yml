@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: anicca-postgres
+    environment:
+      POSTGRES_DB: anicca_dev
+      POSTGRES_USER: anicca
+      POSTGRES_PASSWORD: anicca
+    ports:
+      - "5432:5432"
+    volumes:
+      - anicca_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: anicca-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - anicca_redis_data:/data
+
+  api:
+    build: .
+    container_name: anicca-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://anicca:anicca@postgres:5432/anicca_dev
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  anicca_postgres_data:
+  anicca_redis_data:

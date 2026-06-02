@@ -1,0 +1,15 @@
+{
+  "name": "@anicca/i18n",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Internationalization strings for Anicca — pt-BR (CEFR A2)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@anicca/config": "workspace:*",
+    "typescript": "^5.5.3"
+  }
+}

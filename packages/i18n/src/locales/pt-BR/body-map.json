@@ -1,0 +1,56 @@
+{
+  "regions": {
+    "head": "Cabeça",
+    "neck": "Pescoço",
+    "chest_left": "Tórax Esquerdo",
+    "chest_right": "Tórax Direito",
+    "abdomen_upper": "Abdômen Superior",
+    "abdomen_lower": "Abdômen Inferior",
+    "pelvis": "Pelve",
+    "arm_left": "Braço Esquerdo",
+    "arm_right": "Braço Direito",
+    "leg_left": "Perna Esquerda",
+    "leg_right": "Perna Direita",
+    "back_upper": "Costas Superiores",
+    "back_lower": "Costas Inferiores",
+    "shoulder_left": "Ombro Esquerdo",
+    "shoulder_right": "Ombro Direito"
+  },
+  "symptom_types": {
+    "pain": "Dor",
+    "numbness": "Dormência",
+    "swelling": "Inchaço",
+    "redness": "Vermelhidão",
+    "wound": "Ferida",
+    "burning": "Queimação",
+    "itching": "Coceira",
+    "heaviness": "Peso",
+    "other": "Outro"
+  },
+  "views": {
+    "front": "Frente",
+    "back": "Costas"
+  },
+  "intensity": {
+    "label": "Intensidade",
+    "none": "Sem dor",
+    "mild": "Leve",
+    "moderate": "Moderado",
+    "severe": "Forte",
+    "extreme": "Muito forte"
+  },
+  "modal": {
+    "title": "Como você está aqui?",
+    "description_placeholder": "Descreva como está se sentindo (opcional)",
+    "save": "Registrar",
+    "cancel": "Cancelar"
+  },
+  "history": {
+    "title": "Histórico de {{region}}",
+    "no_entries": "Nenhum registro para essa região",
+    "trend_improving": "Melhorando",
+    "trend_stable": "Estável",
+    "trend_worsening": "Piorando"
+  },
+  "disclaimer": "Toque em uma região do corpo para registrar como você está se sentindo."
+}

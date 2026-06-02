@@ -1,0 +1,35 @@
+{
+  "title": "Seus Direitos",
+  "law_60_days": {
+    "title": "Lei dos 60 Dias",
+    "description": "Você tem o direito de iniciar o tratamento em até 60 dias depois do diagnóstico. Isso vale para todos — SUS, convênio ou particular.",
+    "law_number": "Lei n.º 12.732/2012",
+    "status": {
+      "green": "Seu prazo está ok. Faltam {{days}} dias.",
+      "amber": "Atenção! Faltam apenas {{days}} dias para o vencimento do prazo.",
+      "red": "O prazo foi violado há {{days}} dias. Você pode abrir um chamado.",
+      "completed": "Tratamento iniciado. O prazo foi cumprido."
+    },
+    "cta_open_ticket": "Abrir chamado por violação",
+    "cta_know_rights": "Conhecer meus direitos"
+  },
+  "sus_rights": {
+    "title": "Seus Direitos no SUS",
+    "items": [
+      "Atendimento sem discriminação",
+      "Informação clara sobre diagnóstico e tratamento",
+      "Tratamento iniciado em até 60 dias após o diagnóstico",
+      "Acesso à segunda opinião médica",
+      "Medicamentos do protocolo de tratamento fornecidos pelo SUS"
+    ]
+  },
+  "labor_rights": {
+    "title": "Direitos Trabalhistas",
+    "items": [
+      "Estabilidade no emprego durante o tratamento (jurisprudência do STJ)",
+      "Saque do FGTS em casos de doença grave",
+      "Aposentadoria por invalidez (se incapaz para o trabalho)",
+      "Isenção de IR sobre benefícios previdenciários"
+    ]
+  }
+}

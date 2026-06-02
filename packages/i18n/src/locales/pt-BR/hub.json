@@ -1,0 +1,20 @@
+{
+  "hub": {
+    "greeting": "Olá, {{name}}! 👋",
+    "cycle_info": "Ciclo {{current}} de {{total}}",
+    "search_placeholder": "O que você precisa? Ex: dor nas costas, Lei dos 60 dias...",
+    "quick_actions": {
+      "body_map": "Body Map",
+      "symptoms": "Sintomas",
+      "documents": "Laudos",
+      "ticket": "Abrir Chamado",
+      "rights": "Meus Direitos"
+    },
+    "cards": {
+      "next_cycle": "Próximo Ciclo",
+      "symptoms_today": "Sintomas de Hoje",
+      "last_exam": "Último Exame",
+      "law_60_days": "Lei dos 60 Dias"
+    }
+  }
+}

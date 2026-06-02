@@ -1,0 +1,21 @@
+@dataclass
+class Document:
+    """Represents a medical document or exam uploaded by the patient.
+
+    Attributes:
+        id: Server-assigned unique identifier.
+        patient_id: The patient's pseudonymized identifier.
+        file_url: URL or local path to the stored document.
+        document_type: The type of document identified by AI (e.g. ``"laudo_biopsia"``, ``"exame_sangue"``).
+        extracted_text: Full OCR text extracted from the document.
+        summary: AI-generated summary in accessible language.
+        created_at: UTC timestamp of upload.
+    """
+
+    id: str
+    patient_id: str
+    file_url: str
+    document_type: str
+    extracted_text: str
+    summary: str
+    created_at: datetime = field(default_factory=datetime.utcnow)

@@ -1,0 +1,29 @@
+class DocumentModel(Base):
+    """ORM model for the ``documents`` table.
+
+    Attributes:
+        id: UUID primary key.
+        patient_id: Foreign key to :class:`PatientModel`.
+        file_url: URL or local path to the stored document.
+        document_type: The type of document identified by AI.
+        extracted_text: Full OCR text extracted from the document.
+        summary: AI-generated summary in accessible language.
+        created_at: UTC timestamp of upload.
+        patient: Relationship to :class:`PatientModel`.
+    """
+
+    __tablename__ = "documents"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    file_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    document_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    extracted_text: Mapped[str] = mapped_column(Text, nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    patient: Mapped["PatientModel"] = relationship(back_populates="documents")
