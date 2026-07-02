@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from src.infrastructure.cache.redis_client import create_redis_client
-from src.presentation.routers.auth_router import get_current_user_id
 
 router = APIRouter()
 
