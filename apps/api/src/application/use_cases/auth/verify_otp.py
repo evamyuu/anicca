@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from jose import jwt
 
-from src.application.dto.auth import VerifyOTPInput, VerifyOTPOutput
+from src.application.dto.auth import VerifyOTPInput, TokenResult
 from src.config import settings
 from src.domain.entities import AniPersonality, Patient, TreatmentModality
 from src.domain.exceptions import InvalidOTPError
@@ -44,14 +44,14 @@ class VerifyOTPUseCase:
         self._patient_repo = patient_repo
         self._cache = cache
 
-    async def execute(self, input_dto: VerifyOTPInput) -> VerifyOTPOutput:
+    async def execute(self, input_dto: VerifyOTPInput) -> TokenResult:
         """Execute the OTP verification flow.
 
         Args:
             input_dto: See :class:`~src.application.dto.auth.VerifyOTPInput`.
 
         Returns:
-            See :class:`~src.application.dto.auth.VerifyOTPOutput`.
+            See :class:`~src.application.dto.auth.TokenResult`.
 
         Raises:
             ValueError: When the phone or OTP format is invalid.
@@ -96,7 +96,7 @@ class VerifyOTPUseCase:
             algorithm=_JWT_ALGORITHM,
         )
 
-        return VerifyOTPOutput(
+        return TokenResult(
             access_token=token,
             token_type="bearer",
             is_new_user=is_new_user,
