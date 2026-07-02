@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 
 import type { ConversationMessage } from '@anicca/types';
+import { GenUIRenderer, type GenUIButton } from './GenUIRenderer';
 
 /**
  * Props for {@link AniMessageBubble}.
@@ -40,7 +41,7 @@ export interface AniMessageBubbleProps {
  * <AniMessageBubble message={aniResponseMessage} />
  * ```
  */
-export function AniMessageBubble({ message }: AniMessageBubbleProps) {
+export function AniMessageBubble({ message, onButtonPress }: AniMessageBubbleProps & { onButtonPress?: (button: GenUIButton) => void }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16, paddingHorizontal: 16 }} accessibilityRole="text">
       <View
@@ -83,23 +84,7 @@ export function AniMessageBubble({ message }: AniMessageBubbleProps) {
 
         {message.cards.length > 0 && (
           <View style={{ marginTop: 8 }}>
-            {message.cards.map((card) => (
-              <View
-                key={card.id}
-                style={{
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  marginBottom: 8,
-                  backgroundColor: '#2d2540',
-                }}
-                accessibilityLabel={card.accessibilityLabel}
-              >
-                <Text style={{ color: '#ada5bc', fontSize: 14, fontFamily: 'Nunito_400Regular' }}>
-                  [{card.type}]
-                </Text>
-              </View>
-            ))}
+            <GenUIRenderer cards={message.cards} onButtonPress={onButtonPress} />
           </View>
         )}
 

@@ -97,6 +97,12 @@ class PatientModel(Base):
     documents: Mapped[List["DocumentModel"]] = relationship(
         back_populates="patient", cascade="all, delete-orphan"
     )
+    routines: Mapped[List["RoutineModel"]] = relationship(
+        "RoutineModel", foreign_keys="RoutineModel.patient_id", cascade="all, delete-orphan"
+    )
+    journaling_entries: Mapped[List["JournalingModel"]] = relationship(
+        "JournalingModel", foreign_keys="JournalingModel.patient_id", cascade="all, delete-orphan"
+    )
 
 
 class MessageModel(Base):
@@ -237,11 +243,159 @@ class DocumentModel(Base):
     )
     file_url: Mapped[str] = mapped_column(String(500), nullable=False)
     document_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_channel: Mapped[str] = mapped_column(String(20), nullable=False, default="upload")
     extracted_text: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
+    ai_questions: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     patient: Mapped["PatientModel"] = relationship(back_populates="documents")
 
+
+class UserModel(Base):
+    """ORM model for the ``users`` table — authentication layer.
+
+    Attributes:
+        id: UUID primary key.
+        email: Unique user email address.
+        hashed_password: bcrypt-hashed password, or ``None`` for social auth.
+        role: User role — ``patient``, ``caregiver``, or ``doctor``.
+        patient_id: FK to :class:`PatientModel` for patient/caregiver roles.
+        refresh_token_hash: SHA-256 hash of the last issued refresh token.
+        expo_push_token: Expo push notification token, or ``None``.
+        created_at: UTC creation timestamp.
+        updated_at: UTC last-update timestamp.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="patient")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    crm_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    patient_id: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("patients.id", ondelete="SET NULL"), nullable=True
+    )
+    refresh_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    expo_push_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class RoutineModel(Base):
+    """ORM model for the ``routines`` table — daily patient routine tracking.
+
+    Attributes:
+        id: UUID primary key.
+        patient_id: FK to :class:`PatientModel`.
+        date: ISO 8601 date string for the routine entry.
+        temperature: Body temperature in Celsius, or ``None``.
+        hydration_glasses: Number of water glasses consumed (0–8).
+        sleep_hours: Hours of sleep, or ``None``.
+        sleep_quality: Subjective sleep quality (1–5), or ``None``.
+        medications: JSONB array of ``{name, period, taken}`` objects.
+        wearable_steps: Daily step count from Health Connect, or ``None``.
+        wearable_hrv: HRV RMSSD value from Health Connect, or ``None``.
+        wearable_resting_hr: Resting heart rate in bpm, or ``None``.
+        created_at: UTC creation timestamp.
+        updated_at: UTC last-update timestamp.
+    """
+
+    __tablename__ = "routines"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    temperature: Mapped[Optional[float]] = mapped_column(nullable=True)
+    hydration_glasses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sleep_hours: Mapped[Optional[float]] = mapped_column(nullable=True)
+    sleep_quality: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    medications: Mapped[List[dict]] = mapped_column(JSONB, nullable=False, default=list)
+    wearable_steps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    wearable_hrv: Mapped[Optional[float]] = mapped_column(nullable=True)
+    wearable_resting_hr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    patient: Mapped["PatientModel"] = relationship("PatientModel", foreign_keys=[patient_id])
+
+
+class JournalingModel(Base):
+    """ORM model for the ``journaling_entries`` table — emotional journaling.
+
+    Attributes:
+        id: UUID primary key.
+        patient_id: FK to :class:`PatientModel`.
+        mood: Mood code — ``great``, ``ok``, ``difficult``, ``hard``.
+        text_encrypted: AES-256 encrypted journal text.
+        ctcae_context: JSONB snapshot of current CTCAE events for context.
+        shared_with_doctor: Whether the patient opted to share with their doctor.
+        ai_prompt: The contextual prompt generated by Ani for this entry.
+        created_at: UTC creation timestamp.
+    """
+
+    __tablename__ = "journaling_entries"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    mood: Mapped[str] = mapped_column(String(20), nullable=False)
+    text_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ctcae_context: Mapped[List[dict]] = mapped_column(JSONB, nullable=False, default=list)
+    shared_with_doctor: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    ai_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    patient: Mapped["PatientModel"] = relationship("PatientModel", foreign_keys=[patient_id])
+
+
+class ConsentModel(Base):
+    """ORM model for the ``consents`` table — LGPD audit trail.
+
+    Attributes:
+        id: UUID primary key.
+        user_id: FK to :class:`UserModel`.
+        consent_type: Type of consent (``main``, ``notifications``, ``camera``,
+            ``calendar``, ``research``).
+        granted: Whether consent is currently granted.
+        term_version: Version string of the terms accepted.
+        granted_at: UTC timestamp when consent was granted.
+        revoked_at: UTC timestamp when consent was revoked, or ``None``.
+    """
+
+    __tablename__ = "consents"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    consent_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    granted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    term_version: Mapped[str] = mapped_column(String(20), nullable=False, default="1.0")
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

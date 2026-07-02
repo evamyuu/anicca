@@ -1,131 +1,98 @@
 /**
- * @fileoverview Configures the main tab navigator for the Anicca patient app.
+ * @fileoverview Bottom Tab Navigator for the Patient App.
+ * Matches the Anicca design system: rounded bottom navigation, floating active states,
+ * and Lucide icons (Home, MessageSquare, Pill, FileText).
  *
- * @module app/(tabs)/_layout
+ * @module pages/tabs/layout
  * @author Evelin Brandão Cordeiro
  * @copyright 2026 Anicca. All rights reserved.
  * @license MIT
  */
 
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform, Text } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { Home, MessageSquare, Pill, FileText } from 'lucide-react-native';
 
-/** @internal Tab bar background color (dark surface). */
-const TAB_BAR_BACKGROUND = '#1E1433';
-
-/** @internal Tab bar top border color. */
-const TAB_BAR_BORDER = '#2d2540';
-
-/** @internal Active tab icon and label color (primary-500). */
-const TAB_ACTIVE_TINT = '#a855f7';
-
-/** @internal Inactive tab icon and label color (neutral-500). */
-const TAB_INACTIVE_TINT = '#8f86a0';
-
-/** @internal Tab bar height offset for iOS home indicator. */
-const TAB_BAR_HEIGHT_IOS = 84;
-
-/** @internal Tab bar height on Android. */
-const TAB_BAR_HEIGHT_ANDROID = 64;
-
-/** @internal Bottom padding on iOS for home indicator clearance. */
-const TAB_PADDING_BOTTOM_IOS = 20;
-
-/** @internal Bottom padding on Android. */
-const TAB_PADDING_BOTTOM_ANDROID = 8;
-
-/**
- * Props for the {@link TabIcon} internal renderer.
- * @internal
- */
-interface TabIconProps {
-  /** Icon identifier mapped to an emoji symbol. */
-  name: 'hub' | 'ani' | 'routine' | 'docs';
-  /** Resolved tint color from the tab bar. */
-  color: string;
-}
-
-/**
- * Renders a placeholder emoji tab icon.
- *
- * @remarks
- * This component is a temporary placeholder. It will be replaced with
- * react-native-svg icons once the `packages/ui` icon set is implemented.
- *
- * @param props - See {@link TabIconProps}.
- * @returns A `Text` element rendering the emoji icon.
- * @internal
- */
-function TabIcon({ name, color }: TabIconProps) {
-  const icons: Record<TabIconProps['name'], string> = {
-    hub: '🏠',
-    ani: '🐱',
-    routine: '📋',
-    docs: '📄',
-  };
-
-  return (
-    <Text style={{ fontSize: 20, color, lineHeight: 24 }}>
-      {icons[name]}
-    </Text>
-  );
-}
-
-/**
- * Defines the bottom tab navigator with four screens:
- * Hub, Ani (chat), Rotina (routine), and Documentos (documents).
- *
- * @returns The Expo Router `Tabs` navigator element.
- */
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: TAB_ACTIVE_TINT,
-        tabBarInactiveTintColor: TAB_INACTIVE_TINT,
-        tabBarStyle: {
-          backgroundColor: TAB_BAR_BACKGROUND,
-          borderTopColor: TAB_BAR_BORDER,
-          borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? TAB_PADDING_BOTTOM_IOS : TAB_PADDING_BOTTOM_ANDROID,
-          paddingTop: 8,
-          height: Platform.OS === 'ios' ? TAB_BAR_HEIGHT_IOS : TAB_BAR_HEIGHT_ANDROID,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Nunito_600SemiBold',
-          fontSize: 11,
-        },
+        tabBarActiveTintColor: '#f28b50', // Anicca Orange
+        tabBarInactiveTintColor: '#a3988e', // Soft Gray/Brown
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
+        // Ensures the background matches the overarching glassmorphism theme
+        tabBarBackground: () => (
+          <View style={styles.tabBarBackground} />
+        ),
       }}
     >
       <Tabs.Screen
-        name="hub"
+        name="index"
         options={{
-          title: 'Início',
-          tabBarIcon: ({ color }) => <TabIcon name="hub" color={color} />,
+          title: 'Hub',
+          tabBarIcon: ({ color, size }) => (
+            <Home size={size} color={color} strokeWidth={2.5} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="ani"
+        name="chat"
         options={{
           title: 'Ani',
-          tabBarIcon: ({ color }) => <TabIcon name="ani" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <MessageSquare size={size} color={color} strokeWidth={2.5} />
+          ),
         }}
       />
       <Tabs.Screen
         name="routine"
         options={{
           title: 'Rotina',
-          tabBarIcon: ({ color }) => <TabIcon name="routine" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Pill size={size} color={color} strokeWidth={2.5} />
+          ),
         }}
       />
       <Tabs.Screen
         name="docs"
         options={{
-          title: 'Documentos',
-          tabBarIcon: ({ color }) => <TabIcon name="docs" color={color} />,
+          title: 'Docs',
+          tabBarIcon: ({ color, size }) => (
+            <FileText size={size} color={color} strokeWidth={2.5} />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    bottom: 0,
+    elevation: 0,
+    borderTopWidth: 0,
+    backgroundColor: 'transparent', // The custom background handles it
+    height: Platform.OS === 'ios' ? 90 : 70,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+  },
+  tabBarBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginTop: 4,
+  }
+});

@@ -170,4 +170,17 @@ export const API_ENDPOINTS = {
     briefing: (patientId: string) => `/api/v1/doctor/patients/${patientId}/briefing`,
     clinicalQuery: '/api/v1/doctor/clinical-query',
   },
+
+  /** Hub Sync — Server-Sent Events for real-time cross-channel updates. */
+  events: {
+    /**
+     * SSE stream endpoint. Connect with EventSource to receive real-time events.
+     * Events: document_added, body_map_updated, routine_synced, journaling_synced.
+     *
+     * @param userId - The Anicca user UUID.
+     * @returns The SSE stream URL for the given user.
+     */
+    stream: (userId: string) => `/api/v1/events/stream/${userId}`,
+  },
 } as const;
+

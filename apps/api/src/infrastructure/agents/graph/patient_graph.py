@@ -16,59 +16,61 @@ from src.infrastructure.agents.nodes.supervisor_node import supervisor_node
 from src.infrastructure.agents.nodes.ctcae_classifier_node import ctcae_classifier_node
 from src.infrastructure.agents.nodes.documents_ocr_node import documents_ocr_node
 from src.infrastructure.agents.nodes.synthesizer_node import synthesizer_node
+from src.infrastructure.agents.nodes.catalog_agent import catalog_agent_node
+
 
 def _route_by_supervisor(state: AniState) -> str:
     """Read the intent from the state to route to the appropriate specialist."""
     intent = state.get("intent")
-    
+
     if intent == "ROUTE_SYMPTOM":
         return "ctcae_classifier"
     elif intent == "ROUTE_DOCUMENT":
         return "documents_ocr"
-    
-    # If ROUTE_GENERAL or unknown, go straight to synthesizer
+
     return "synthesizer"
+
 
 def build_patient_graph() -> Any:
     """Construct and compile the Patient LangGraph state machine.
+
+    The graph includes the Catalog Agent as a final node that runs after the
+    synthesizer on every WhatsApp interaction. It classifies the interaction and
+    publishes a typed SSE event so the app can react in real time.
 
     Returns:
         A compiled :class:`~langgraph.graph.StateGraph` ready for invocation.
     """
     graph = StateGraph(AniState)
 
-    # 1. Add all nodes
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("ctcae_classifier", ctcae_classifier_node)
     graph.add_node("documents_ocr", documents_ocr_node)
     graph.add_node("synthesizer", synthesizer_node)
+    graph.add_node("catalog", catalog_agent_node)
 
-    # 2. Define Entry Point
     graph.set_entry_point("supervisor")
 
-    # 3. Define conditional routing from supervisor
     graph.add_conditional_edges(
         "supervisor",
         _route_by_supervisor,
         {
             "ctcae_classifier": "ctcae_classifier",
             "documents_ocr": "documents_ocr",
-            "synthesizer": "synthesizer"
+            "synthesizer": "synthesizer",
         },
     )
 
-    # 4. Define edges from specialists to synthesizer
     graph.add_edge("ctcae_classifier", "synthesizer")
     graph.add_edge("documents_ocr", "synthesizer")
-
-    # 5. End graph after synthesizer
-    graph.add_edge("synthesizer", END)
+    graph.add_edge("synthesizer", "catalog")
+    graph.add_edge("catalog", END)
 
     return graph.compile()
 
 
-# Module-level compiled instance for reuse
 patient_graph = build_patient_graph()
+"""Module-level compiled instance for reuse."""
 
 
 async def run_patient_agent(
@@ -77,6 +79,7 @@ async def run_patient_agent(
     patient_context: dict,
     personality: str = "default",
     media_url: str | None = None,
+    user_id: str | None = None,
 ) -> dict:
     """Execute the Multi-Agent pipeline for a single user message.
 
@@ -84,11 +87,13 @@ async def run_patient_agent(
         user_message: The user's message text.
         session_history: List of prior ``{role, content}`` message dicts.
         patient_context: Patient context dictionary from Redis.
-        personality: The patient's Ani personality string. Defaults to ``"mentor"``.
+        personality: The patient's Ani personality string. Defaults to ``"default"``.
         media_url: Optional path to an uploaded document.
+        user_id: The Anicca user UUID for cross-channel context and SSE publishing.
 
     Returns:
-        A dictionary with ``response_text``, ``agents_invoked``, and ``cards``.
+        A dictionary with ``response_text``, ``agents_invoked``, ``cards``,
+        ``whatsapp_buttons``, ``whatsapp_list_sections``, and ``catalog_event``.
     """
     history_messages = [
         HumanMessage(content=m["content"]) if m["role"] == "user"
@@ -105,7 +110,11 @@ async def run_patient_agent(
         "agents_invoked": [],
         "final_response": "",
         "cards": [],
+        "whatsapp_buttons": None,
+        "whatsapp_list_sections": None,
         "media_url": media_url,
+        "user_id": user_id,
+        "catalog_event": None,
     }
 
     result = await patient_graph.ainvoke(initial_state)
@@ -114,4 +123,7 @@ async def run_patient_agent(
         "response_text": result["final_response"],
         "agents_invoked": result["agents_invoked"],
         "cards": result.get("cards", []),
+        "whatsapp_buttons": result.get("whatsapp_buttons"),
+        "whatsapp_list_sections": result.get("whatsapp_list_sections"),
+        "catalog_event": result.get("catalog_event"),
     }

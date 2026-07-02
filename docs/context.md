@@ -1124,5 +1124,719 @@ WANG, J. et al. Virtual oncology collaborative tumor board using multiple artifi
 WANG, R. et al. AI Agents in Clinical Medicine: A Systematic Review. medrXiv, agosto 2025. Disponível em: <https://medrxiv.org/content/10.1101/2025.08.22.25334232v1>. Acesso em: 20 mai. 2026.
 
 
+CENTRO UNIVERSITÁRIO FIAP
+BACHARELADO EM SISTEMAS DE INFORMAÇÃO
+Evelin Brandão Cordeiro — RM 97814
+Pabllo Vinicyus Oliveira Borges de Souza — RM 550124
+ANICCA
+FASE 4
+
+
+
+
+
+
+São Paulo
+2026
+
+CENTRO UNIVERSITÁRIO FIAP
+BACHARELADO EM SISTEMAS DE INFORMAÇÃO
+Evelin Brandão Cordeiro — RM 97814
+Pabllo Vinicyus Oliveira Borges de Souza — RM 550124
+ANICCA
+FASE 4
+Atividade do Enterprise Challenge apresentada ao curso de Bacharelado em Sistemas de Informação do Centro Universitário FIAP, como parte das entregas da Fase 4 — Cap. 1: É hora de prototipar.
+
+
+
+
+
+
+
+
+São Paulo
+2026
+RESUMO EXECUTIVO
+A Anicca — cujo slogan é "Navegando com você na jornada contra o câncer" — é um hub de navegação oncológica conversacional desenvolvido para acompanhar o paciente com câncer em cada aspecto do seu cotidiano: do diagnóstico ao pós-tratamento. Nesta Fase 4, a solução evoluiu da modelagem conceitual para a prototipação e implementação técnica inicial. O presente documento descreve as evoluções realizadas desde a entrega anterior, apresenta o protótipo de alta fidelidade desenvolvido no Figma e o estado atual da implementação técnica — Backend for Frontend (BFF) em FastAPI com Python 3.12, integração WhatsApp via Whatsmiau Cloud v2, orquestração de múltiplos agentes via LangGraph com a API Gemini do Google, banco de dados PostgreSQL com pgvector e cache de sessões em Redis, com o frontend em React Native (Expo SDK 52). O teste de usabilidade foi conduzido por meio de pesquisa indireta em fontes públicas — portais como Oncoguia, Abrale, SciELO, Ministério da Saúde, estudos qualitativos publicados e levantamentos quantitativos — identificando oito perfis de usuários cujos relatos respondem indiretamente às perguntas do formulário de usabilidade. O documento também destaca quatorze funcionalidades com potencial de aprimoramento por inteligência artificial e reflete sobre facilidades, neutralidades e dificuldades da implementação, com ênfase no posicionamento do Anicca como Clinical Decision Support System (CDSS) — sistema de apoio à decisão clínica — que combina reconhecimento de padrões longitudinais, filtragem inteligente por RAG, raciocínio relacional via Knowledge Graph e síntese generativa com LLM.
+
+Palavras-chave: hub conversacional; navegação oncológica; BFF; FastAPI; React Native; LangGraph; WhatsApp; teste de usabilidade; pesquisa indireta; CDSS; XGBoost; pgvector; análise de sentimento; Figma.
+
+LISTA DE FIGURAS
+Figura 1 – Arquitetura geral do hub conversacional Anicca (BFF + três perfis + multi-agentes)
+Figura 2 – Wireframe: Splash Screen
+Figura 3 – Wireframe: Tela de Boas-Vindas e Onboarding
+Figura 4 – Wireframe: Login / Cadastro e Questionário Inicial
+Figura 5 – Wireframe: Hub Principal (Tela Inicial do Paciente)
+Figura 6 – Wireframe: Chat com Ani
+Figura 7 – Wireframe: Rotina de Hoje e Meus Documentos
+Figura 8 – Wireframe: Body Map Interativo
+Figura 9 – Wireframe: Visão do Cuidador (com tasks e recomendações)
+Figura 10 – Wireframe: Painel do Médico com IA Clínica
+
+
+
+LISTA DE QUADROS
+Quadro 1 – Status de implementação por módulo — Fase 4
+Quadro 2 – Stack tecnológico — implementação da Fase 4
+Quadro 3 – Fases da jornada e ações mapeadas para derivação das tarefas do teste
+Quadro 4 – Tarefas do teste de usabilidade derivadas do mapa de jornada
+Quadro 5 – Perfis dos participantes do teste de usabilidade indireto
+Quadro 6 – Respostas indiretas às perguntas do roteiro de usabilidade
+Quadro 7 – Tabulação do teste de usabilidade — eficiência, eficácia e satisfação por participante
+Quadro 8 – Funcionalidades priorizadas com inteligência artificial
+Quadro 9 – Frameworks e ferramentas por funcionalidade de IA
+Quadro 10 – Reflexão sobre implementação — facilidades, neutralidades e dificuldades
+
+
+
+
+
+
+
+
+
+
+LISTA DE ABREVIATURAS E SIGLAS
+ABNT — Associação Brasileira de Normas Técnicas
+ANVISA — Agência Nacional de Vigilância Sanitária
+APAC — Autorização de Procedimento Ambulatorial de Alta Complexidade
+API — Application Programming Interface
+ASCO — American Society of Clinical Oncology
+AWS — Amazon Web Services
+BFF — Backend for Frontend
+CAAE — Certificado de Apresentação de Apreciação Ética
+CACON — Centro de Alta Complexidade em Oncologia
+CDSS — Clinical Decision Support System
+CEFR — Common European Framework of Reference for Languages
+CI/CD — Continuous Integration / Continuous Delivery
+CID-10 — Classificação Internacional de Doenças — 10ª Revisão
+CNES — Cadastro Nacional de Estabelecimentos de Saúde
+CTCAE — Common Terminology Criteria for Adverse Events
+FAB — Floating Action Button
+FSD — Feature-Sliced Design
+GenUI — Generative UI
+HRV — Heart Rate Variability
+IA — Inteligência Artificial
+INCA — Instituto Nacional de Câncer
+JAMA — Journal of the American Medical Association
+JCO — Journal of Clinical Oncology
+JSI — JavaScript Interface
+JWT — JSON Web Token
+LGPD — Lei Geral de Proteção de Dados Pessoais
+LLM — Large Language Model
+LSTM — Long Short-Term Memory
+ML — Machine Learning
+MVP — Minimum Viable Product
+MVVM — Model-View-ViewModel
+NCCN — National Comprehensive Cancer Network
+NCI — National Cancer Institute
+NLP — Natural Language Processing
+OCR — Optical Character Recognition
+PII — Personally Identifiable Information
+PRO — Patient-Reported Outcome
+RAG — Retrieval-Augmented Generation
+RDC — Resolução da Diretoria Colegiada
+RNDS — Rede Nacional de Dados em Saúde
+RNN — Recurrent Neural Network
+RSC — React Server Components
+SaMD — Software as a Medical Device
+SBOC — Sociedade Brasileira de Oncologia Clínica
+SHA — Secure Hash Algorithm
+SHAP — SHapley Additive exPlanations
+SISREG — Sistema de Regulação
+SSR — Server-Side Rendering
+SUS — Sistema Único de Saúde
+TFD — Tratamento Fora de Domicílio
+UFAM — Universidade Federal do Amazonas
+UNACON — Unidade de Alta Complexidade em Oncologia
+WCAG — Web Content Accessibility Guidelines
+XGBoost — Extreme Gradient Boosting
+
+
+
+
+
+
+
+
+
+
+
+SUMÁRIO
+LISTA DE ABREVIATURAS E SIGLAS	6
+1 VERSÃO ATUAL DO PROJETO	10
+1.1 SOLUÇÃO — O ANICCA	10
+1.2 ARQUITETURA DO HUB — BFF E TRÊS PERFIS	11
+1.3 WIREFRAMES DAS TELAS PRINCIPAIS	11
+1.3.1 Splash Screen	11
+1.3.2 Tela de Boas-Vindas e Onboarding	12
+1.3.3 Login / Cadastro e Questionário Inicial	13
+1.3.4 Hub Principal — Tela Inicial do Paciente	14
+1.3.5 Chat com Ani	15
+1.3.6 Rotina de Hoje e Meus Documentos	16
+1.3.7 Body Map Interativo	17
+1.3.8 Visão do Cuidador	18
+1.3.9 Painel do Médico com IA Clínica	19
+1.4 EVOLUÇÕES IMPLEMENTADAS DESDE A FASE 3	20
+2 IMPLEMENTAÇÃO GERAL	22
+2.1 LINGUAGENS, FRAMEWORKS E FERRAMENTAS	22
+2.2 STATUS DE IMPLEMENTAÇÃO E GITHUB	23
+3 TESTE DE USABILIDADE COM PÚBLICO-ALVO	24
+3.1 PLANEJAMENTO — TAREFAS E ROTEIRO	24
+3.2 EXECUÇÃO — METODOLOGIA DE PESQUISA INDIRETA	25
+3.3 PERFIS DOS PARTICIPANTES	25
+3.4 TABULAÇÃO E ANÁLISE	26
+3.5 CONCLUSÕES E AJUSTES	28
+4 DESTAQUE DE FUNCIONALIDADES COM INTELIGÊNCIA ARTIFICIAL	30
+4.1 FUNCIONALIDADES IDENTIFICADAS E JUSTIFICATIVAS	30
+4.2 O ANICCA COMO SISTEMA DE APOIO À DECISÃO CLÍNICA (CDSS)	32
+4.2.1 O dado do paciente como insumo clínico	32
+4.2.2 Clinical Decision Support System (CDSS) — definição e posicionamento	32
+4.2.3 Tipos de IA envolvidos e visualização pelo usuário	33
+4.3 FRAMEWORKS E FERRAMENTAS PARA AS FUNCIONALIDADES DESTACADAS	33
+5 REFLEXÃO SOBRE A IMPLEMENTAÇÃO DAS FUNCIONALIDADES EM DESTAQUE	36
+5.1 FACILIDADES, NEUTRALIDADES E DIFICULDADES	36
+5.2 VISÃO COMPUTACIONAL, MACHINE LEARNING E INTEGRAÇÃO DE ALTA FIDELIDADE	37
+5.2.1 Visão Computacional	37
+5.2.2 Machine Learning e o pipeline de dados longitudinais do CDSS	37
+5.2.3 Integração de Protótipo de Alta Fidelidade com Lógica Simulada de Backend	38
+
+1 VERSÃO ATUAL DO PROJETO 
+1.1 SOLUÇÃO — O ANICCA
+O Brasil enfrenta uma crise silenciosa na assistência oncológica. O INCA estima 704 mil casos novos por ano no triênio 2023–2025. Ainda que a Lei n.º 12.732/2012 garanta início de tratamento em até 60 dias após o diagnóstico patológico, 73,6% dos pacientes nos dez tipos tumorais com piores indicadores têm essa lei descumprida. Em estados do Norte e Nordeste, a espera pode ultrapassar 634 dias. Além disso, 68% dos pacientes desconhecem seus direitos legais e 44% não conseguem acessá-los.
+O problema se desdobra em múltiplas dimensões do cotidiano: desinformação sobre diagnóstico e tratamento; isolamento emocional e social; dificuldade de gestão da rotina diária (medicamentos, sintomas, hidratação, sono); dificuldades financeiras; logística de deslocamento; burocracia do SISREG, APAC e TFD; e ausência de um canal único que acompanhe o paciente de forma contínua. Nenhuma solução digital disponível no Brasil endereça esse conjunto de necessidades de forma integrada.
+A Anicca é um hub de navegação oncológica conversacional que integra WhatsApp, web e app em uma experiência unificada, contínua e inteligente. A plataforma opera por meio de Ani, um mascote gato personalizável que guia pacientes, cuidadores e médicos ao longo de toda a jornada oncológica. O agente de IA subjacente é baseado em Large Language Model (LLM) com Retrieval-Augmented Generation (RAG) oncológico, sem emitir diagnóstico ou prescrição — posicionando a Anicca fora do escopo regulatório de Software as a Medical Device (SaMD) da ANVISA (RDC 657/2022). No nível técnico avançado, o Ani opera sobre uma arquitetura de múltiplos agentes especializados via LangGraph, um grafo de conhecimento oncológico (Neo4j + OncoKB) e modelos preditivos treinados com Federated Learning.
+A plataforma possui três perfis distintos: paciente, cuidador e médico — este último com painel clínico de decisão apoiado por IA, incluindo comparação com casos similares em bases nacionais e internacionais (guidelines ASCO, SBOC, NCCN, PubMed e OncoKB) por meio de arquitetura de múltiplos agentes. A Anicca também incorpora Body Map interativo para registro de sintomas por região corporal, módulo completo de rotina diária (medicamentos, hidratação, temperatura, sono), journaling emocional contextual gerado pelo LLM com base no estado clínico e emocional do paciente, integração com smartwatches e Federated Learning para treino de modelos de ML em dados hospitalares sem centralização — atendendo à LGPD por design.
+1.2 ARQUITETURA DO HUB — BFF E TRÊS PERFIS
+O hub adota o padrão arquitetural Backend for Frontend (BFF) — o backend FastAPI é um intermediário dedicado ao frontend que adapta as respostas para cada canal e perfil. O BFF recebe mensagens de qualquer canal via Gateway de Canal unificado, aciona o agente coordenador Ani (LangGraph), que distribui subtarefas para agentes especializados e retorna a resposta formatada: template rich para WhatsApp, card JSON declarativo para app/web (GenUI), texto para voz. A camada de contexto unificado (Redis) persiste estado da conversa, perfil e histórico independentemente do canal.
+Os três perfis da plataforma — Paciente, Cuidador e Médico — acessam a mesma interface (app/web) com conteúdo adaptado pelo perfil declarado no onboarding. Não há portais separados: o mesmo código serve todos os perfis. A arquitetura combina três padrões que operam em níveis distintos: Clean Architecture governa o sistema inteiro; Feature-Sliced Design (FSD) organiza as features dentro do frontend em seis camadas hierárquicas; e MVVM via hooks vive dentro da camada de apresentação de cada feature.
+Figura 1 – Arquitetura geral do hub conversacional Anicca (BFF + três perfis + multi-agentes)
+
+Fonte: Elaborado pelos autores (2026)
+1.3 WIREFRAMES DAS TELAS PRINCIPAIS
+Os wireframes foram desenvolvidos no Figma, seguindo as diretrizes de acessibilidade WCAG 2.1 AA, as boas práticas do Conversation Design Institute e o paradigma de Generative UI (GenUI). Todas as telas implementam alternância entre modo guiado pelo Ani e modo autônomo. A fonte Nunito é aplicada em todos os elementos de texto. A seguir são descritas e apresentadas as telas desenvolvidas na Fase 4.
+1.3.1 Splash Screen
+A Splash Screen é a primeira tela exibida ao abrir o aplicativo. Apresenta o logotipo da Anicca centralizado sobre o fundo na cor primária (#403229), com o mascote Ani em animação Lottie de entrada (ani-wave.json). A tela dura aproximadamente 2,5 segundos e redireciona automaticamente para a Tela de Boas-Vindas (se primeiro acesso) ou para o Hub Principal (se usuário já autenticado). A fonte do nome "Anicca" é Nunito Black (peso 900).
+Figura 2 – Wireframe: Splash Screen
+
+Fonte: Elaborado pelos autores (2026)
+1.3.2 Tela de Boas-Vindas e Onboarding
+A Tela de Boas-Vindas é o ponto de entrada do fluxo de onboarding de 7 etapas. O Ani aparece em destaque com animação Lottie (ani-wave.json), apresentando-se em linguagem CEFR A2. Dois botões principais estruturam a navegação dual: "Vamos começar" (inicia o fluxo guiado) e "Explorar sozinho" (ativa o modo autônomo e leva diretamente ao Hub). A progressão pelas etapas é indicada por uma barra de progresso linear na parte superior. Em cada etapa, o Ani adapta sua fala ao contexto — na Etapa 2, por exemplo, exibe três cards de seleção de perfil (Sou a paciente / Sou o cuidador / Médico ou Enfermeiro). A Etapa 6 apresenta o Termo de Uso em linguagem simplificada com três toggles de consentimento (notificações, câmera, calendário), conforme exigido pela LGPD.
+Figura 3 – Wireframe: Tela de Boas-Vindas e Onboarding
+
+Fonte: Elaborado pelos autores (2026)
+1.3.3 Login / Cadastro e Questionário Inicial
+Após completar o onboarding, o usuário é convidado (mas não obrigado) a criar uma conta — zero-friction: é possível usar a plataforma sem cadastro. A tela de Login/Cadastro oferece acesso via e-mail e senha, ou login social (Google / Apple). CPF não é solicitado nesta tela — apenas no módulo de importação RNDS. Após o cadastro, um questionário inicial de 4 perguntas personaliza a experiência do Ani: tipo de câncer (autocomplete CID-10 simplificado), fase atual do tratamento, modalidade de saúde (SUS/convênio/particular) e personalidade do Ani escolhida. As respostas são salvas no Zustand store de perfil e sincronizadas com o backend via FastAPI.
+Figura 4 – Wireframe: Login / Cadastro e Questionário Inicial
+
+Fonte: Elaborado pelos autores (2026)
+1.3.4 Hub Principal — Tela Inicial do Paciente
+O Hub Principal é a tela de entrada após o login. O cabeçalho exibe o avatar personalizado do usuário, seu nome e o ciclo atual de tratamento. A barra de busca inteligente é o ponto de entrada da GenUI — ao digitar palavras-chave como "dor no estômago" ou "náusea", o sistema renderiza inline os cards declarativos correspondentes (Body Map pré-selecionado, card CTCAE, ou card de medicamento). Abaixo da busca, quatro cards de atalho apresentam: próximo ciclo de tratamento (com countdown), sintomas do dia (carga CTCAE acumulada), último exame laboratorial (tendência de neutrófilos) e status da Lei dos 60 dias (semáforo verde/âmbar/vermelho). A navegação inferior fixa apresenta quatro abas: Hub, Ani, Rotina e Docs. O botão flutuante do Ani (FAB laranja #FF9A5C) está sempre visível para acesso rápido ao chat.
+Figura 5 – Wireframe: Hub Principal (Tela Inicial do Paciente)
+
+Fonte: Elaborado pelos autores (2026)
+1.3.5 Chat com Ani
+A tela de Chat com Ani é o coração conversacional da plataforma. A interface segue o padrão de chat familiar (bolhas de mensagem), com a distinção visual de que as respostas do Ani podem conter cards GenUI declarativos embutidos — por exemplo, ao perguntar sobre sintomas, o Ani retorna um card CTCAE interativo diretamente na conversa. O indicador de digitação (typing indicator) usa a animação Lottie ani-thinking.json. O usuário pode alternar a qualquer momento entre o modo conversacional (chat livre) e o modo autônomo (navegar pelo Hub sem o Ani). O histórico completo da conversa é persistido no Redis (sessão ativa) e no PostgreSQL (histórico de longo prazo), garantindo continuidade entre sessões e canais (WhatsApp ↔ app ↔ web). Sugestões de ação rápida (quick replies) são exibidas abaixo das respostas do Ani para facilitar a navegação sem digitação.
+Figura 6 – Wireframe: Chat com Ani
+
+Fonte: Elaborado pelos autores (2026)
+1.3.6 Rotina de Hoje e Meus Documentos
+A tela de Rotina de Hoje organiza o acompanhamento diário do paciente em cinco blocos em rolagem vertical. Bloco 1 — Temperatura: campo de entrada numérica; se ≥37,8°C, exibe banner educacional laranja com orientação para contato com o plantão oncológico (posicionado como informação de suporte, não triagem automática, em conformidade com as recomendações IDSA/ASCO). Bloco 2 — Medicamentos: listagem por período (manhã/tarde/noite) com marcação por toque e contador de adesão diária. Bloco 3 — Hidratação: oito copos interativos com mensagem educativa sobre hidratação durante a quimioterapia. Bloco 4 — Sono: campo de registro de duração e qualidade subjetiva (escala 1–5 com emoji), integrado automaticamente com dados do smartwatch via Google Health Connect quando disponível. Bloco 5 — CTA de Sintomas: botão destacado de acesso rápido ao Body Map e à escala CTCAE.
+A tela de Meus Documentos funciona como uma central inteligente de gestão documental do paciente oncológico. Toda documentação médica recebida por qualquer canal — foto enviada via WhatsApp, upload direto no app ou digitalização pela câmera — é automaticamente processada pelo Agente Documentos via OCR (AWS Textract) e catalogada sem intervenção manual do usuário.
+A interface organiza os documentos em sete categorias colapsáveis, exibidas como accordion: Hemograma e Exames Laboratoriais, Imagem (TC/RM/PET-Scan), Patologia e Biópsia, Consultas e Relatórios Médicos, Prescrições, Plano de Saúde e Seguro, e SUS/INSS/RNDS. Cada categoria exibe o número de documentos armazenados e a data do mais recente. Ao expandir uma categoria, os documentos aparecem em cards individuais contendo: badge de origem (WhatsApp, câmera, upload), data de recebimento, nome do arquivo e um destaque gerado por IA com a informação mais relevante daquele documento — por exemplo, em um hemograma, o destaque pode exibir "Neutrófilos 980 — abaixo do valor de referência" ou "PSA 4,2 — estável em relação à coleta anterior".
+Uma barra de busca por palavra-chave no topo da tela permite localizar qualquer documento por termo clínico, data ou tipo de exame. O botão de câmera flutuante (FAB) permite capturar e enviar um novo documento diretamente da tela, acionando o fluxo de OCR e catalogação automática. Documentos podem ser compartilhados individualmente com o médico vinculado com um único toque, gerando um registro de compartilhamento no log de auditoria.
+Figura 7 – Wireframe: Rotina de Hoje e Meus Documentos
+
+Fonte: Elaborado pelos autores (2026)
+1.3.7 Body Map Interativo
+O Body Map é implementado como silhueta SVG interativa com visões frontal e dorsal do corpo humano. Na visão do paciente, o toque em qualquer região anatômica abre um modal de registro com: escala de intensidade deslizante (0–10), seleção do tipo de sintoma (dor, dormência, inchaço, vermelhidão, ferida, outro) e campo de texto livre para descrição. Após o registro, a região é colorida com intensidade proporcional ao nível informado (gradiente de amarelo a vermelho), e o histórico temporal é acessível por linha do tempo por região. Na visão do médico (painel clínico), o Body Map exibe os registros acumulados do paciente ao longo do tempo, com filtro por período e tipo de sintoma, e permite inserção de anotações clínicas privadas por região anatômica.
+Figura 8 – Wireframe: Body Map Interativo
+
+Fonte: Elaborado pelos autores (2026)
+1.3.8 Visão do Cuidador
+A visão do cuidador é acessada mediante consentimento explícito do paciente (badge de permissão visível em todos os dados). O dashboard do cuidador apresenta, além das informações padrão da visão do paciente (timeline da jornada, próximas consultas, Body Map de sintomas, chamados abertos), dois blocos exclusivos que diferenciam esta visão: Tasks — lista de tarefas contextuais geradas pelo Ani com base no estado clínico do paciente vinculado (exemplo: "Rosa tem consulta amanhã — lembrar de levar os laudos", "Neutrófilos baixos esta semana — verificar temperatura hoje"); e Recomendações — sugestões personalizadas do Ani dirigidas ao cuidador para apoio emocional e logístico (exemplo: "Esta semana é a mais pesada do Ciclo 3 para Rosa — considere organizar as refeições com antecedência"). O alerta de risco de abandono (badge ML verde/amarelo/vermelho) é exibido de forma proeminente para orientar a atenção do cuidador.
+Figura 9 – Wireframe: Visão do Cuidador (com tasks e recomendações)
+
+Fonte: Elaborado pelos autores (2026)
+1.3.9 Painel do Médico com IA Clínica
+O painel do médico é acessado via portal web (apps/web-doctor) com credenciais distintas, protegidas por JWT com claim role: "doctor" e validação de vínculo paciente-médico no banco de dados. A tela principal lista os pacientes vinculados com: iniciais, tipo de câncer, ciclo atual, último registro CTCAE e score de risco de abandono (badge colorido gerado pelo modelo ML XGBoost + SHAP: verde/amarelo/vermelho). Ao selecionar um paciente, o médico acessa: Body Map temporal com histórico de sintomas por região e filtro por data; evolução CTCAE em gráfico de linha; briefing pré-consulta gerado automaticamente pelo Agente Briefing (resumo do últimos 30 dias de PROs, exames pendentes, chamados abertos, aderência a medicamentos); documentos compartilhados; e mensagens seguras criptografadas com log de auditoria. O campo de consulta livre de IA clínica aciona simultaneamente os Agentes PubMed, Guidelines, OncoKB e ClinicalTrials, retornando síntese com citação rastreável à fonte primária por recomendação.
+Figura 10 – Wireframe: Painel do Médico com IA Clínica
+
+Fonte: Elaborado pelos autores (2026)
+
+1.4 EVOLUÇÕES IMPLEMENTADAS DESDE A FASE 3
+A Fase 4 concentrou-se na transição da modelagem conceitual para a prototipação e implementação técnica inicial. As principais evoluções cobrem três frentes: (a) construção da fundação técnica do sistema — monorepo, BFF, banco de dados e cache de sessão; (b) integração dos canais conversacionais — WhatsApp via Whatsmiau Cloud v2 e orquestração de agentes via LangGraph; e (c) design das interfaces em alta fidelidade no Figma.
+Quadro 1 – Status de implementação por módulo — Fase 4
+Componente / Módulo
+Status e descrição
+Monorepo Turborepo + pnpm workspaces
+Estrutura criada com packages/ compartilhados (types, ui, config). Expo SDK 52 detecta automaticamente o monorepo.
+BFF FastAPI (Python 3.12)
+Operacional. Endpoints de webhook WhatsApp, autenticação JWT, roteamento de perfis (paciente/cuidador/médico) e integração com Redis.
+Integração WhatsApp (Whatsmiau Cloud v2)
+Webhooks ativos em sandbox. Recebimento e envio de mensagens de texto, botões e listas funcionando.
+LangGraph + Gemini API
+Grafo de agentes v1 implementado: Agente Supervisor (Ani), Agente RAG Oncológico e Agente Documentos. Respostas em tempo real via streaming.
+PostgreSQL + pgvector + Alembic
+Banco provisionado. Migrations iniciais rodando. Esquema de Paciente, Jornada, Sintoma e EntradaJournaling criado.
+Redis (contexto conversacional)
+Cache de sessão por conversa ativo. Persistência do histórico entre turnos e canais (WhatsApp ↔ app).
+React Native (Expo SDK 52)
+App inicializado com Expo Router v4 e NativeWind v4. Telas de Splash, Onboarding e Hub Principal em refinamento visual.
+Wireframes Figma (alta fidelidade)
+10 telas concluídas: Splash, Boas-Vindas, Onboarding (7 etapas), Login/Cadastro, Hub Principal, Chat Ani, Rotina de Hoje, Meus Documentos, Body Map, Visão do Cuidador e Painel do Médico.
+GitHub
+Repositório público: https://github.com/evamyuu/anicca com estrutura monorepo documentada.
+
+Fonte: Elaborado pelos autores (2026)
+As integrações complementares — OCR de laudos (AWS Textract), Body Map interativo com histórico temporal, Google Health Connect, modelagem relacional no Neo4j e Federated Learning — estão planejadas para as Fases 5 e 6, conforme o cronograma estabelecido.
+2 IMPLEMENTAÇÃO GERAL
+2.1 LINGUAGENS, FRAMEWORKS E FERRAMENTAS
+A solução Anicca é uma aplicação multiplataforma que cobre mobile (iOS e Android), web e WhatsApp num único hub conversacional com BFF dedicado. A escolha por React Native com Expo SDK 52 — em vez de desenvolvimento nativo separado com Kotlin/Swift — é justificada pela necessidade de sincronismo entre plataformas, pelo suporte à New Architecture (Fabric + JSI) que elimina a ponte JS ↔ nativo e pela detecção automática de monorepo pelo Expo. O backend em Python com FastAPI foi escolhido pelo ecossistema ML robusto e pela performance assíncrona nativa, essencial para o streaming de respostas do LLM.
+O protótipo foi desenvolvido diretamente em alta fidelidade no Figma, integrando design e código em paralelo, com tokens de design (paleta de cores, tipografia Nunito, espaçamentos e componentes reutilizáveis) referenciados diretamente no NativeWind v4 do app e no Tailwind do portal web. A paleta do modo claro é baseada em tons quentes: primária #403229 (marrom profundo), secundária #FF9A5C (laranja Ani). O modo escuro segue estilo Windows — fundo #0F0F0F, superfície #1A1A1A.
+Quadro 2 – Stack tecnológico — implementação da Fase 4
+Camada
+Tecnologia
+Justificativa
+Monorepo
+Turborepo + pnpm workspaces
+Cache de build; tasks paralelas; compatível com Expo SDK 52.
+Frontend Mobile
+React Native (Expo SDK 52)
+Multiplataforma iOS/Android; New Architecture (Fabric+JSI); Expo Router v4.
+Frontend Web
+Next.js 14 (App Router)
+RSC para SSR; Server Actions; streaming de respostas LLM.
+UI Components
+NativeWind v4 + shadcn/ui
+Tailwind CSS unificado mobile/web; WCAG 2.1 AA.
+Estado Servidor
+React Query v5 (TanStack)
+Cache automático; refetch; loading/error padronizados.
+Estado Global
+Zustand
+Store leve; perfil, mascote, preferências, sessão.
+Backend API / BFF
+Python 3.12 / FastAPI
+Async nativo; Pydantic v2; ecossistema ML/IA.
+Orquestração Agentes
+LangGraph (LangChain v1.0)
+Grafo de estados multi-agente com auditabilidade e streaming.
+LLM / IA
+Gemini API (Google)
+Modelo gemini-2.5-flash; streaming nativo; multi-agente.
+RAG / Vector DB
+LangChain + pgvector
+Embeddings text-embedding-3-small (OpenAI); busca semântica.
+OCR de Laudos
+AWS Textract (Fase 5)
+Precisão para docs médicos; extração estruturada de texto.
+WhatsApp
+Whatsmiau Cloud v2
+Gratuita até 1.000 conversas/mês; webhooks; Evolution API.
+Banco de Dados
+PostgreSQL 16 (AWS RDS)
+Relacional + pgvector; pgcrypto para dados sensíveis.
+Cache / Sessão
+Redis 7 (AWS ElastiCache)
+Contexto conversacional entre turnos e canais.
+CI/CD
+GitHub Actions + Docker
+Pipelines de teste, lint e deploy automatizados.
+Tipografia
+Nunito (Google Fonts)
+Rounded, empática, acessível — exclusiva do Anicca.
+Linguagem
+TypeScript (strict) + Python 3.12
+Tipagem estrita; JSDoc obrigatório por arquivo.
+Cloud
+AWS São Paulo (sa-east-1)
+Residência de dados no Brasil (LGPD).
+
+Fonte: Elaborado pelos autores (2026)
+2.2 STATUS DE IMPLEMENTAÇÃO E GITHUB
+Nesta fase, toda a base técnica saiu do papel. O BFF FastAPI está operacional com endpoints de webhook WhatsApp. A integração com a Whatsmiau Cloud v2 está ativa em sandbox, com recebimento e envio de mensagens testados. O grafo LangGraph está rodando com a API do Gemini em tempo real, entregando respostas dos Agentes Supervisor, RAG Oncológico e Documentos. O banco PostgreSQL com pgvector está provisionado e as migrations estão rodando via Alembic. O frontend React Native está inicializado com Expo Router v4 e as telas estão em refinamento visual. O código está disponível em: https://github.com/evamyuu/anicca.
+A observação importante para o planejamento é que o protótipo funcional de alta fidelidade com todas as integrações estará completo na Fase 5 (agosto/2026), incluindo OCR de laudos, Body Map interativo com histórico e Knowledge Graph Neo4j. A Fase 6 (setembro/2026) contempla testes de usabilidade diretos com usuários reais, ajustes de UX e demonstração ao vivo na banca Claro/FIAP.
+3 TESTE DE USABILIDADE COM PÚBLICO-ALVO
+3.1 PLANEJAMENTO — TAREFAS E ROTEIRO
+O teste de usabilidade da Fase 4 foi estruturado a partir do mapa de jornada do usuário — metodologia recomendada para derivar tarefas realistas e representativas do uso real do produto. O mapa de jornada da Anicca foi construído com base na persona principal Rosa Silva (52 anos, paciente de câncer de mama estágio II, SUS, Caruaru/PE) e cobre as fases de pré-tratamento, tratamento ativo e acompanhamento contínuo.
+Quadro 3 – Fases da jornada e ações mapeadas para derivação das tarefas do teste
+Fase da Jornada
+Ação principal
+Descrição da ação no app
+Pré-tratamento
+Receber o diagnóstico
+Fotografar laudo pelo WhatsApp, receber tradução da IA em linguagem leiga e lista de perguntas para o médico.
+Pré-tratamento
+Conhecer direitos no SUS
+Consultar a Lei dos 60 dias, ver semáforo de prazo e abrir ticket preventivo se necessário.
+Durante o tratamento
+Registrar sintomas do dia
+Marcar sintoma no Body Map, ver classificação CTCAE e receber orientação educacional contextualizada.
+Durante o tratamento
+Gerenciar rotina diária
+Registrar temperatura, marcar medicamentos tomados, registrar hidratação e sono.
+Continuamente
+Journaling emocional
+Responder check-in diário às 21h, escrever livremente no diário privado e receber sugestão contextual da IA.
+
+Fonte: Elaborado pelos autores (2026)
+Das cinco ações mapeadas, foram selecionadas as três com maior impacto na proposta de valor core do Anicca — as que respondem diretamente às barreiras de desinformação, isolamento e fragmentação identificadas no problema. Essas três ações foram transformadas nas tarefas do roteiro de teste.
+Quadro 4 – Tarefas do teste de usabilidade derivadas do mapa de jornada
+Tarefa
+Descrição
+Funcionalidade testada
+Critério de avaliação
+T1
+Enviar foto de laudo pelo WhatsApp e verificar a tradução gerada pela IA em linguagem acessível
+Funcionalidade de OCR + RAG Oncológico — core do módulo de documentos
+Eficiência de acesso à informação clínica; redução de barreiras linguísticas
+T2
+Acessar a tela de Hub Principal e registrar um sintoma no Body Map com localização e intensidade
+Funcionalidade de Body Map SVG interativo — core do módulo de sintomas
+Eficácia do registro espacial; intuitividade da silhueta tocável
+T3
+Verificar os direitos legais pelo módulo de Direitos e abrir um ticket para a ouvidoria do SUS
+Funcionalidade de RAG de direitos + módulo de chamados — core da navegação oncológica
+Completude da tarefa; satisfação com a clareza da linguagem CEFR A2
+
+Fonte: Elaborado pelos autores (2026)
+O roteiro de teste segue a estrutura início–meio–fim recomendada pela metodologia de pesquisa de usuário. No início, o facilitador apresenta o contexto: "Você é Rosa Silva, 52 anos, acabou de receber um diagnóstico de câncer de mama e está tentando entender o que fazer. Abra o Anicca e explore a solução para cada situação apresentada." No meio, o participante realiza as três tarefas sequencialmente, enquanto o observador anota erros, dúvidas e dificuldades sem interromper. No fim, o participante responde a perguntas abertas sobre satisfação geral, pontos de maior clareza e sugestões de melhoria.
+3.2 EXECUÇÃO — METODOLOGIA DE PESQUISA INDIRETA
+A execução do teste de usabilidade adotou metodologia de pesquisa indireta — abordagem reconhecida em User Research quando o recrutamento presencial de participantes representativos não é viável no prazo da entrega. A pesquisa indireta consiste em identificar e analisar relatos públicos de pessoas que compõem o público-alvo, publicados em fontes confiáveis, cujas declarações respondam às mesmas perguntas que o roteiro de teste endereçaria.
+As fontes consultadas incluem: Instituto Oncoguia, Abrale, Ministério da Saúde, Correio Braziliense, SciELO Brasil (Cadernos de Saúde Pública, Revista Brasileira de Enfermagem), Revista Saúde em Redes (Redeunida), Ludomedia/NTQR (estudos qualitativos de enfermagem publicados em 2021), Revista Brasileira de Saúde Suplementar (RBSS) e OncoCenter Médicos. Complementarmente, foram utilizados dados quantitativos do DataSenado (2019), da plataforma Wellon (2024, base de 4,7 milhões de atendimentos) e do ensaio clínico de Basch et al. publicado no JAMA (2017).
+3.3 PERFIS DOS PARTICIPANTES
+Quadro 5 – Perfis dos participantes do teste de usabilidade indireto
+Código
+Participante / Perfil
+Fonte
+Dor principal expressa
+U1 — Paciente
+Neuza Rodrigues de Ávila, 64 anos, linfoma não-Hodgkin, SUS
+Revista Online Abrale
+Descontinuidade do tratamento, falta de informação sobre direitos e ausência de canal centralizado.
+U2 — Paciente
+Luiz, câncer de próstata, Distrito Federal, SUS
+Correio Braziliense (jun/2023)
+Quatro tentativas de retorno sem sucesso; sensação de abandono pós-cirurgia sem canal de acompanhamento.
+U3 — Paciente
+Antônia Josimar de Oliveira, 57 anos, câncer de mama, RJ, SUS
+Ministério da Saúde (out/2025)
+Choque emocional no diagnóstico, fila do regulador; necessidade urgente de acolhimento e orientação clara.
+U4 — Cuidadoras
+Grupo 'Poderosas Amigas da Mama' — mulheres pós-mastectomia, Baixada Fluminense
+Estudo qualitativo, Revista Saúde em Redes (Redeunida)
+Criação espontânea de grupo WhatsApp para apoio mútuo — valida canal e demanda por suporte contínuo.
+U5 — Cuidadores
+Cuidadores familiares identificados em estudos de sobrecarga (n diverso)
+SciELO/REBEn + síntese NSaúde
+46% sem tempo para consultas próprias; 61% com necessidade de apoio mental; sobrecarga de coordenação.
+U6 — Médico
+Dra. Alessandra Menezes Morelle (idealizadora do app Thummi)
+OncoCenter Médicos (entrevista publicada)
+Defende canal estruturado; aponta que WhatsApp 'cru' é insuficiente, validando necessidade de ferramenta dedicada.
+U7 — Enfermeiros/Pacientes
+Pacientes colorretais + enfermeiros navegadores, São Paulo
+Estudo qualitativo, Ludomedia/NTQR (Almeida & Vieira, 2021)
+Pacientes sugeriram WhatsApp Business e conteúdo digital confiável como ferramenta de comunicação com a equipe.
+U8 — Síntese de Jornada
+Estudo 'Jornada do Paciente Oncológico na Saúde Suplementar' (DparaE, CAAE 74923823.6.0000.5121)
+Revista Brasileira de Saúde Suplementar
+Fragmentação do cuidado, burocracia, falhas de comunicação e falta de suporte emocional: +50h de entrevistas.
+
+Fonte: Levantamento de fontes públicas realizado pelos autores (2026)
+3.4 TABULAÇÃO E ANÁLISE
+A análise das fontes foi organizada em dois quadros complementares. O Quadro 5 mapeia a correspondência entre cada pergunta do roteiro e os usuários indiretos que a respondem, com o padrão observado e a síntese da evidência. O Quadro 6 aplica os critérios clássicos de usabilidade — eficiência, eficácia e satisfação — inferindo as métricas a partir dos comportamentos e declarações registrados nas fontes.
+Quadro 6 – Respostas indiretas às perguntas do roteiro de usabilidade
+Pergunta
+Tema
+Usuários
+Síntese da evidência
+P1
+Interesse em app de jornada oncológica
+U1, U2, U3, U8
+Existência e adoção de apps como WeCancer/Cecí, Thummi e APPonco comprova demanda; relatos validam necessidade de acompanhamento contínuo desde o diagnóstico.
+P2
+Uso de WhatsApp para informações de saúde
+U4, U6, U7
+WhatsApp responde por 89,57% dos contatos com instituições de saúde (Wellon, 2024); 79% dos brasileiros o usam como fonte de informação (DataSenado, 2019). Almeida & Vieira (2021) confirmam que pacientes sugeriram o canal proativamente.
+P3
+Dificuldade de entender laudos/termos técnicos
+U3, U8
+Choque no diagnóstico por linguagem inacessível. Paciente do estudo de Almeida & Vieira (2021) solicitou explicitamente: 'simplifica para o paciente, tira esse viés científico'. Oncoguia e INCA mantêm glossários oncológicos pela mesma razão.
+P4
+Falta de canal único (documentos + lembretes + comunicação)
+U1, U2, U5
+Informações espalhadas; recomendações clínicas atuais são manuais (fichário, calendário). Cuidadores acumulam a coordenação: medicação, agendamentos, sintomas.
+P5
+Painel da jornada em tempo real para cuidador/médico
+U5, U6, U7
+WeCancer já oferece painel clínico com alertas de efeitos adversos graves. Dra. Morelle e enfermeiros navegadores confirmam a demanda; U7 aponta que os próprios pacientes sugeriram a ferramenta.
+P6
+Perdido sobre direitos no SUS
+U1, U2, U3
+Estudo SciELO (ASCOMCER, n=62, 91,9% SUS): apenas 62,9% conheciam ao menos um direito; maioria dos direitos individuais conhecida por menos de 10% dos pacientes. Oncoguia lançou Manual dos Direitos da Pessoa com Câncer por essa razão.
+P7
+IA conversacional empática no dia a dia
+U3, U7, U8
+Projeto PsiVirtual (UFAM) e Woebot mostram demanda crescente. Ressalvas de psicólogos sobre sigilo e empatia simulada (Revista Visão Hospitalar) orientam o design ético do Ani com disclaimers explícitos e supervisão humana.
+P8
+Registro de sintomas — como faz hoje
+U5, U7
+Hoje é manual ou inexistente. Ensaio Basch et al. (JAMA 2017, n=766): sobrevida global 5 meses maior no grupo com automonitoramento digital de sintomas (31,2 vs 26,0 meses, HR=0,832, p=0,03).
+
+Fonte: Levantamento de fontes públicas realizado pelos autores (2026)
+
+Quadro 7 – Tabulação do teste de usabilidade — eficiência, eficácia e satisfação por participante
+Participante
+Eficácia (consegue realizar a tarefa?)
+Eficiência (facilidade/aprendizado)
+Satisfação (expectativa expressa)
+U1 (Paciente)
+Descontinuidade do tratamento evidenciada; necessidade de canal de acompanhamento contínuo confirmada
+Alta: buscou ativamente canais de informação e comunicação
+Frustração com sistema fragmentado — alta propensão a adotar ferramenta que centralize a jornada
+U2 (Paciente)
+Quatro tentativas de retorno sem resposta — necessidade de canal rastreável e proativo confirmada
+Alta: tentou múltiplos canais disponíveis sem sucesso
+Insatisfação extrema com sistema atual — alta propensão a adotar alternativa digital
+U3 (Paciente)
+Necessidade de tradução do diagnóstico em linguagem acessível e acolhimento no momento do choque emocional
+Alta: buscou informação ativamente no diagnóstico
+Choque emocional = momento de maior abertura a suporte digital de acolhimento
+U4 (Cuidadoras)
+Canal WhatsApp criado espontaneamente para suporte mútuo — demanda por ferramenta estruturada confirmada
+Alta: adesão voluntária ao canal informal sem nenhuma friction
+Satisfação com suporte entre pares — disposição para ferramenta com matching inteligente
+U5 (Cuidadores)
+Sobrecarga de coordenação documentada; 61% com necessidade de apoio mental confirmados
+Alta: cuidadores buscam ativamente organização e suporte
+Alta motivação para ferramentas que centralizem tarefas e ofereçam suporte emocional
+U6 (Médico)
+Demanda por canal estruturado e seguro — WhatsApp cru insuficiente — validada pelo próprio oncologista
+Alta: criou própria solução (app Thummi) pela ausência de ferramenta adequada
+Satisfação com ferramenta que resolva comunicação médico-paciente com rastreabilidade
+U7 (Enfermeiros)
+Pacientes sugeriram proativamente WhatsApp Business e conteúdo digital confiável (Almeida & Vieira, 2021)
+Alta: iniciativa partiu dos usuários, não da equipe de saúde
+Alta abertura para ferramenta estruturada que centralize comunicação e informação
+U8 (Síntese)
+Fragmentação do cuidado e falta de suporte emocional identificados como principais dores sistêmicas
+Alta: estudo com +50h de entrevistas confirma padrão sistêmico de demanda
+Alta propensão à adoção de ferramenta que enderece fragmentação e apoio emocional
+
+Fonte: Análise elaborada pelos autores com base nas fontes levantadas (2026)
+3.5 CONCLUSÕES E AJUSTES
+Os resultados do teste de usabilidade indireto confirmam, de forma convergente, que existe público real e demanda comprovada para todas as funcionalidades core do Anicca. As três lacunas mais críticas e menos atendidas pelos apps existentes são: (a) tradução de laudos em linguagem acessível; (b) centralização de documentos, lembretes e comunicação num único canal; e (c) orientação contextualizada sobre direitos no SUS — com apenas 62,9% dos pacientes conhecendo ao menos um de seus direitos legais.
+O estudo de Almeida e Vieira (2021), realizado com pacientes em tratamento para câncer colorretal no Hospital Israelita Albert Einstein, identificou que os pacientes valorizam especialmente: comunicação quase instantânea com a equipe, conteúdo atualizado e fidedigno e linguagem simplificada — exatamente o que o Ani entrega via WhatsApp e app. A ressalva importante do mesmo estudo — de que em alguns casos o interesse pelo app não foi significativo, com causas relacionadas ao cansaço do cotidiano e falta de tempo — orienta diretamente o design do Anicca: o WhatsApp como canal de entrada principal reduz a fricção de acesso; as quick replies e os cards GenUI eliminam a necessidade de digitação; e o protocolo de silêncio respeita o ritmo do paciente em vez de aumentar a sobrecarga com notificações.
+Os principais ajustes derivados do teste são: (1) priorizar o módulo de tradução de laudos no MVP; (2) fortalecer o módulo de direitos com linguagem CEFR A2 e simulador da Lei dos 60 dias; (3) manter o WhatsApp como canal de entrada principal; (4) posicionar o registro de sintomas como recurso clínico com comunicação do benefício de sobrevida; (5) tratar a IA empática com disclaimers explícitos de limites e supervisão humana; (6) para o teste direto (Fase 6), recrutar via Oncoguia, Abrale e grupos de WhatsApp de pacientes oncológicos.
+4 DESTAQUE DE FUNCIONALIDADES COM INTELIGÊNCIA ARTIFICIAL
+4.1 FUNCIONALIDADES IDENTIFICADAS E JUSTIFICATIVAS
+A identificação das funcionalidades com maior potencial de aprimoramento por IA parte de dois eixos complementares: (a) as dores validadas pelo teste de usabilidade da Seção 3, que apontam onde o impacto no usuário é maior; e (b) a análise de concorrentes e gaps de mercado, que mapeia onde as soluções existentes têm lacunas que a arquitetura multi-agente do Anicca resolve de forma diferenciada. O Quadro 7 apresenta as quatorze funcionalidades identificadas, com suas justificativas.
+Quadro 8 – Funcionalidades priorizadas com inteligência artificial
+Funcionalidade
+Como a IA aprimora
+Fase
+Justificativa (dor validada)
+FAQ Dinâmico por Perfil Clínico
+O LLM gera, com base no CID-10 + estágio do paciente, uma lista curada das dúvidas mais frequentes para aquele perfil — exibida como cards na tela do Hub. Diferente do chat livre, é curadoria proativa.
+MVP (Fase 5)
+Paciente E2 em Almeida & Vieira (2021) sugeriu explicitamente um FAQ por tipo de tumor e estágio. Filtragem inteligente visível diretamente na tela inicial.
+Comunidade entre Pares (Matching por IA)
+Matching entre pacientes por similaridade de perfil (CID-10, estágio, fase, localização) via embeddings. Moderação automática de linguagem de sofrimento antes da entrega das mensagens.
+Fase 5 (roadmap)
+Grupos como 'Poderosas Amigas da Mama' surgem espontaneamente pela ausência de canal estruturado. Matching por IA resolve o gap sem expor dados clínicos entre pares.
+Matching de Ensaios Clínicos (Paciente)
+Filtragem automática em ClinicalTrials.gov por CID-10 + estágio + localização do paciente, com cards que traduzem critérios técnicos em linguagem CEFR A2.
+Fase 5
+User research confirma que pacientes buscam ativamente tratamentos alternativos mas a barreira é a linguagem técnica dos critérios de inclusão e exclusão.
+Protocolo de Silêncio (ML + NLP)
+Quando o modelo ML detecta 12+ dias sem acesso combinado com queda de sentimento no journaling, o Ani envia UMA mensagem empática e entra em modo silêncio. Zero notificações adicionais.
+MVP (Fase 5)
+Resposta direta ao gap de dropout identificado em Almeida & Vieira (2021): cansaço e sobrecarga cognitiva são as principais razões de abandono de apps de saúde.
+Análise de Sentimento no Journaling (NLP)
+Camada NLP que classifica o estado emocional (positivo/neutro/sofrimento leve/sofrimento intenso) a partir das entradas de journaling, alimentando o modelo preditivo e o protocolo de silêncio.
+MVP (Fase 5)
+Transforma texto não estruturado do paciente em sinal clínico estruturado — conecta o dado subjetivo ao CDSS do médico e ao modelo preditivo.
+Geolocalização de CACONs/UNACONs
+Integração com CNES/DATASUS (tipo 36 = oncologia) com filtragem geoespacial que calcula distância do paciente ao estabelecimento e indica elegibilidade TFD (>50 km). Mapa interativo no app.
+MVP (Fase 5)
+Barreira geográfica é uma das principais barreiras à navegação oncológica no SUS. Para pacientes do Norte/Nordeste — onde a espera pode ultrapassar 634 dias — é funcionalidade crítica.
+Personalidade Adaptativa do Ani
+O LLM adapta tom, vocabulário e abordagem emocional baseado na persona escolhida no onboarding + no estado clínico atual. Adaptação visível em cada mensagem.
+MVP (Fase 4–5)
+Personalização por IA é fator-chave de alta adesão em apps oncológicos (JCO CCI, 2024). A persona é variável do system prompt que calibra empatia, tecnicidade e proatividade.
+Briefing Pré-Consulta Automático
+Resume automaticamente os últimos 30 dias de PROs: sintomas CTCAE, aderência a medicamentos, variação de humor, exames pendentes, chamados abertos e dados de wearable. Entregue ao médico sem ação manual.
+MVP (Fase 5)
+É geração de texto com reconhecimento de padrões temporais que resolve o gap de informação longitudinal — nenhum prontuário clínico convencional captura esses dados de forma estruturada.
+Tradução de Laudos (RAG + OCR)
+Agente Documentos usa AWS Textract para extrair o texto do laudo e o Agente RAG para traduzir termos técnicos em linguagem CEFR A2, gerando três perguntas para o oncologista.
+MVP (Fase 5)
+Dor mais crítica: 68% dos pacientes não conhecem seus direitos e chegam ao tratamento sem entender o diagnóstico. Funcionalidade com maior impacto e menor risco regulatório.
+Journaling Emocional Contextual
+O LLM gera prompts de journaling personalizados com base no estado clínico (ciclo de quimio, sintomas, aderência) e no histórico emocional (check-ins anteriores). Prompt único, não genérico.
+MVP (Fase 4–5)
+Ensaio Basch et al. (JCO 2016) demonstrou melhora de qualidade de vida e redução de visitas ao pronto-socorro com monitoramento digital de PROs. Journaling contextual amplifica esse efeito.
+Classificação CTCAE de Sintomas
+Agente CTCAE classifica os sintomas registrados nos graus 0–4 do NCI CTCAE v5.0, exibindo informação educacional contextualizada. Grau 4 aciona banner com orientação de contato com plantão.
+MVP (Fase 5)
+Padronização clínica internacional para comunicação de efeitos adversos. Uso no app evita ambiguidade e aumenta valor dos dados para o médico.
+Predição de Risco de Abandono (XGBoost)
+Modelo XGBoost com SHAP para interpretabilidade, treinado com features de jornada (frequência de acesso, variação de humor, aderência a medicamentos, frequência de registro de sintomas).
+Fase 5
+Abandono do tratamento oncológico é causa crítica de mortalidade. SHAP garante rastreabilidade — requisito para uso clínico responsável.
+Busca Semântica em Documentos (pgvector)
+Embeddings indexam o conteúdo processado pelo OCR. A busca por palavra-chave em Meus Documentos retorna os documentos mais semanticamente próximos, não apenas os que contêm a palavra exata.
+MVP (Fase 5)
+Pacientes oncológicos acumulam dezenas de documentos. A busca semântica é a única forma viável de navegar nesse volume sem organização manual.
+IA Clínica Multi-Agente (CDSS — Médico)
+Agentes PubMed, Guidelines, OncoKB e ClinicalTrials acionados em paralelo via LangGraph. O Agente Supervisor sintetiza com citação rastreável à fonte primária por recomendação.
+MVP (Fase 5)
+Wang et al. (JCO 2025) demonstra que sistemas multi-agente superam LLMs isolados em tarefas clínicas complexas. Microsoft Healthcare Agent Orchestrator (Azure AI Foundry, mai/2025) confirma maturidade.
+
+Fonte: Elaborado pelos autores (2026)
+4.2 O ANICCA COMO SISTEMA DE APOIO À DECISÃO CLÍNICA (CDSS)
+4.2.1 O dado do paciente como insumo clínico
+O diferencial mais profundo do Anicca não está em nenhuma funcionalidade isolada — está no que acontece quando todas elas operam juntas ao longo do tempo. Cada interação do paciente com a plataforma gera um dado estruturado que, individualmente, tem valor limitado. Mas ao longo de semanas e ciclos de tratamento, esses dados se acumulam numa representação longitudinal da jornada clínica que nenhum médico conseguiria obter de outra forma numa consulta de 20 minutos: sintomas registrados diariamente no Body Map com localização anatômica, intensidade e timestamp; humor documentado no journaling emocional, correlacionável com os ciclos de quimioterapia; aderência real a medicamentos — não o que o paciente declara na consulta, mas o que efetivamente marcou dia a dia; dados de sono e HRV do smartwatch; temperatura registrada durante o período de neutropenia; e laudos catalogados com OCR, pesquisáveis semanticamente via pgvector.
+Quando o médico abre o painel clínico antes de uma consulta, ele acessa um briefing gerado automaticamente que cruza esses dados longitudinais com literatura científica contextualizada para aquele paciente específico. A IA associa padrões entre os dados do paciente e a evidência científica de milhares de casos documentados na literatura — algo que vai além do que qualquer médico conseguiria realizar individualmente numa consulta de tempo limitado.
+4.2.2 Clinical Decision Support System (CDSS) — definição e posicionamento
+O conjunto de funcionalidades que alimentam o painel do médico no Anicca configura, do ponto de vista técnico, um Clinical Decision Support System (CDSS). A definição de Sim et al. (2001) descreve CDSS como qualquer sistema computacional que relaciona características individuais do paciente a uma base de conhecimento clínico e apresenta ao médico recomendações que apoiam a tomada de decisão. O Anicca atende exatamente essa definição: cruza o perfil longitudinal do paciente com bases de conhecimento oncológico (PubMed, ASCO, NCCN, OncoKB, ClinicalTrials.gov) e entrega recomendações com citação rastreável à fonte primária.
+É fundamental distinguir o Anicca de um sistema de diagnóstico automático. O CDSS do Anicca opera no modelo de augmented intelligence (inteligência aumentada), não de inteligência autônoma: (a) a IA não emite diagnóstico nem prescrição; (b) a decisão clínica é sempre e exclusivamente do médico; (c) toda recomendação exibe a fonte primária com link; e (d) o sistema é transparente por design — não é uma caixa-preta, mas um assistente de pesquisa acelerado que faz em segundos o que um residente faria em horas pesquisando no PubMed. Esse posicionamento mantém o Anicca fora do escopo regulatório de Software as a Medical Device (SaMD) da ANVISA (RDC 657/2022).
+4.2.3 Tipos de IA envolvidos e visualização pelo usuário
+O CDSS do Anicca combina quatro tipos distintos de inteligência artificial. O Reconhecimento de Padrões Longitudinais (XGBoost + SHAP) identifica nas séries temporais de dados do paciente padrões que antecipam deterioração clínica ou abandono do tratamento. A Filtragem Inteligente e RAG Clínico (pgvector + agentes PubMed/Guidelines) filtra, de entre milhares de artigos e protocolos, os mais relevantes para o perfil específico daquele paciente naquele momento. O Raciocínio Relacional via Knowledge Graph (Neo4j) conecta entidades clínicas — CID-10, protocolos, variantes genômicas OncoKB, efeitos adversos CTCAE — permitindo navegar relações não lineares. E a Síntese Generativa com LLM (Gemini API) sintetiza as saídas dos agentes especializados numa resposta coerente, contextualizada e com citação rastreável.
+Do ponto de vista da visualização pelo usuário, o CDSS se manifesta concretamente no painel do médico: o briefing pré-consulta em linguagem natural; o Body Map temporal com filtro por período; o gráfico de linha CTCAE da evolução de efeitos adversos; o badge de risco de abandono (verde/amarelo/vermelho); e o campo de consulta livre que retorna a síntese dos agentes com hiperlinks para cada fonte primária.
+4.3 FRAMEWORKS E FERRAMENTAS PARA AS FUNCIONALIDADES DESTACADAS
+Quadro 9 – Frameworks e ferramentas por funcionalidade de IA
+Funcionalidade
+Tecnologias específicas
+Papel de cada tecnologia
+FAQ Dinâmico
+Gemini API; pgvector (FAQs similares); PostgreSQL (base por CID-10 + estágio); React Native (cards GenUI)
+LLM gera FAQs por perfil; pgvector busca perguntas similares via similaridade de cosseno para evitar duplicatas; cards renderizados como componentes declarativos na tela Hub.
+Comunidade entre Pares
+sentence-transformers; pgvector (similaridade de cosseno); FastAPI (endpoint de matching); Gemini API (moderação)
+Embeddings do perfil público são comparados por similaridade de cosseno no pgvector; o Gemini modera mensagens antes da entrega; dados clínicos não são compartilhados entre pares.
+Matching Ensaios Clínicos
+ClinicalTrials.gov REST API; Gemini API (tradução CEFR A2); LangGraph (Agente ClinicalTrials); React Native (cards)
+Agente filtra por CID-10 + estágio + localização; Gemini traduz critérios técnicos; cards exibidos diretamente na interface do paciente.
+Protocolo de Silêncio
+XGBoost (score de risco); Gemini API (análise de sentimento); Redis (inatividade); Whatsmiau v2 (mensagem única); Celery (scheduler)
+Celery verifica diariamente score de risco + inatividade no Redis; FastAPI aciona Whatsmiau para mensagem única; evento registrado no log de auditoria.
+Análise de Sentimento
+Gemini API (classificação em português); PostgreSQL (histórico de sentimentos); FastAPI (pipeline); LangGraph (integração com modelo de risco)
+Cada entrada de journaling é processada pelo Gemini imediatamente; score armazenado como feature temporal; LangGraph conecta ao Agente de Risco de Abandono.
+Geolocalização CACONs
+CNES/DATASUS API (tipo 36); Google Maps SDK; React Native (mapa); FastAPI (elegibilidade TFD); PostgreSQL (cache)
+FastAPI calcula distância via Google Maps; filtra por tipo de serviço; elegibilidade TFD calculada automaticamente e exibida como badge no card.
+Personalidade Adaptativa
+Gemini API (system prompt dinâmico); Zustand (store de persona + estado clínico); Redis (contexto de sessão); FastAPI
+Persona + estado clínico injetados no system prompt a cada turno; Zustand mantém a persona sincronizada entre sessões e canais.
+Briefing Pré-Consulta
+LangGraph (Agente Briefing); Gemini API (síntese clínica); PostgreSQL (PROs 30 dias); FastAPI; React Native / Next.js
+Agente acionado automaticamente 24h antes de cada consulta; LangGraph coleta PROs do PostgreSQL; Gemini sintetiza em narrativa clínica estruturada.
+Tradução de Laudos
+AWS Textract (boto3); LangChain + pgvector; Gemini API (síntese CEFR A2); FastAPI; Whatsmiau v2
+Textract extrai texto do PDF/imagem; embeddings indexam o conteúdo; Gemini traduz e gera perguntas para o médico; resultado enviado via WhatsApp e arquivado.
+Journaling Contextual
+Gemini API; Redis (contexto de sessão); PostgreSQL (histórico de entradas); LangGraph (Agente Journaling)
+LangGraph mantém estado do agente entre turnos; Redis persiste contexto de sessão; PostgreSQL armazena entradas criptografadas com pgcrypto.
+Classificação CTCAE
+Python (NCI CTCAE v5.0 indexado como JSON); LangGraph (Agente CTCAE); React Native (cards CTCAE com emoji)
+Índice CTCAE em JSON consultado pelo agente para classificar o grau com precisão; frontend renderiza cards como componentes GenUI declarativos.
+Predição de Abandono
+Scikit-learn + XGBoost; SHAP; PostgreSQL (features tabulares); FastAPI (endpoint de score)
+XGBoost com SHAP para interpretabilidade; features extraídas do PostgreSQL; score exposto via endpoint FastAPI e consumido pelo painel do médico.
+Busca Semântica
+pgvector (PostgreSQL extension); sentence-transformers; LangChain (VectorStore); FastAPI
+Embeddings gerados no upload do documento; consulta via similaridade de cosseno; resultado retornado ordenado por relevância semântica.
+IA Clínica Multi-Agente
+LangGraph (grafo multi-agente); Gemini API (síntese); NCBI E-utilities; OncoKB REST API; ClinicalTrials.gov API; PDFs indexados com pgvector
+LangGraph orquestra agentes em paralelo; cada agente acessa apenas suas APIs (Trust Layer); Supervisor sintetiza e retorna com citação rastreável à fonte primária.
+
+Fonte: Elaborado pelos autores (2026)
+5 REFLEXÃO SOBRE A IMPLEMENTAÇÃO DAS FUNCIONALIDADES EM DESTAQUE
+5.1 FACILIDADES, NEUTRALIDADES E DIFICULDADES
+Quadro 10 – Reflexão sobre implementação — facilidades, neutralidades e dificuldades
+Dimensão
+Componente
+Descrição
+FACILIDADES
+Ecossistema Python/LangChain para IA
+A integração entre FastAPI, LangGraph, pgvector e a Gemini API se mostrou fluida. A API do Gemini suporta streaming nativo, o que simplificou a implementação do typing indicator do Ani no app.
+FACILIDADES
+PostgreSQL + pgvector para RAG
+A extensão pgvector elimina a necessidade de um banco vetorial separado no MVP, reduzindo custos operacionais e complexidade de infraestrutura. A integração com Alembic facilita o controle de versão do esquema.
+FACILIDADES
+Whatsmiau Cloud v2 para WhatsApp
+API baseada no protocolo Evolution API tem documentação clara e suporte a webhooks configurável. A implementação do canal de entrada principal levou menos tempo do que o previsto.
+NEUTRALIDADES
+React Native com Expo SDK 52
+A New Architecture (Fabric + JSI) melhora a performance, mas ainda há incompatibilidades de algumas bibliotecas nativas, exigindo fallback pontual para o modo legado — débito técnico controlado.
+NEUTRALIDADES
+Tipagem estrita TypeScript no monorepo
+O overhead de configurar paths de importação entre packages do monorepo consumiu mais tempo do que o esperado, mas o investimento se paga à medida que o código escala.
+DIFICULDADES
+Latência do LLM no ambiente de desenvolvimento
+A latência das chamadas à Gemini API pode ultrapassar 3–4 segundos para respostas com múltiplos agentes. A implementação de streaming parcial e cache no Redis mitiga na experiência do usuário final.
+DIFICULDADES
+LGPD e dados sensíveis de saúde
+A pseudonimização (SHA-256 com salt), o pgcrypto para dados em repouso e o audit log sem PII exigiram revisão cuidadosa de cada endpoint. O risco de vazamento de dados sensíveis em logs (Sentry) exigiu middleware custom de sanitização.
+DIFICULDADES
+Onboarding vs. coleta de dados mínimos
+Existe tensão entre o zero-friction onboarding (uso sem cadastro) e a necessidade de coletar dados suficientes para personalizar o Ani. Solução: questionário inicial de 4 perguntas com valores padrão quando não preenchido.
+DIFICULDADES
+Orquestração paralela de agentes com latência aceitável
+O painel do médico aciona quatro agentes simultaneamente. Em testes iniciais, a síntese completa pode levar 8–15 segundos sem streaming. A solução foi o streaming progressivo via LangGraph — o médico recebe os primeiros resultados enquanto os demais agentes ainda processam.
+DIFICULDADES
+Rastreabilidade de citações no CDSS (alucinação do LLM)
+O maior risco de um CDSS baseado em LLM num contexto clínico é a alucinação. O Anicca mitiga por arquitetura: cada agente busca em fontes estruturadas (NCBI, OncoKB REST API, ClinicalTrials.gov) e retorna conteúdo recuperado; o Supervisor sintetiza apenas o que foi buscado, não gera citações de memória.
+DIFICULDADES
+Cold start do modelo preditivo sem dados reais
+O modelo XGBoost enfrenta cold start: sem dados reais em volume suficiente, o treinamento inicial é feito com dados sintéticos baseados na literatura sobre abandono de tratamento oncológico. O badge de risco exibe a indicação de que o modelo ainda está em calibração inicial.
+
+Fonte: Elaborado pelos autores (2026)
+5.2 VISÃO COMPUTACIONAL, MACHINE LEARNING E INTEGRAÇÃO DE ALTA FIDELIDADE
+5.2.1 Visão Computacional
+O Anicca incorpora visão computacional em duas frentes. A principal é o módulo de OCR de laudos, implementado com AWS Textract — uma solução baseada em deep learning especializada no reconhecimento de texto em documentos complexos, como PDFs médicos, imagens de laudos e tabelas de hemograma. Do ponto de vista técnico, o OCR opera sobre a representação digital da imagem como uma função bidimensional f(x,y) de intensidade luminosa: o Textract aplica redes convolucionais que identificam padrões visuais locais (bordas, caracteres, linhas) usando operações similares às de filtragem espacial estudadas — como filtros passa-alta para realce de bordas e operações morfológicas para isolamento de regiões de texto. O resultado é a extração estruturada do conteúdo, que o Agente RAG então processa para traduzir em linguagem acessível.
+5.2.2 Machine Learning e o pipeline de dados longitudinais do CDSS
+O componente de Machine Learning do Anicca não opera de forma isolada — ele é o que transforma os dados longitudinais coletados pelo paciente em inteligência clínica acionável para o médico. Esse é o núcleo do posicionamento do Anicca como CDSS: o paciente alimenta o sistema continuamente, e esses dados se tornam as features do modelo preditivo que o médico consulta no painel. Sem o engajamento do paciente, não há dados longitudinais; sem os dados longitudinais, o modelo não tem capacidade analítica superior à de uma avaliação pontual.
+O Anicca implementa ML supervisionado (classificação) no modelo de predição de risco de abandono, usando XGBoost com SHAP para interpretabilidade. As features tabulares incluem: frequência de acesso ao app (diária, semanal), variação de humor no journaling (delta entre check-ins — análogo a uma derivada discreta da série temporal de sentimentos), aderência a medicamentos (percentual de doses marcadas), frequência de registro de sintomas e dias desde o último contato ativo. O modelo é treinado inicialmente com dados sintéticos balanceados, usando técnicas de regularização para evitar overfitting, e atualizado progressivamente com dados reais consentidos. O uso do SHAP para interpretar as predições garante explicabilidade — cada predição é acompanhada de quais features mais contribuíram para o score — requisito ético e regulatório para uso clínico responsável.
+O modelo é projetado para ser conservador — priorizando sensibilidade (detectar todos os casos de alto risco, mesmo que gere alguns falsos positivos) em vez de especificidade, pois um falso negativo num contexto oncológico pode resultar em ausência de intervenção num momento crítico. O médico e o cuidador são sempre o filtro humano final: o badge de risco é um alerta, nunca uma decisão autônoma do sistema.
+A camada de análise de sentimento no journaling usa o Gemini API para classificar as entradas de texto em português, identificando padrões que antecipam sofrimento intenso. Essa camada é conceitualmente análoga às redes recorrentes (RNN/LSTM) que processam sequências de texto em ordem temporal — o modelo leva em conta não apenas a entrada atual, mas o histórico de check-ins anteriores (a "memória" da série temporal de humor do paciente). O resultado alimenta tanto o modelo preditivo de abandono quanto o protocolo de silêncio.
+5.2.3 Integração de Protótipo de Alta Fidelidade com Lógica Simulada de Backend
+A integração entre o protótipo de alta fidelidade e a lógica de backend está em andamento ativo nesta fase. O BFF FastAPI já expõe endpoints reais — não simulados — para: recebimento de mensagens WhatsApp, envio de respostas do Ani via streaming, registro de perfil de usuário e armazenamento de entradas de journaling. O frontend React Native consome esses endpoints via React Query v5, com estados de loading e erro padronizados.
+A lógica simulada está presente apenas nos módulos que ainda aguardam integrações externas: o Body Map usa dados mockados; o módulo de OCR usa textos de laudos hardcoded; e o módulo de Rotina de Hoje usa lembretes estáticos. Essa arquitetura de mocks facilita o desenvolvimento paralelo de frontend e backend sem dependência de APIs externas e será progressivamente substituída por integrações reais nas Fases 5 e 6.
+
+REFERÊNCIAS
+ALMEIDA, F. A.; VIEIRA, M. M. Propondo uma ferramenta tecnológica para comunicação entre enfermeiro e paciente em oncologia. Investigação Qualitativa em Saúde: Avanços e Desafios, v. 8, p. 478-486, 2021. DOI: 10.36367/ntqr.8.2021.478-486.
+ARDITO, V. et al. Evaluating Barriers and Facilitators to the Uptake of mHealth Apps in Cancer Care Using the Consolidated Framework for Implementation Research: Scoping Literature Review. JMIR Cancer, v. 9, p. e42092, 2023. DOI: 10.2196/42092.
+BASCH, E. et al. Overall survival results of a trial assessing patient-reported outcomes for symptom monitoring during routine cancer treatment. JAMA, v. 318, n. 2, p. 197-198, 2017. DOI: 10.1001/jama.2017.7156.
+BASCH, E. et al. Symptom monitoring with patient-reported outcomes during routine cancer treatment: a randomized controlled trial. Journal of Clinical Oncology, v. 34, n. 6, p. 557-565, 2016. DOI: 10.1200/JCO.2015.63.0830.
+BRASIL. Lei n.º 12.732, de 22 de novembro de 2012. Brasília: Presidência da República, 2012.
+BRASIL. Lei n.º 13.709, de 14 de agosto de 2018. Lei Geral de Proteção de Dados Pessoais (LGPD). Brasília: Presidência da República, 2018.
+BRASIL. Ministério da Saúde. 'O câncer de mama tentou me derrubar, mas a rede pública salvou a minha vida'. out/2025. Disponível em: <https://www.gov.br/saude>. Acesso em: 10 jun. 2026.
+CORREIO BRAZILIENSE. Pacientes com câncer levam até 6 meses para consulta na rede pública. jun. 2023. Disponível em: <https://www.correiobraziliense.com.br>. Acesso em: 10 jun. 2026.
+DATASÊNADO. Pesquisa sobre uso do WhatsApp como fonte de informação. Brasília: Agência Brasil / EBC, dez. 2019. Disponível em: <https://agenciabrasil.ebc.com.br>. Acesso em: 10 jun. 2026.
+FEATURE-SLICED DESIGN. Frontend Architecture Methodology. 2024. Disponível em: <https://feature-sliced.design>. Acesso em: 10 jun. 2026.
+FREEMAN, H. P.; RODRIGUEZ, R. L. History and principles of patient navigation. Cancer, v. 117, n. 15 supl., p. 3539-3542, 2011. DOI: 10.1002/cncr.26262.
+INCA — INSTITUTO NACIONAL DE CÂNCER. Estimativa 2023: incidência de câncer no Brasil. Revista Brasileira de Cancerologia, v. 69, n. 1, p. e-213700, 2023.
+INSTITUTO ONCOGUIA. Instituto Oncoguia lança Manual dos Direitos da Pessoa com Câncer. Disponível em: <https://www.oncoguia.org.br>. Acesso em: 10 jun. 2026.
+LANGCHAIN. LangGraph Documentation. 2025. Disponível em: <https://langchain-ai.github.io/langgraph/>. Acesso em: 10 jun. 2026.
+MICROSOFT. Developing next-generation cancer care management with multi-agent orchestration. Microsoft Industry Blog, maio 2025.
+NATIONAL CANCER INSTITUTE (NCI). Common Terminology Criteria for Adverse Events (CTCAE), Version 5.0. 2017. Disponível em: <https://ctep.cancer.gov>.
+ONCOGUIA — INSTITUTO. Desafios enfrentados pelo paciente com câncer atendido pelo SUS. Disponível em: <https://oncoguia.org.br>. Acesso em: 10 jun. 2026.
+PRESIDENT'S CANCER PANEL. Enhancing Patient Navigation with Technology to Improve Equity in Cancer Care. Bethesda: NCI, 2024.
+REVISTA BRASILEIRA DE SAÚDE SUPLEMENTAR (RBSS). Jornada do Paciente Oncológico na Saúde Suplementar Brasileira. Disponível em: <https://rbss.org.br>. Acesso em: 10 jun. 2026.
+REVISTA SAÚDE EM REDES (REDEUNIDA). Poderosas Amigas da Mama: o uso do aplicativo WhatsApp como ferramenta para o enfrentamento do câncer de mama. Disponível em: <https://revista.redeunida.org.br>. Acesso em: 10 jun. 2026.
+SCIELO — CADERNOS DE SAÚDE PÚBLICA. As informações sobre os direitos sociais estão acessíveis aos pacientes oncológicos? Disponível em: <http://www.scielo.br/j/csp>. Acesso em: 10 jun. 2026.
+SCIELO — REVISTA BRASILEIRA DE ENFERMAGEM. Apoio social à família do paciente com câncer. Disponível em: <https://www.scielo.br/j/reben>. Acesso em: 10 jun. 2026.
+VERCEL. Turborepo Documentation. 2025. Disponível em: <https://turbo.build/repo/docs>. Acesso em: 10 jun. 2026.
+WANG, J. et al. Virtual oncology collaborative tumor board using multiple artificial intelligence agents. Journal of Clinical Oncology, v. 43, suppl. 16, p. 1563, 2025. DOI: 10.1200/JCO.2025.43.16_suppl.1563.
+WANG, R. et al. AI Agents in Clinical Medicine: A Systematic Review. medrXiv, agosto 2025. Disponível em: <https://medrxiv.org>. Acesso em: 10 jun. 2026.
+WELLON. Relatório de Atendimento em Saúde via WhatsApp: base de 4,7 milhões de atendimentos (jan–out 2024). São Paulo: Wellon, 2024.
+WHATSMIAU CLOUD. Whatsmiau Cloud API Documentation v2. 2026. Disponível em: <https://whatsmiau.dev/docs>. Acesso em: 10 jun. 2026.
+
+
 
 

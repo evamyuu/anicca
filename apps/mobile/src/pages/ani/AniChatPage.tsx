@@ -78,13 +78,17 @@ export function AniChatPage() {
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) =>
-          item.role === 'ani' ? (
-            <AniMessageBubble message={item} />
-          ) : (
-            <UserMessageBubble message={item} />
-          )
-        }
+        renderItem={({ item }) => {
+          if (item.role === 'user') {
+            return <UserMessageBubble message={item} />;
+          }
+          return (
+            <AniMessageBubble 
+              message={item} 
+              onButtonPress={(button) => send(button.text)} 
+            />
+          );
+        }}
         contentContainerStyle={{ paddingVertical: 16 }}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-16 px-8">

@@ -1,0 +1,31 @@
+# Infrastructure as Code for Render Cloud Deployment
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: anicca-api
+    env: python
+    region: oregon # Same region as our Supabase (US-West/Americas) for max speed
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    rootDir: apps/api
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      # The variables below will be securely filled in the Render Dashboard,
+      # but are listed here to enforce their creation.
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: WHATSMIAU_TOKEN
+        sync: false
+      - key: WHATSMIAU_INSTANCE_ID
+        sync: false
+      - key: WHATSMIAU_WEBHOOK_SECRET
+        sync: false
+      - key: SECRET_KEY
+        sync: false

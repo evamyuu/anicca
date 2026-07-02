@@ -20,6 +20,7 @@ import { QueryProvider } from '@/shared/providers/QueryProvider';
 import { ThemeProvider } from '@/shared/providers/ThemeProvider';
 import { AuthProvider } from '@/shared/providers/AuthProvider';
 import { SplashPage } from '@/pages/splash/SplashPage';
+import { useProtectedRoute } from '@/shared/hooks/useProtectedRoute';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +35,9 @@ SplashScreen.preventAutoHideAsync();
  */
 function AppContent() {
   const isLoading = useFontLoading();
+  
+  // Enforces navigation boundaries based on Zustand auth state
+  useProtectedRoute();
 
   if (isLoading) {
     return <SplashPage />;

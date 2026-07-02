@@ -22,9 +22,71 @@ from src.presentation.schemas import (
     RequestOTPSchema,
     TokenResponseSchema,
     VerifyOTPSchema,
+    LoginRequestSchema,
+    RegisterRequestSchema,
 )
+from src.application.dto.auth import LoginInput, RegisterInput
+from src.application.use_cases.auth.login_use_case import LoginUseCase
+from src.application.use_cases.auth.register_use_case import RegisterUseCase
+from src.domain.exceptions import UnauthorizedError, DomainError
 
 router = APIRouter()
+
+
+@router.post(
+    "/login",
+    response_model=TokenResponseSchema,
+    summary="Login using email and password",
+)
+async def login(
+    body: LoginRequestSchema,
+    db: AsyncSession = Depends(get_db_session),
+) -> TokenResponseSchema:
+    """Authenticates a user via Email/Password."""
+    try:
+        result = await LoginUseCase(db_session=db).execute(
+            LoginInput(email=body.email, password=body.password)
+        )
+    except UnauthorizedError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+        
+    return TokenResponseSchema(
+        access_token=result.access_token,
+        token_type=result.token_type,
+        is_new_user=result.is_new_user,
+        patient_id=result.patient_id,
+    )
+
+
+@router.post(
+    "/register",
+    response_model=TokenResponseSchema,
+    summary="Register a new user via email and password",
+)
+async def register(
+    body: RegisterRequestSchema,
+    db: AsyncSession = Depends(get_db_session),
+) -> TokenResponseSchema:
+    """Registers a new user and creates an empty patient profile."""
+    try:
+        result = await RegisterUseCase(db_session=db).execute(
+            RegisterInput(
+                email=body.email, 
+                password=body.password, 
+                phone=body.phone,
+                role=body.role,
+                crm_number=body.crm_number
+            )
+        )
+    except DomainError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+        
+    return TokenResponseSchema(
+        access_token=result.access_token,
+        token_type=result.token_type,
+        is_new_user=result.is_new_user,
+        patient_id=result.patient_id,
+    )
 
 
 @router.post(

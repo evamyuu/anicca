@@ -1,5 +1,8 @@
 """
-Synthesizer Node for final response generation.
+Synthesizer Node for final response generation with interactive WhatsApp actions.
+
+Ani always suggests a next action in WhatsApp via buttons or lists — the user
+never needs to think about what to type next.
 
 Module:    src.infrastructure.agents.nodes.synthesizer_node
 Author:    Evelin Brandão Cordeiro
@@ -22,24 +25,73 @@ _llm = ChatGoogleGenerativeAI(
     temperature=0.7,
 )
 
-# Output schema enforcing GenUI and text separation
+
 class GenUIButton(BaseModel):
+    """A button rendered in the app (GenUI) or WhatsApp."""
+
     id: str = Field(description="Unique ID for the button payload")
-    text: str = Field(description="Button display text (max 20 chars)")
+    text: str = Field(description="Button display text (max 20 chars for WhatsApp)")
+
 
 class GenUICard(BaseModel):
-    type: str = Field(description="Type of card, e.g., 'button_group', 'list', 'ctcae_grade'")
-    text: Optional[str] = Field(description="Optional text inside the card")
-    buttons: Optional[List[GenUIButton]] = Field(description="List of buttons if type is button_group")
+    """A rich card rendered in the app interface (GenUI)."""
+
+    type: str = Field(description="Type of card: 'button_group', 'ctcae_grade', 'timeline', 'document_preview'")
+    text: Optional[str] = Field(default=None, description="Optional text inside the card")
+    buttons: Optional[List[GenUIButton]] = Field(default=None, description="Buttons if type is button_group")
+    data: Optional[dict] = Field(default=None, description="Arbitrary payload for specialized cards")
+
+
+class WhatsAppButton(BaseModel):
+    """An interactive button for WhatsApp (max 3, max 20 chars each)."""
+
+    id: str = Field(description="Unique button ID for the reply handler")
+    text: str = Field(description="Button label — max 20 characters")
+
+
+class WhatsAppListRow(BaseModel):
+    """A row in a WhatsApp interactive list."""
+
+    id: str = Field(description="Unique row ID")
+    title: str = Field(description="Row title — max 24 characters")
+    description: Optional[str] = Field(default=None, description="Row subtitle — max 72 characters")
+
+
+class WhatsAppListSection(BaseModel):
+    """A section in a WhatsApp interactive list."""
+
+    title: str = Field(description="Section heading")
+    rows: List[WhatsAppListRow] = Field(description="Up to 10 rows in this section")
+
 
 class AniFinalResponse(BaseModel):
+    """Complete Ani response with text, GenUI cards, and WhatsApp interactions."""
+
     text: str = Field(description="The main text response spoken by Ani to the user")
-    cards: List[GenUICard] = Field(description="Interactive cards or buttons to show alongside the text")
+    cards: List[GenUICard] = Field(
+        default_factory=list,
+        description="Interactive cards rendered in the app interface"
+    )
+    whatsapp_buttons: Optional[List[WhatsAppButton]] = Field(
+        default=None,
+        description=(
+            "Up to 3 quick-reply buttons for WhatsApp. "
+            "ALWAYS include these in WhatsApp interactions. "
+            "Examples: 'Registrar sintoma', 'Ver documentos', 'Falar com Ani'"
+        ),
+    )
+    whatsapp_list_sections: Optional[List[WhatsAppListSection]] = Field(
+        default=None,
+        description=(
+            "Use instead of buttons when there are more than 3 options, "
+            "e.g. selecting a body region or document category."
+        ),
+    )
 
 
 def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> str:
     """Construct the high-fidelity Ani system prompt based on personality."""
-    
+
     base_identity = (
         "You are Ani, an AI companion specialized in oncology navigation for Brazilian patients. "
         "Your mission is to provide emotional support, clinical guidance (never diagnosing), "
@@ -49,6 +101,13 @@ def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> 
         "- Respect the Brazilian healthcare context (SUS, ANS, Lei dos 60 dias).\n"
         "- When discussing symptoms, implicitly reference NCI CTCAE v5.0 severity.\n"
         "- Keep language simple, accessible (WCAG 1.4.4), and jargon-free.\n"
+        "- CRITICAL for WhatsApp: ALWAYS include whatsapp_buttons with 2-3 next actions.\n"
+        "  The user should NEVER need to think about what to type — just tap a button.\n"
+        "  If you asked a question, buttons should be answer options.\n"
+        "  If you completed an action, buttons should be follow-up options.\n"
+        "  Standard buttons: 'Registrar sintoma' (id: register_symptom), "
+        "  'Enviar laudo' (id: send_document), 'Ver direitos' (id: see_rights), "
+        "  'Minha rotina' (id: my_routine), 'Falar mais' (id: continue).\n"
     )
 
     personality_instructions = {
@@ -91,7 +150,7 @@ def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> 
     }
 
     selected_persona = personality_instructions.get(
-        AniPersonality(personality), 
+        AniPersonality(personality),
         personality_instructions[AniPersonality.DEFAULT]
     )
 
@@ -110,30 +169,31 @@ def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> 
 
 
 async def synthesizer_node(state: AniState) -> dict:
-    """Synthesize the final response using the designated personality and Structured Outputs."""
+    """Synthesize the final response with personality, GenUI cards, and WhatsApp buttons."""
     try:
         personality = AniPersonality(state.get("personality", "default"))
     except ValueError:
         personality = AniPersonality.DEFAULT
-        
+
     system_prompt = _build_system_prompt(personality, state.get("patient_context", {}))
-    
-    # We combine the system prompt with whatever context the specialist nodes injected
+
     messages_to_send = [SystemMessage(content=system_prompt)] + state["messages"]
 
-    # Force the LLM to output our exact schema
     structured_llm = _llm.with_structured_output(AniFinalResponse)
-    
+
     response: AniFinalResponse = await structured_llm.ainvoke(messages_to_send)
 
     agents = list(state.get("agents_invoked", []))
     agents.append("synthesizer")
 
-    # Serialize the Pydantic cards to dicts so they can be JSON-serialized later
     cards_dicts = [card.model_dump() for card in response.cards]
+    buttons_dicts = [b.model_dump() for b in response.whatsapp_buttons] if response.whatsapp_buttons else None
+    list_dicts = [s.model_dump() for s in response.whatsapp_list_sections] if response.whatsapp_list_sections else None
 
     return {
         "final_response": response.text,
         "cards": cards_dicts,
+        "whatsapp_buttons": buttons_dicts,
+        "whatsapp_list_sections": list_dicts,
         "agents_invoked": agents,
     }

@@ -12,6 +12,7 @@ License:   MIT
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -52,8 +53,8 @@ class VerifyOTPInput:
 
 
 @dataclass(frozen=True)
-class VerifyOTPOutput:
-    """Output DTO for :class:`~src.application.use_cases.auth.VerifyOTPUseCase`.
+class TokenResult:
+    """Output DTO for :class:`~src.application.use_cases.auth.VerifyOTPUseCase` and Logins.
 
     Attributes:
         access_token: A signed JWT bearer token.
@@ -65,4 +66,23 @@ class VerifyOTPOutput:
     access_token: str
     token_type: str
     is_new_user: bool
-    patient_id: str
+    patient_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class LoginInput:
+    """Input parameters for traditional login."""
+
+    email: str
+    password: str
+
+
+@dataclass(frozen=True)
+class RegisterInput:
+    """Input parameters for user registration."""
+
+    email: str
+    password: str
+    phone: Optional[str] = None
+    role: str = "patient"
+    crm_number: Optional[str] = None

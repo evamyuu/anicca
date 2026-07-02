@@ -81,13 +81,29 @@ class TokenResponseSchema(BaseModel):
         access_token: Signed JWT bearer token.
         token_type: Always ``"bearer"``.
         is_new_user: ``True`` on first authentication.
-        patient_id: The server-assigned patient identifier.
+        patient_id: Optional[str] = Field(None, description="Linked patient UUID")
     """
 
     access_token: str
     token_type: str = "bearer"
     is_new_user: bool
-    patient_id: str
+    patient_id: Optional[str] = Field(None, description="Linked patient UUID")
+
+
+class LoginRequestSchema(BaseModel):
+    """Schema for traditional email/password login request."""
+    email: str = Field(..., description="User's email address")
+    password: str = Field(..., description="User's password")
+
+
+class RegisterRequestSchema(BaseModel):
+    """Schema for traditional user registration."""
+    email: str = Field(..., description="User's email address")
+    password: str = Field(..., description="Desired password")
+    phone: Optional[str] = Field(None, description="Optional WhatsApp phone number")
+    role: str = Field(default="patient", description="User role: patient, caregiver, doctor")
+    crm_number: Optional[str] = Field(None, description="Required if role is doctor")
+
 
 
 class StartSessionResponseSchema(BaseModel):

@@ -12,7 +12,10 @@ from fastapi import APIRouter
 from src.presentation.routers.auth_router import router as auth_router
 from src.presentation.routers.messages_router import router as messages_router
 from src.presentation.routers.whatsapp_router import router as whatsapp_router
-
+from src.presentation.routers.body_map_router import router as body_map_router
+from src.presentation.routers.routine_router import router as routine_router
+from src.presentation.routers.documents_router import router as documents_router
+from src.presentation.routers.doctor_router import router as doctor_router
 
 def _stub_router(*paths: str) -> APIRouter:
     """Create a minimal stub router with ``GET`` endpoints returning a pending status.
@@ -33,16 +36,12 @@ def _stub_router(*paths: str) -> APIRouter:
     return router
 
 
-body_map_router = _stub_router("", "/{patient_id}/history")
 symptoms_router = _stub_router("", "/{patient_id}/history")
-routine_router = _stub_router("/today", "/temperature", "/hydration", "/sleep", "/medications")
 journaling_router = _stub_router("/history", "/mood-trend")
 tickets_router = _stub_router("")
-documents_router = _stub_router("")
 profile_router = _stub_router("", "/avatar", "/ani-personality")
 consent_router = _stub_router("", "/history")
 wearables_router = _stub_router("/latest")
-doctor_router = _stub_router("/patients")
 
 __all__ = [
     "auth_router",

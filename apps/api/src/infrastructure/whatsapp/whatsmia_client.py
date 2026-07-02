@@ -48,7 +48,7 @@ class WhatsmiaClient:
         Args:
             to: Destination phone number in E.164 format (e.g. ``"+5511999999999"``).
             text: Message body. Supports WhatsApp markdown: ``*bold*``,
-                ``_italic_``, ``~strikethrough~``, ``\`\`\`monospace\`\`\``).
+                ``_italic_``, ``~strikethrough~``, `` ```monospace``` ``).
             preview_url: When ``True``, Whatsmiau generates a URL link preview.
 
         Returns:

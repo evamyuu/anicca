@@ -27,6 +27,9 @@ from src.presentation.routers import (
     wearables_router,
     doctor_router,
 )
+from src.presentation.routers.events_router import router as events_router
+from src.infrastructure.security.pii_sanitizer import PIISanitizerMiddleware
+from src.infrastructure.security.rate_limiter import RateLimiterMiddleware
 from src.config import settings
 
 app = FastAPI(
@@ -45,6 +48,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Custom security middlewares
+app.add_middleware(PIISanitizerMiddleware)
+app.add_middleware(RateLimiterMiddleware)
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Secure HTTP headers middleware."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(messages_router, prefix="/api/v1/messages", tags=["Messages (Ani)"])
 app.include_router(whatsapp_router, prefix="/api/v1/whatsapp", tags=["WhatsApp (Whatsmiau)"])
@@ -58,6 +75,7 @@ app.include_router(profile_router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(consent_router, prefix="/api/v1/consent", tags=["Consent (LGPD)"])
 app.include_router(wearables_router, prefix="/api/v1/wearables", tags=["Wearables"])
 app.include_router(doctor_router, prefix="/api/v1/doctor", tags=["Doctor Panel"])
+app.include_router(events_router, prefix="/api/v1/events", tags=["Hub Sync (SSE)"])
 
 
 @app.get("/health", tags=["Health"])

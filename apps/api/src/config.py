@@ -8,7 +8,7 @@ License:   MIT
 """
 
 from functools import lru_cache
-from typing import List
+from typing import Optional, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -60,16 +60,26 @@ class Settings(BaseSettings):
 
     GEMINI_API_KEY: str = ""
 
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "sa-east-1"
-    AWS_S3_BUCKET: str = "anicca-documents-dev"
+    AWS_S3_BUCKET: str = "anicca-med-docs"
 
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USERNAME: str = "neo4j"
     NEO4J_PASSWORD: str = ""
 
     PSEUDONYMIZATION_SALT: str = "change-me-in-production"
+
+    JWT_REFRESH_SECRET: str = "change-refresh-secret-in-production"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
+    RATE_LIMIT_PER_MINUTE: int = 60
+
+    API_PUBLIC_URL: str = "http://localhost:8000"
+
+    EXPO_ACCESS_TOKEN: str = ""
 
 
 @lru_cache

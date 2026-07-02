@@ -146,6 +146,7 @@ async def _process_in_background(inbound: WhatsAppInboundMessage):
                 patient_repo=patient_repo,
                 message_repo=message_repo,
                 cache=cache,
+                redis_client=redis,
             ).execute(inbound)
             await db.commit()
             print("[BACKGROUND] Processing finished successfully.")
@@ -156,6 +157,9 @@ async def _process_in_background(inbound: WhatsAppInboundMessage):
             print(f"[BACKGROUND] Error during processing: {e}")
             traceback.print_exc()
             await db.rollback()
+        finally:
+            await redis.aclose()
+
 
 
 @router.post("/webhook", summary="Receive inbound WhatsApp messages from Whatsmiau Cloud")
