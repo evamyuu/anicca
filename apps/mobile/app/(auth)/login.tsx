@@ -72,7 +72,7 @@ export default function LoginScreen() {
         {/* TOP BRAND AREA - Brown Background */}
         <View style={styles.topArea}>
           <Image 
-            source={require('../../assets/images/ani_hello.png')} 
+            source={{ uri: 'https://ui-avatars.com/api/?name=Ani&background=c4b5fd&color=fff&size=256' }} 
             style={styles.mascotImage}
             defaultSource={{uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='}} // Transparent 1x1 fallback
           />
@@ -199,7 +199,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   bottomArea: {
-    flex: 1,
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
@@ -309,6 +308,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: 20,
     marginBottom: 40,
+    paddingBottom: 40,
   },
   termsBold: {
     fontWeight: 'bold',

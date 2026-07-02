@@ -52,14 +52,9 @@ function AppContent() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="body-map/index" options={{ presentation: 'modal' }} />
         <Stack.Screen name="symptom/ctcae" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="symptom/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="journaling/index" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="journaling/history" />
         <Stack.Screen name="tickets/index" />
         <Stack.Screen name="tickets/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="documents/index" />
-        <Stack.Screen name="documents/[id]" />
-        <Stack.Screen name="avatar/customize" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="+not-found" />
       </Stack>

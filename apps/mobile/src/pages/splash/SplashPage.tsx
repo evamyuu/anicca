@@ -78,7 +78,7 @@ export function SplashPage() {
       {/* ── Loading indicator pinned to bottom ── */}
       <View style={styles.loaderArea}>
         {/* Track */}
-        <View style={[styles.track, { backgroundColor: trackColor }]}>
+        <View style={[styles.track, { backgroundColor: trackColor, width: TRACK_WIDTH }]}>
           {/* Animated pill */}
           <Animated.View
             style={[
@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
     alignItems:    'center',
   },
   track: {
-    width:        TRACK_WIDTH,
     height:       4,
     borderRadius: 9999,
     overflow:     'hidden',
