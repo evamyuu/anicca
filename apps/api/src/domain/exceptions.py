@@ -79,3 +79,11 @@ class PhoneAlreadyLinkedError(AniccaDomainError):
     def __init__(self, phone: str) -> None:
         super().__init__(f"Phone '{phone}' is already linked to an existing account.")
         self.phone = phone
+
+
+class UnauthorizedError(AniccaDomainError):
+    """Raised when authentication fails due to invalid credentials."""
+
+
+class DomainError(AniccaDomainError):
+    """Generic domain error for business logic violations."""
