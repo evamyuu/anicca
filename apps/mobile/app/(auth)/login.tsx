@@ -272,7 +272,7 @@ export default function LoginScreen() {
                 <Text style={styles.errorText}>{errorMsg}</Text>
               ) : null}
               <GradientButton
-                title={loading ? "Carregando..." : "Entrar"}
+                title={loading ? "Carregando..." : activeTab === 'register' ? "CRIAR CONTA" : "ENTRAR"}
                 onPress={handleAuthAction}
                 colors={['#FF9A5C', '#E87A3E']}
                 disabled={loading}

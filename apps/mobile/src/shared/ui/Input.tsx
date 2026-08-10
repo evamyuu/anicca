@@ -32,19 +32,19 @@ export function Input({ label, leftIcon, error, isPassword, containerStyle, wrap
 
   return (
     <View style={[styles.container, wrapperStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {!!label ? <Text style={styles.label}>{label}</Text> : null}
       
       <View 
         style={[
           styles.inputContainer,
           isFocused && styles.inputFocused,
-          error && styles.inputError,
+          !!error && styles.inputError,
           containerStyle
         ]}
         accessible={true}
         accessibilityRole="none"
       >
-        {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
+        {!!leftIcon ? <View style={styles.leftIconContainer}>{leftIcon}</View> : null}
         
         <TextInput
           style={styles.input}
@@ -56,7 +56,7 @@ export function Input({ label, leftIcon, error, isPassword, containerStyle, wrap
           {...props}
         />
         
-        {isPassword && (
+        {isPassword ? (
           <TouchableOpacity 
             style={styles.rightIconContainer}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
@@ -69,10 +69,10 @@ export function Input({ label, leftIcon, error, isPassword, containerStyle, wrap
               <Eye size={20} color="#a3988e" />
             )}
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
       
-      {error && <Text style={styles.errorText} accessibilityRole="alert">{error}</Text>}
+      {!!error ? <Text style={styles.errorText} accessibilityRole="alert">{error}</Text> : null}
     </View>
   );
 }
