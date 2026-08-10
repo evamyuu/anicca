@@ -34,7 +34,7 @@ def build_doctor_agent() -> Any:
     Uses Gemini 2.5 Flash and the PubMed search tool.
     """
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-flash-latest",
         google_api_key=settings.GEMINI_API_KEY,
         temperature=0.0,  # Zero temperature for clinical accuracy
     )

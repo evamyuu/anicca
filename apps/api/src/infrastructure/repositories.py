@@ -303,7 +303,7 @@ def _patient_model_to_entity(model: PatientModel) -> Patient:
         cpf_hash=model.cpf_hash,
         cancer_type=model.cancer_type,
         cancer_stage=model.cancer_stage,
-        treatment_modality=TreatmentModality(model.treatment_modality),
+        treatment_modality=TreatmentModality(model.treatment_modality.lower()) if model.treatment_modality else None,
         treatment_types=model.treatment_types or [],
         journey_phase=model.journey_phase,
         diagnosis_date=model.diagnosis_date,

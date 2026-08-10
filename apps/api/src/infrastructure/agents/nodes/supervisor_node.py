@@ -15,7 +15,7 @@ from src.config import settings
 from src.infrastructure.agents.state import AniState
 
 _llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-flash-latest",
     google_api_key=settings.GEMINI_API_KEY,
     temperature=0.0,  # Zero temperature for routing consistency
 )

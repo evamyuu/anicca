@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Platform, RefreshControl } from 'react-native';
 import { Plus, Sparkles, Camera, MessageSquare, Mic, Upload, Search, Droplet, Activity, Heart, Pill, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -23,9 +23,10 @@ export default function DocsScreen() {
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const userId = useAuthStore(s => s.userId);
 
-  const { data: documents } = useQuery({
+  const { data: documents, refetch } = useQuery({
     queryKey: ['documents', userId],
     queryFn: () => listDocuments(userId!),
     enabled: !!userId,
@@ -33,9 +34,21 @@ export default function DocsScreen() {
 
   const docsCount = documents?.length || 0;
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#ffffff" colors={[BRAND.PRIMARY.DEFAULT]} />
+        }
+      >
         
         {/* Header */}
         <View style={styles.header}>

@@ -17,11 +17,17 @@ from src.config import settings
 from src.infrastructure.agents.state import AniState
 
 _llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-flash-latest",
     google_api_key=settings.GEMINI_API_KEY,
     temperature=0.0,
 )
 
+
+class BodyMapPayload(BaseModel):
+    body_region: str = Field(description="Region like head, abdomen, arm_left, chest_left, back_head, etc.")
+    body_view: Literal["front", "back"]
+    intensity: int = Field(description="0 to 5")
+    symptom_types: list[str] = Field(description="dor, dormencia, inchaco, vermelhidao, ferida, formigamento, or outro")
 
 class CatalogDecision(BaseModel):
     """Structured catalog classification output."""
@@ -35,6 +41,10 @@ class CatalogDecision(BaseModel):
     ] = Field(description="The type of data event this interaction produced.")
     payload_summary: str = Field(
         description="One sentence summarizing what was captured in Portuguese."
+    )
+    body_map_payload: Optional[BodyMapPayload] = Field(
+        default=None,
+        description="Extract the body map data if event_type is body_map_updated."
     )
 
 
@@ -84,6 +94,8 @@ async def catalog_agent_node(state: AniState) -> dict:
             "summary": decision.payload_summary,
             "channel": "whatsapp",
         }
+        if decision.body_map_payload:
+            catalog_event["body_map_payload"] = decision.body_map_payload.model_dump()
 
     return {
         "catalog_event": catalog_event,

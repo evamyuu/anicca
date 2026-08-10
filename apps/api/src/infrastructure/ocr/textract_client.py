@@ -72,7 +72,7 @@ class TextractClient:
             )
         except Exception as exc:
             print(f"[Textract] Extraction failed: {exc}")
-            return _FALLBACK_MESSAGE
+            return await self._mock_extract(file_bytes)
 
     def _sync_extract(
         self, file_bytes: bytes, content_type: str, filename: Optional[str]
