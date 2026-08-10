@@ -1,16 +1,11 @@
 """
-Catalog Agent node — runs at the end of every WhatsApp interaction.
+Implementation of catalog_agent.
 
-Classifies the interaction intent and routes it to the correct data store,
-then publishes a typed event to the Redis pub/sub channel ``events:{user_id}``.
-This is what makes WhatsApp a channel that automatically feeds the app.
-
-Module:    src.infrastructure.agents.nodes.catalog_agent
+Module:    apps.api.src.infrastructure.agents.nodes.catalog_agent
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import json
 from typing import Literal, Optional
 

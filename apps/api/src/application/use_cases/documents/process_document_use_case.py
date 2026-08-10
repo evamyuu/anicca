@@ -1,15 +1,11 @@
 """
-Use case: ProcessDocumentUseCase.
+Implementation of process_document_use_case.
 
-OCR pipeline: receive file bytes → extract text (Textract) → simplify with LLM
-(CEFR A2 language) → save to DocumentModel → publish document_added SSE event.
-
-Module:    src.application.use_cases.documents.process_document_use_case
+Module:    apps.api.src.application.use_cases.documents.process_document_use_case
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import uuid

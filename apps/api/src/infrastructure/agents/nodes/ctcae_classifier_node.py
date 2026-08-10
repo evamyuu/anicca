@@ -1,12 +1,11 @@
 """
-CTCAE Symptom Classifier Node.
+Implementation of ctcae_classifier_node.
 
-Module:    src.infrastructure.agents.nodes.ctcae_classifier_node
+Module:    apps.api.src.infrastructure.agents.nodes.ctcae_classifier_node
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from langchain_core.messages import SystemMessage, HumanMessage
 from src.infrastructure.agents.state import AniState
 
@@ -26,9 +25,6 @@ async def ctcae_classifier_node(state: AniState) -> dict:
         "Do NOT reply to the user directly, just provide your clinical assessment in this internal thought."
     ))
 
-    # A more robust implementation would actually use an LLM here to output structured JSON
-    # representing the CTCAE grade, and append it to the context.
-    # For now, we just append the specialist's instruction for the synthesizer to read.
     
     agents = list(state.get("agents_invoked", []))
     agents.append("ctcae_classifier")

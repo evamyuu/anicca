@@ -102,14 +102,12 @@ export function useHubSync({ userId, onEvent }: UseHubSyncOptions): void {
           });
         }
       } catch {
-        // Malformed SSE data — ignore silently
       }
     };
 
     es.onerror = () => {
       es.close();
       eventSourceRef.current = null;
-      // Exponential backoff reconnect
       if (isActiveRef.current) {
         setTimeout(connect, 5_000);
       }

@@ -1,15 +1,11 @@
 """
-Domain value objects: immutable primitives with built-in validation.
+Implementation of value_objects.
 
-Value objects enforce business invariants at construction time so that
-invalid states are impossible to represent anywhere in the application.
-
-Module:    src.domain.value_objects
+Module:    apps.api.src.domain.value_objects
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import re

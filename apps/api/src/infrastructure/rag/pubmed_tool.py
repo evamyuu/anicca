@@ -1,16 +1,11 @@
 """
-PubMed Integration Tool for Medical LangGraph.
+Implementation of pubmed_tool.
 
-Uses NCBI Entrez E-utilities to search real medical abstracts and guidelines
-worldwide without mocks.
-API Reference: https://www.ncbi.nlm.nih.gov/books/NBK25500/
-
-Module:    src.infrastructure.rag.pubmed_tool
+Module:    apps.api.src.infrastructure.rag.pubmed_tool
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import httpx
 import xml.etree.ElementTree as ET
 from langchain_core.tools import tool
@@ -28,7 +23,6 @@ async def search_pubmed(query: str, max_results: int = 3) -> str:
     Returns:
         A formatted string containing the titles and abstracts of the retrieved medical papers.
     """
-    # 1. eSearch: Get PubMed IDs matching the query
     search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     search_params = {
         "db": "pubmed",
@@ -48,7 +42,6 @@ async def search_pubmed(query: str, max_results: int = 3) -> str:
             if not id_list:
                 return "No recent medical papers found on PubMed for this query."
                 
-            # 2. eFetch: Retrieve XML abstracts for the found IDs
             fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
             fetch_params = {
                 "db": "pubmed",
@@ -59,7 +52,6 @@ async def search_pubmed(query: str, max_results: int = 3) -> str:
             fetch_resp = await client.get(fetch_url, params=fetch_params)
             fetch_resp.raise_for_status()
             
-            # Parse XML response
             root = ET.fromstring(fetch_resp.text)
             results = []
             
@@ -70,7 +62,6 @@ async def search_pubmed(query: str, max_results: int = 3) -> str:
                 abstract_elem = article.find(".//AbstractText")
                 abstract = abstract_elem.text if abstract_elem is not None else "No Abstract available."
                 
-                # Combine multiple abstract text segments if they exist
                 if abstract_elem is not None:
                     abstract_texts = article.findall(".//AbstractText")
                     if len(abstract_texts) > 1:

@@ -1,15 +1,11 @@
 """
-Concrete SQLAlchemy repository implementations.
+Implementation of repositories.
 
-Each class implements the corresponding abstract port from
-:mod:`src.domain.repositories` using SQLAlchemy async sessions.
-
-Module:    src.infrastructure.repositories
+Module:    apps.api.src.infrastructure.repositories
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 from typing import List, Optional
@@ -112,6 +108,20 @@ class SQLPatientRepository(AbstractPatientRepository):
             select(PatientModel.id).where(PatientModel.whatsapp_phone == phone.value)
         )
         return result.scalar_one_or_none() is not None
+
+    async def update_phone(self, patient_id: str, phone: PhoneNumber) -> None:
+        """Update the WhatsApp phone number for a patient.
+
+        Args:
+            patient_id: The patient's UUID string.
+            phone: A validated :class:`~src.domain.value_objects.PhoneNumber`.
+        """
+        from sqlalchemy import update as sql_update
+        await self._session.execute(
+            sql_update(PatientModel)
+            .where(PatientModel.id == patient_id)
+            .values(whatsapp_phone=phone.value)
+        )
 
 
 class SQLMessageRepository(AbstractMessageRepository):
@@ -405,4 +415,3 @@ def _document_model_to_entity(model: DocumentModel) -> Document:
         summary=model.summary,
         created_at=model.created_at,
     )
-

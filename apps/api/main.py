@@ -1,16 +1,18 @@
 """
-Anicca API application entry point.
+Implementation of main.
 
-Registers all BFF routers and CORS middleware for the FastAPI application.
-
-Module:    main
+Module:    apps.api.main
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from src.presentation.routers import (
     auth_router,
@@ -48,7 +50,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Custom security middlewares
 app.add_middleware(PIISanitizerMiddleware)
 app.add_middleware(RateLimiterMiddleware)
 

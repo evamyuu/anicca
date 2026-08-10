@@ -1,15 +1,11 @@
 """
-Use case: ProcessWhatsAppMessageUseCase.
+Implementation of process_whatsapp_message.
 
-Orchestrates the full inbound WhatsApp message pipeline:
-receive → identify patient → run Ani → respond with buttons → publish SSE event.
-
-Module:    src.application.use_cases.whatsapp.process_whatsapp_message
+Module:    apps.api.src.application.use_cases.whatsapp.process_whatsapp_message
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import uuid
@@ -150,7 +146,6 @@ class ProcessWhatsAppMessageUseCase:
         )
         await self._message_repo.save(user_msg)
 
-        # Se houver arquivo anexo (recebido do WhatsApp Router)
         extracted_ocr_text = ""
         if inbound.media_url and inbound.media_url.startswith("/app/uploads/"):
             try:
@@ -162,7 +157,6 @@ class ProcessWhatsAppMessageUseCase:
                 with open(filepath, "rb") as f:
                     file_bytes = f.read()
 
-                # Usa a infraestrutura real do banco, repassando o redis pub/sub para sincronizar
                 doc_uc = ProcessDocumentUseCase(db_session=self._patient_repo._session, redis_client=self._redis)
                 doc_result = await doc_uc.execute(
                     file_bytes=file_bytes,
@@ -172,13 +166,11 @@ class ProcessWhatsAppMessageUseCase:
                     filename=os.path.basename(filepath)
                 )
                 
-                # Resumo simplificado vai pro LLM entender do que se trata sem reler a imagem
                 extracted_ocr_text = f" [A paciente enviou um exame/documento via WhatsApp. O sistema extraiu o seguinte resumo: '{doc_result.summary}'. A principal descoberta é: '{doc_result.key_finding}']."
                 
             except Exception as ocr_exc:
                 print(f"[ProcessWhatsApp] Erro ao extrair documento via OCR Textract: {ocr_exc}")
 
-        # Roda a IA do LangGraph com a mensagem original + Resumo do OCR (se existir)
         user_message_to_llm = inbound.text + extracted_ocr_text
 
         ani_result = await run_patient_agent(

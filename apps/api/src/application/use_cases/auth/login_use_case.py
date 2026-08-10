@@ -1,12 +1,11 @@
 """
-Traditional Email/Password Login Use Case.
+Implementation of login_use_case.
 
-Module:    src.application.use_cases.auth.login_use_case
+Module:    apps.api.src.application.use_cases.auth.login_use_case
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Optional
 
 from passlib.context import CryptContext
@@ -38,7 +37,6 @@ class LoginUseCase:
         Raises:
             UnauthorizedError: If credentials are wrong.
         """
-        # Fetch the user by email
         result = await self._db.execute(
             select(UserModel).where(UserModel.email == params.email)
         )
@@ -47,11 +45,9 @@ class LoginUseCase:
         if not user or not user.hashed_password:
             raise UnauthorizedError("E-mail ou senha incorretos.")
 
-        # Verify password hash
         if not pwd_context.verify(params.password, user.hashed_password):
             raise UnauthorizedError("E-mail ou senha incorretos.")
 
-        # Generate JWT
         access_token = create_access_token(
             data={"sub": str(user.id), "role": user.role, "patient_id": str(user.patient_id) if user.patient_id else None}
         )

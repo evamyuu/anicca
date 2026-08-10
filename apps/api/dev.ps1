@@ -38,4 +38,4 @@ Set-Location $ApiDir
 
 Write-Host "Starting Anicca API on http://localhost:8000 ..." -ForegroundColor Green
 Write-Host "   Docs: http://localhost:8000/docs" -ForegroundColor DarkGray
-& $Uvicorn main:app --reload --port 8000 --host 0.0.0.0
+& (Join-Path $ApiDir ".venv\Scripts\python.exe") run.py

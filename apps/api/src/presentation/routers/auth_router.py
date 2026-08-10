@@ -1,12 +1,11 @@
 """
-Auth router: OTP request and verification endpoints.
+Implementation of auth_router.
 
-Module:    src.presentation.routers.auth_router
+Module:    apps.api.src.presentation.routers.auth_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +27,12 @@ from src.presentation.schemas import (
 from src.application.dto.auth import LoginInput, RegisterInput
 from src.application.use_cases.auth.login_use_case import LoginUseCase
 from src.application.use_cases.auth.register_use_case import RegisterUseCase
+from src.application.use_cases.auth.google_login_use_case import GoogleLoginUseCase, GoogleLoginInput
 from src.domain.exceptions import UnauthorizedError, DomainError
+from pydantic import BaseModel, Field
+
+class GoogleLoginRequestSchema(BaseModel):
+    id_token: str = Field(..., description="Google ID Token")
 
 router = APIRouter()
 
@@ -46,6 +50,29 @@ async def login(
     try:
         result = await LoginUseCase(db_session=db).execute(
             LoginInput(email=body.email, password=body.password)
+        )
+    except UnauthorizedError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+        
+    return TokenResponseSchema(
+        access_token=result.access_token,
+        token_type=result.token_type,
+        is_new_user=result.is_new_user,
+        patient_id=result.patient_id,
+    )
+@router.post(
+    "/google",
+    response_model=TokenResponseSchema,
+    summary="Login with Google ID Token",
+)
+async def login_with_google(
+    body: GoogleLoginRequestSchema,
+    db: AsyncSession = Depends(get_db_session),
+) -> TokenResponseSchema:
+    """Authenticates a user via Google Sign-In."""
+    try:
+        result = await GoogleLoginUseCase(db_session=db).execute(
+            GoogleLoginInput(token=body.id_token)
         )
     except UnauthorizedError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))

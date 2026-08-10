@@ -1,11 +1,16 @@
+/**
+ * @fileoverview Implementation of LoginPage.
+ *
+ * @module pages/auth/LoginPagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LoginPage — FSD: pages/auth
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function LoginPage() {
   const [phone, setPhone] = React.useState('');
@@ -14,7 +19,6 @@ export function LoginPage() {
   const handleLogin = async () => {
     if (!phone.trim()) return;
     setIsLoading(true);
-    // TODO: call auth API
     setTimeout(() => {
       setIsLoading(false);
       router.replace('/(onboarding)/step-1-welcome');

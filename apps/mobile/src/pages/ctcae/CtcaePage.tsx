@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Implementation of CtcaePage.
+ *
+ * @module pages/ctcae/CtcaePagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

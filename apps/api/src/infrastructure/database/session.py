@@ -1,12 +1,11 @@
 """
-Async SQLAlchemy session factory and dependency provider.
+Implementation of session.
 
-Module:    src.infrastructure.database.session
+Module:    apps.api.src.infrastructure.database.session
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (

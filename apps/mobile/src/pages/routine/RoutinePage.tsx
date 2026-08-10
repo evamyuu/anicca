@@ -1,11 +1,15 @@
+/**
+ * @fileoverview Implementation of RoutinePage.
+ *
+ * @module pages/routine/RoutinePagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { ScrollView, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RoutinePage — FSD: pages/routine
-// Today's routine: temperature, medication, hydration, sleep, symptoms CTA
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function RoutinePage() {
   return (

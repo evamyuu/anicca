@@ -1,16 +1,11 @@
 """
-Canal-agnostic conversation context store backed by Redis.
+Implementation of conversation_store.
 
-The conversation key is ``conversation:{user_id}``, NOT phone number or device ID.
-This is the foundation of the Hub Sync: a session started on WhatsApp continues
-in the app, and vice versa, with full context preserved.
-
-Module:    src.infrastructure.cache.conversation_store
+Module:    apps.api.src.infrastructure.cache.conversation_store
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import json

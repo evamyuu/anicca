@@ -105,7 +105,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 9999,
   },
-  // ─── Variants ───
   primaryVariant: {
     backgroundColor: BRAND.PRIMARY.DEFAULT,
   },
@@ -129,7 +128,6 @@ const styles = StyleSheet.create({
   ghostVariant: {
     backgroundColor: 'transparent',
   },
-  // ─── Sizes ───
   smSize: {
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -157,10 +155,9 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
-  // ─── Text Styles ───
   textBase: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
+    fontSize: 16,
     letterSpacing: 0.5,
     textAlign: 'center',
   },

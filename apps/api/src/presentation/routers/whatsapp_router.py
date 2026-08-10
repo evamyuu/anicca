@@ -1,15 +1,11 @@
 """
-WhatsApp webhook router and outbound message endpoints.
+Implementation of whatsapp_router.
 
-Handles inbound Whatsmiau Cloud webhook events and routes them through the
-:class:`~src.application.use_cases.whatsapp.process_whatsapp_message.ProcessWhatsAppMessageUseCase`.
-
-Module:    src.presentation.routers.whatsapp_router
+Module:    apps.api.src.presentation.routers.whatsapp_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import os
 import traceback
 import httpx
@@ -43,7 +39,6 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
     """
     events = data.get("data")
     if events is None:
-        # Sometimes Whatsmiau sends the event at the root level without a "data" wrapper
         events = [data]
     elif not isinstance(events, list):
         events = [events]
@@ -53,7 +48,13 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
             continue
 
         message_type = event.get("messageType") or event.get("type")
-        if message_type not in ("text", "image", "document", "conversation", "extendedTextMessage", "interactive", "buttonsResponseMessage", "listResponseMessage", "templateButtonReplyMessage"):
+        if message_type not in (
+            "text", "image", "imageMessage",
+            "document", "documentMessage",
+            "conversation", "extendedTextMessage",
+            "interactive", "buttonsResponseMessage",
+            "listResponseMessage", "templateButtonReplyMessage"
+        ):
             continue
 
         phone = (
@@ -66,12 +67,13 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
             if not phone.startswith("+"):
                 phone = f"+{phone}"
         
-        # Check text in different possible Whatsmiau formats
         message_data = event.get("message", {})
         text = (
             message_data.get("conversation") or 
             message_data.get("extendedTextMessage", {}).get("text") or
             event.get("body", {}).get("text") or
+            message_data.get("imageMessage", {}).get("caption") or
+            message_data.get("documentMessage", {}).get("caption") or
             message_data.get("interactiveResponseMessage", {}).get("body", {}).get("text") or
             message_data.get("buttonsResponseMessage", {}).get("selectedDisplayText") or
             message_data.get("listResponseMessage", {}).get("title") or
@@ -80,13 +82,17 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
         )
         message_id = event.get("key", {}).get("id") or event.get("messageId", "")
         media_url = (
+            event.get("mediaUrl") or
             event.get("body", {}).get("url") or 
             message_data.get("imageMessage", {}).get("url") or
             message_data.get("documentMessage", {}).get("url")
         )
 
         if media_url and not text:
-            text = "[Mídia recebida]"
+            if message_type in ("imageMessage", "image"):
+                text = "[Imagem recebida — analisando o exame ou foto...]"
+            else:
+                text = "[Documento recebido]"
 
         if not phone or not text:
             continue
@@ -132,15 +138,34 @@ async def _process_in_background(inbound: WhatsAppInboundMessage):
         try:
             print(f"[BACKGROUND] Processing inbound from {inbound.phone}...")
             
-            if inbound.media_url:
-                local_path = await _download_media(inbound.media_url, inbound.whatsapp_message_id)
-                if local_path:
-                    inbound = WhatsAppInboundMessage(
-                        phone=inbound.phone,
-                        text=inbound.text,
-                        whatsapp_message_id=inbound.whatsapp_message_id,
-                        media_url=local_path
-                    )
+            if inbound.media_url or inbound.whatsapp_message_id:
+                if inbound.whatsapp_message_id and not (inbound.media_url or "").startswith("/app/uploads/"):
+                    print(f"[BACKGROUND] Attempting media download for message {inbound.whatsapp_message_id}...")
+                    media_bytes = await whatsmia_client.download_media(inbound.whatsapp_message_id)
+                    if media_bytes:
+                        import os, uuid as _uuid
+                        os.makedirs("/app/uploads", exist_ok=True)
+                        local_path = f"/app/uploads/{inbound.whatsapp_message_id}"
+                        with open(local_path, "wb") as f:
+                            f.write(media_bytes)
+                        print(f"[BACKGROUND] Media saved to {local_path} ({len(media_bytes)} bytes)")
+                        inbound = WhatsAppInboundMessage(
+                            phone=inbound.phone,
+                            text=inbound.text,
+                            whatsapp_message_id=inbound.whatsapp_message_id,
+                            media_url=local_path
+                        )
+                    else:
+                        print("[BACKGROUND] Media download returned no bytes, continuing without media.")
+                elif inbound.media_url and not inbound.media_url.startswith("/app/uploads/"):
+                    local_path = await _download_media(inbound.media_url, inbound.whatsapp_message_id)
+                    if local_path:
+                        inbound = WhatsAppInboundMessage(
+                            phone=inbound.phone,
+                            text=inbound.text,
+                            whatsapp_message_id=inbound.whatsapp_message_id,
+                            media_url=local_path
+                        )
                     
             await ProcessWhatsAppMessageUseCase(
                 patient_repo=patient_repo,
@@ -202,7 +227,6 @@ async def receive_whatsapp_webhook(
         print("Ignored: non_text_or_unsupported_type")
         return {"status": "ignored", "reason": "non_text_or_unsupported_type"}
 
-    # Schedule the processing pipeline as a background task to prevent webhook timeout
     background_tasks.add_task(_process_in_background, inbound)
 
     return {"status": "processing", "messageId": inbound.whatsapp_message_id}
@@ -250,3 +274,105 @@ async def link_whatsapp_phone(request: Request) -> dict:
         A dictionary with ``status`` and ``message`` fields.
     """
     return {"status": "pending", "message": "Verification code sent via WhatsApp"}
+
+
+import random
+import string
+
+
+@router.post("/link/request-otp", summary="Send OTP via WhatsApp for phone verification")
+async def request_whatsapp_otp(request: Request) -> dict:
+    """Generate a 6-digit OTP and deliver it via WhatsApp.
+
+    Stores the OTP in Redis with a 10-minute TTL keyed by phone number.
+
+    Args:
+        request: JSON body with ``phone`` (E.164) and ``patient_id`` fields.
+
+    Returns:
+        A dictionary with ``status`` field.
+    """
+    body = await request.json()
+    phone = body.get("phone")
+    patient_id = body.get("patient_id")
+
+    if not phone or not patient_id:
+        raise HTTPException(status_code=400, detail="'phone' and 'patient_id' are required.")
+
+    code = "".join(random.choices(string.digits, k=6))
+
+    redis = await create_redis_client()
+    try:
+        await redis.setex(f"whatsapp_otp:{phone}", 600, f"{code}:{patient_id}")
+    finally:
+        await redis.aclose()
+
+    message = (
+        f"🔐 *Código de verificação Anicca*\n\n"
+        f"Seu código é: *{code}*\n\n"
+        f"Válido por 10 minutos. Não compartilhe com ninguém."
+    )
+    await whatsmia_client.send_text(to=phone, text=message)
+
+    return {"status": "sent"}
+
+
+@router.post("/link/verify-otp", summary="Verify OTP and link WhatsApp to patient account")
+async def verify_whatsapp_otp(
+    request: Request,
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Verify the OTP and link the phone number to the patient account.
+
+    Args:
+        request: JSON body with ``phone``, ``patient_id``, and ``code`` fields.
+        db: Async database session.
+
+    Returns:
+        A dictionary with ``status`` and ``message`` fields.
+
+    Raises:
+        :class:`~fastapi.HTTPException`: 400 on invalid/expired OTP.
+    """
+    body = await request.json()
+    phone = body.get("phone")
+    patient_id = body.get("patient_id")
+    code = body.get("code")
+
+    if not phone or not patient_id or not code:
+        raise HTTPException(status_code=400, detail="'phone', 'patient_id' and 'code' are required.")
+
+    redis = await create_redis_client()
+    try:
+        stored = await redis.get(f"whatsapp_otp:{phone}")
+        if not stored:
+            raise HTTPException(status_code=400, detail="OTP expired or not found.")
+
+        stored_str = stored.decode() if isinstance(stored, bytes) else stored
+        stored_code, stored_patient_id = stored_str.split(":", 1)
+
+        if stored_code != code:
+            raise HTTPException(status_code=400, detail="OTP invalid.")
+
+        if stored_patient_id != patient_id:
+            raise HTTPException(status_code=400, detail="OTP invalid for this patient.")
+
+        await redis.delete(f"whatsapp_otp:{phone}")
+    finally:
+        await redis.aclose()
+
+    patient_repo = SQLPatientRepository(db)
+    from src.domain.value_objects import PhoneNumber
+    patient = await patient_repo.get_by_id(patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+
+    await patient_repo.update_phone(patient_id, PhoneNumber(phone))
+    await db.commit()
+
+    await whatsmia_client.send_text(
+        to=phone,
+        text="✅ *WhatsApp vinculado com sucesso!*\n\nAgora você pode falar comigo diretamente por aqui. Basta me mandar uma mensagem! 💙"
+    )
+
+    return {"status": "linked", "message": "WhatsApp vinculado com sucesso!"}

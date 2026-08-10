@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Implementation of +not-found.
+ *
+ * @module app/+not-foundx
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import { Link, Stack } from 'expo-router';
 import { View, Text } from 'react-native';
 
@@ -13,7 +21,7 @@ export default function NotFoundScreen() {
         <Text className="text-neutral-400 text-center mb-8 font-nunito">
           Parece que você se perdeu. Não se preocupe, vou te levar de volta!
         </Text>
-        <Link href="/(tabs)/hub" className="text-primary-400 font-semibold text-base">
+        <Link href="/(tabs)/" className="text-primary-400 font-semibold text-base">
           Voltar ao Início
         </Link>
       </View>

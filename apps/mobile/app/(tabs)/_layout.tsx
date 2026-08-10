@@ -13,6 +13,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Home, MessageSquare, Pill, FileText } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function TabsLayout() {
   return (
@@ -23,9 +24,13 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: '#a3988e', // Soft Gray/Brown
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
-        // Ensures the background matches the overarching glassmorphism theme
         tabBarBackground: () => (
-          <View style={styles.tabBarBackground} />
+          <LinearGradient
+            colors={['#403229', '#736760']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.tabBarBackground}
+          />
         ),
       }}
     >
@@ -65,6 +70,13 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="body-map"
+        options={{
+          href: null,
+          title: 'Body Map'
+        }}
+      />
     </Tabs>
   );
 }
@@ -73,26 +85,28 @@ const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
     bottom: 0,
+    left: 0,
+    right: 0,
     elevation: 0,
-    borderTopWidth: 0,
-    backgroundColor: 'transparent', // The custom background handles it
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderColor: '#ffffff',
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    backgroundColor: 'transparent',
     height: Platform.OS === 'ios' ? 90 : 70,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
   tabBarLabel: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
     marginTop: 4,
   }
 });

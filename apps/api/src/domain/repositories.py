@@ -1,16 +1,11 @@
 """
-Abstract repository interfaces (ports) for the domain layer.
+Implementation of repositories.
 
-These interfaces define the contract between the application layer and the
-infrastructure layer. The domain and application layers depend ONLY on these
-abstractions — never on SQLAlchemy, Redis, or any concrete implementation.
-
-Module:    src.domain.repositories
+Module:    apps.api.src.domain.repositories
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -270,4 +265,3 @@ class AbstractDocumentRepository(ABC):
         Returns:
             A list of :class:`Document` objects, ordered by creation date descending.
         """
-

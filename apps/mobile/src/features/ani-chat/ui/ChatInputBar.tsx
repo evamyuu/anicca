@@ -90,12 +90,12 @@ export function ChatInputBar({
       Animated.timing(scaleAnim, {
         toValue: SCALE_COMPRESSED,
         duration: SCALE_ANIMATION_DURATION_MS,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(scaleAnim, {
         toValue: SCALE_DEFAULT,
         duration: SCALE_ANIMATION_DURATION_MS,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   };

@@ -1,15 +1,11 @@
 """
-Routine router — records and retrieves the patient's daily routine.
+Implementation of routine_router.
 
-Covers temperature, medications, hydration, sleep, and wearable data.
-Publishes ``routine_synced`` SSE events after each update.
-
-Module:    src.presentation.routers.routine_router
+Module:    apps.api.src.presentation.routers.routine_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import uuid
 from datetime import date, datetime, timezone
 from typing import List, Optional

@@ -1,16 +1,11 @@
 """
-Domain exception hierarchy for the Anicca application.
+Implementation of exceptions.
 
-All exceptions inherit from :class:`AniccaDomainError`, which allows callers
-to catch domain violations distinctly from infrastructure or framework errors.
-
-Module:    src.domain.exceptions
+Module:    apps.api.src.domain.exceptions
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
-
 class AniccaDomainError(Exception):
     """Base class for all Anicca domain exceptions."""
 

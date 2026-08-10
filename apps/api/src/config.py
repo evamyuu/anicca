@@ -1,12 +1,11 @@
 """
-Application configuration loaded from environment variables and .env file.
+Implementation of config.
 
-Module:    src.config
+Module:    apps.api.src.config
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from functools import lru_cache
 from typing import Optional, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -44,13 +43,15 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore"
     )
 
     ENVIRONMENT: str = "development"
     SECRET_KEY: str = "change-me-in-production"
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8081"]
+    GOOGLE_CLIENT_ID: Optional[str] = None
 
-    DATABASE_URL: str = "postgresql+asyncpg://anicca:anicca@localhost:5432/anicca_dev"
+    DATABASE_URL: str = "postgresql+psycopg://anicca:anicca@localhost:5432/anicca_dev"
     REDIS_URL: str = "redis://localhost:6379"
 
     WHATSMIAU_TOKEN: str = ""
@@ -62,7 +63,7 @@ class Settings(BaseSettings):
 
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
-    AWS_REGION: str = "sa-east-1"
+    AWS_REGION: str = "us-east-1"
     AWS_S3_BUCKET: str = "anicca-med-docs"
 
     NEO4J_URI: str = "bolt://localhost:7687"

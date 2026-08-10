@@ -1,16 +1,11 @@
 """
-Data Transfer Objects for the authentication use cases.
+Implementation of auth.
 
-DTOs are plain dataclasses that cross the application layer boundary.
-They carry no business logic and are decoupled from both domain entities
-and HTTP schemas.
-
-Module:    src.application.dto.auth
+Module:    apps.api.src.application.dto.auth
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from dataclasses import dataclass
 from typing import Optional
 

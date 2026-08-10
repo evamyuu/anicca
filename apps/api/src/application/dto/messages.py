@@ -1,12 +1,11 @@
 """
-Data Transfer Objects for the message (Ani conversation) use cases.
+Implementation of messages.
 
-Module:    src.application.dto.messages
+Module:    apps.api.src.application.dto.messages
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from dataclasses import dataclass, field
 from typing import List
 

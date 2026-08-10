@@ -1,12 +1,11 @@
 """
-Use case: VerifyOTPUseCase — validates an OTP and issues a JWT.
+Implementation of verify_otp.
 
-Module:    src.application.use_cases.auth.verify_otp
+Module:    apps.api.src.application.use_cases.auth.verify_otp
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import uuid

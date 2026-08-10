@@ -1,12 +1,11 @@
 """
-Documents router — upload and retrieval of medical documents with OCR.
+Implementation of documents_router.
 
-Module:    src.presentation.routers.documents_router
+Module:    apps.api.src.presentation.routers.documents_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from datetime import datetime
 from typing import List, Optional
 

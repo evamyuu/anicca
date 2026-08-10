@@ -1,7 +1,11 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// ani-chat — Public API (barrel export)
-// FSD rule: only export what is needed by widgets/pages
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * @fileoverview Implementation of index.
+ *
+ * @module features/ani-chat/index
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 
 export { useAniChat } from './model/useAniChat';
 export { useAniChatStore } from './model/ani-chat.store';

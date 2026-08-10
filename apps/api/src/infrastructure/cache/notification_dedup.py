@@ -1,16 +1,11 @@
 """
-Notification deduplication to prevent duplicate push/WhatsApp events.
+Implementation of notification_dedup.
 
-Before sending any notification, check this store. If a notification of the
-same type was sent to the same channel for the same user within the TTL window,
-suppress the duplicate.
-
-Module:    src.infrastructure.cache.notification_dedup
+Module:    apps.api.src.infrastructure.cache.notification_dedup
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import redis.asyncio as aioredis
 
 _DEDUP_TTL = 3_600

@@ -1,12 +1,11 @@
 """
-Use case: RequestOTPUseCase — initiates phone number authentication.
+Implementation of request_otp.
 
-Module:    src.application.use_cases.auth.request_otp
+Module:    apps.api.src.application.use_cases.auth.request_otp
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from src.application.dto.auth import RequestOTPInput, RequestOTPOutput
 from src.domain.repositories import AbstractSessionCache
 from src.domain.value_objects import PhoneNumber, OTPCode

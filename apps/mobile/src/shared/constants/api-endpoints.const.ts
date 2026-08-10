@@ -183,4 +183,3 @@ export const API_ENDPOINTS = {
     stream: (userId: string) => `/api/v1/events/stream/${userId}`,
   },
 } as const;
-

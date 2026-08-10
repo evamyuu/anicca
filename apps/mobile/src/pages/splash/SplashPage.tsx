@@ -8,8 +8,11 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, Image, Animated, StyleSheet, useColorScheme } from 'react-native';
-import { BRAND } from '@/shared/constants/brand-colors.const';
+import { View, Animated, StyleSheet } from 'react-native';
+import LogoLight from '../../../assets/images/brand/logo-light.svg';
+import LogoDark from '../../../assets/images/brand/logo-dark.svg';
+import { useTheme } from '@/shared/providers/ThemeProvider';
+import { ThemeColors } from '@/shared/theme/colors';
 import { useResponsive } from '@/shared/hooks/useResponsive';
 
 
@@ -27,51 +30,39 @@ import { useResponsive } from '@/shared/hooks/useResponsive';
  * @returns The splash screen element.
  */
 export function SplashPage() {
-  const colorScheme = useColorScheme();
-  const isDark      = colorScheme === 'dark';
+  const { isDark, colors } = useTheme();
+  const styles = createStyles(colors);
+  
   const { width }   = useResponsive();
   const TRACK_WIDTH = width * 0.55;
 
   const indicatorAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(indicatorAnim, {
-          toValue:         1,
-          duration:        1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorAnim, {
-          toValue:         0,
-          duration:        800,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
+    Animated.timing(indicatorAnim, {
+      toValue:         1,
+      duration:        2500, // Matches the minimum splash duration in _layout.tsx
+      useNativeDriver: false,
+    }).start();
   }, [indicatorAnim]);
 
-  /** Translate the indicator pill from left edge to right edge of the track. */
-  const translateX = indicatorAnim.interpolate({
+  /** Progress from 0 to TRACK_WIDTH */
+  const indicatorWidth = indicatorAnim.interpolate({
     inputRange:  [0, 1],
-    outputRange: [0, TRACK_WIDTH - 48],
+    outputRange: [0, TRACK_WIDTH],
   });
 
-  const backgroundColor = isDark ? BRAND.BG.DARK  : BRAND.BG.LIGHT;
-  const trackColor      = isDark ? BRAND.SURFACE.BORDER_DARK : BRAND.SURFACE.BORDER;
+  const trackColor = 'rgba(215, 204, 197, 0.4)'; // #D7CCC5 at 40% as requested
+  const Logo = isDark ? LogoDark : LogoLight;
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={styles.container}>
       {/* ── Logo centred ── */}
       <View style={styles.logoArea}>
-        <Image
-          source={require('../../../assets/images/brand/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-          accessibilityLabel="Anicca logo"
-          accessibilityRole="image"
+        <Logo 
+          width={180}
+          height={60}
+          style={styles.logo as any}
         />
       </View>
 
@@ -80,10 +71,10 @@ export function SplashPage() {
         {/* Track */}
         <View style={[styles.track, { backgroundColor: trackColor, width: TRACK_WIDTH }]}>
           {/* Animated pill */}
-          <Animated.View
+            <Animated.View
             style={[
               styles.indicator,
-              { backgroundColor: BRAND.SECONDARY.DEFAULT, transform: [{ translateX }] },
+              { backgroundColor: colors.primary, width: indicatorWidth },
             ]}
           />
         </View>
@@ -92,9 +83,10 @@ export function SplashPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex:           1,
+    backgroundColor: colors.background,
     alignItems:     'center',
     justifyContent: 'center',
   },
@@ -121,7 +113,6 @@ const styles = StyleSheet.create({
     position:     'absolute',
     top:          0,
     left:         0,
-    width:        48,
     height:       4,
     borderRadius: 9999,
   },

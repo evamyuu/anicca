@@ -1,12 +1,11 @@
 """
-JWT authentication middleware and dependency provider.
+Implementation of auth.
 
-Module:    src.presentation.middleware.auth
+Module:    apps.api.src.presentation.middleware.auth
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 from typing import Annotated

@@ -1,15 +1,11 @@
 """
-Synthesizer Node for final response generation with interactive WhatsApp actions.
+Implementation of synthesizer_node.
 
-Ani always suggests a next action in WhatsApp via buttons or lists — the user
-never needs to think about what to type next.
-
-Module:    src.infrastructure.agents.nodes.synthesizer_node
+Module:    apps.api.src.infrastructure.agents.nodes.synthesizer_node
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage

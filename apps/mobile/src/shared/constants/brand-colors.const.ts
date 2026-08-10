@@ -25,7 +25,6 @@
  * - `SEMANTIC`  — Convenience aliases for success / warning / info
  */
 export const BRAND = {
-  // ── Primary — Deep Brown ─────────────────────────────────────
   PRIMARY: {
     50:      '#f7f4f2',
     100:     '#ede6e0',
@@ -39,7 +38,6 @@ export const BRAND = {
     900:     '#17110d',
   },
 
-  // ── Secondary — Warm Orange ──────────────────────────────────
   SECONDARY: {
     50:      '#fff5ee',
     100:     '#ffe8d5',
@@ -53,20 +51,17 @@ export const BRAND = {
     900:     '#7a3c10',
   },
 
-  // ── Auxiliaries ───────────────────────────────────────────────
   AUX: {
     GREEN:  '#4DA167', // growth / success states
     PURPLE: '#725AC1', // clinical / doctor panel
     BLUE:   '#255C99', // trust / informational
   },
 
-  // ── Backgrounds ───────────────────────────────────────────────
   BG: {
     LIGHT: '#F0E9E5', // warm off-white — light mode page bg
     DARK:  '#1E1E1E', // near-black — dark mode page bg
   },
 
-  // ── Surfaces ─────────────────────────────────────────────────
   SURFACE: {
     CARD:        '#FFFFFF',
     CARD_DARK:   '#2C2C2C',
@@ -74,7 +69,6 @@ export const BRAND = {
     BORDER_DARK: '#3a3a3a',
   },
 
-  // ── Error / Danger ────────────────────────────────────────────
   ERROR: {
     DEFAULT: '#D4203B',
     SOFT:    '#FA5770',
@@ -83,7 +77,6 @@ export const BRAND = {
     DARK:    '#a8142c',
   },
 
-  // ── Semantic Convenience Aliases ─────────────────────────────
   SEMANTIC: {
     SUCCESS: '#4DA167',
     WARNING: '#FF9A5C',

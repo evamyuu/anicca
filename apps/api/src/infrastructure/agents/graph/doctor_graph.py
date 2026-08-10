@@ -1,15 +1,11 @@
 """
-Medical Doctor Graph Definition.
+Implementation of doctor_graph.
 
-This agent powers "Ani Inteligência Clínica" in the Next.js medical dashboard.
-It uses tool calling to access the PubMed database for real-world oncology guidelines.
-
-Module:    src.infrastructure.agents.graph.doctor_graph
+Module:    apps.api.src.infrastructure.agents.graph.doctor_graph
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Any, List
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
@@ -48,7 +44,7 @@ def build_doctor_agent() -> Any:
     return create_react_agent(
         model=llm,
         tools=tools,
-        state_modifier=_DOCTOR_SYSTEM_PROMPT,
+        prompt=_DOCTOR_SYSTEM_PROMPT,
     )
 
 doctor_agent = build_doctor_agent()
@@ -80,5 +76,4 @@ async def run_doctor_agent(
     
     result = await doctor_agent.ainvoke({"messages": messages})
     
-    # The last message is the AI's final answer
     return result["messages"][-1].content

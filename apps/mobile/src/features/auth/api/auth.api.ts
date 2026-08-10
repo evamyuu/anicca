@@ -1,5 +1,5 @@
 /**
- * Auth API definitions for Login and Registration.
+ * @fileoverview Implementation of auth.
  *
  * @module features/auth/api/auth.api
  * @author Evelin Brandão Cordeiro
@@ -9,7 +9,6 @@
 
 import axios from 'axios';
 
-// The dev API URL, ideally comes from env
 const API_URL = 'http://10.0.2.2:8000/api/v1/auth';
 
 export interface TokenResponse {

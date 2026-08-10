@@ -1,15 +1,11 @@
 """
-AWS Textract OCR client for medical document text extraction.
+Implementation of textract_client.
 
-Uploads documents to S3 and uses Textract to extract structured text.
-Falls back gracefully with a user-friendly message on any error.
-
-Module:    src.infrastructure.ocr.textract_client
+Module:    apps.api.src.infrastructure.ocr.textract_client
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import uuid
 from typing import Optional
 

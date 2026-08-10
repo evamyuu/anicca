@@ -20,30 +20,24 @@ export function useProtectedRoute() {
   const profileType = useAuthStore((s) => s.profileType);
 
   useEffect(() => {
-    // Determine which group the user is currently trying to access
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const inProtectedGroup = segments[0] === '(tabs)';
 
-    // Wait until navigation is mounted (segments exist)
     if (segments.length === 0) return;
 
     if (!isAuthenticated) {
-      // If not logged in and trying to access tabs or onboarding, kick to login
-      if (inProtectedGroup || inOnboardingGroup) {
+      if (inProtectedGroup) {
         router.replace('/(auth)/login');
       }
     } else {
-      // If logged in
       if (!profileType) {
-        // Logged in but no profile type selected -> must complete onboarding
         if (!inOnboardingGroup) {
           router.replace('/(onboarding)');
         }
       } else {
-        // Logged in and onboarding finished -> direct to protected Hub, block from login/onboarding
         if (inAuthGroup || inOnboardingGroup) {
-          router.replace('/(tabs)/');
+          router.replace('/(tabs)');
         }
       }
     }

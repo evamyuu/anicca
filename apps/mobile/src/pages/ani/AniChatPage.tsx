@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Implementation of AniChatPage.
+ *
+ * @module pages/ani/AniChatPagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,10 +18,6 @@ import {
   AniTypingIndicator,
 } from '@/features/ani-chat';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AniChatPage — FSD: pages/ani
-// Assembles the ani-chat feature into a full page.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function AniChatPage() {
   const { messages, isTyping, isLoading, error, send, retry } = useAniChat();

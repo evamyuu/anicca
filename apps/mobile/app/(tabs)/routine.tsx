@@ -9,35 +9,71 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Thermometer, Sun, Moon, Check, Droplets, Droplet, Star, Minus, Plus, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useAuthStore } from '@/shared/lib/zustand-persist';
+import { getTodayRoutine, updateTemperature, updateHydration, updateSleep, updateMedications, MedicationItem } from '@/shared/api/routine';
 
 export default function RoutineScreen() {
   const router = useRouter();
-  const [temperature, setTemperature] = useState('');
-  
-  // Hydration state (out of 8 cups)
-  const [hydration, setHydration] = useState(4);
-  
-  // Sleep state
-  const [sleepHours, setSleepHours] = useState(7);
-  
-  // Local state to simulate checking off medications
-  const [meds, setMeds] = useState([
-    { id: 1, time: 'morning', name: 'Capecitabina', type: 'Quimio oral', dose: '500mg • 2 comprimidos • Com o café da manhã', checked: true },
-    { id: 2, time: 'morning', name: 'Dexametasona', type: 'Anti-náusea', dose: '4mg • 1 comprimido • Com o café da manhã', checked: true },
-    { id: 3, time: 'morning', name: 'Ondansetrona', type: 'Anti-náusea', dose: '8mg • 1 comprimido • Em jejum ou com água', checked: false },
-    { id: 4, time: 'afternoon', name: 'Omeprazol', type: 'Suporte', dose: '20mg • 1 cápsula • 30 min antes do almoço', checked: false },
-  ]);
+  const userId = useAuthStore(s => s.userId);
+  const queryClient = useQueryClient();
 
-  const toggleMed = (id: number) => {
-    setMeds(meds.map(med => med.id === id ? { ...med, checked: !med.checked } : med));
+  const [localTemp, setLocalTemp] = useState('');
+  const [localSleepQ, setLocalSleepQ] = useState(5);
+
+  const { data: routine, isLoading } = useQuery({
+    queryKey: ['routine', 'today', userId],
+    queryFn: () => getTodayRoutine(userId!),
+    enabled: !!userId,
+  });
+
+  const tempMutation = useMutation({
+    mutationFn: (val: number) => updateTemperature(userId!, val),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] });
+      Alert.alert('Sucesso', 'Temperatura salva!');
+    }
+  });
+
+  const hydraMutation = useMutation({
+    mutationFn: (val: number) => updateHydration(userId!, val),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+  });
+
+  const sleepMutation = useMutation({
+    mutationFn: ({ hours, quality }: { hours: number, quality: number }) => updateSleep(userId!, hours, quality),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+  });
+
+  const medsMutation = useMutation({
+    mutationFn: (meds: MedicationItem[]) => updateMedications(userId!, meds),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+  });
+
+  const meds = routine?.medications?.length ? routine.medications : [
+    { name: 'Capecitabina', period: 'morning', taken: true, type: 'Quimio oral', dose: '500mg • 2 comprimidos' },
+    { name: 'Dexametasona', period: 'morning', taken: true, type: 'Anti-náusea', dose: '4mg • 1 comprimido' },
+    { name: 'Ondansetrona', period: 'morning', taken: false, type: 'Anti-náusea', dose: '8mg • 1 comprimido' },
+    { name: 'Omeprazol', period: 'afternoon', taken: false, type: 'Suporte', dose: '20mg • 1 cápsula' },
+  ];
+
+  const hydration = routine?.hydration_glasses || 0;
+  const sleepHours = routine?.sleep_hours || 7;
+  const lastTemp = routine?.temperature;
+
+  const toggleMed = (index: number) => {
+    const newMeds = [...meds];
+    newMeds[index].taken = !newMeds[index].taken;
+    medsMutation.mutate(newMeds);
   };
 
-  const morningMeds = meds.filter(m => m.time === 'morning');
-  const afternoonMeds = meds.filter(m => m.time === 'afternoon');
-  const checkedCount = meds.filter(m => m.checked).length;
+  const morningMeds = meds.map((m, i) => ({...m, originalIndex: i})).filter(m => m.period === 'morning');
+  const afternoonMeds = meds.map((m, i) => ({...m, originalIndex: i})).filter(m => m.period === 'afternoon');
+  const checkedCount = meds.filter(m => m.taken).length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -67,19 +103,28 @@ export default function RoutineScreen() {
               <Text style={styles.tempUnit}>°C</Text>
               <TextInput 
                 style={styles.tempInput}
-                placeholder="Último: 36.7°C"
+                placeholder={lastTemp ? `Último: ${lastTemp}°C` : 'Ex: 36.5'}
                 placeholderTextColor="#a3988e"
                 keyboardType="decimal-pad"
-                value={temperature}
-                onChangeText={setTemperature}
+                value={localTemp}
+                onChangeText={setLocalTemp}
               />
             </View>
-            <TouchableOpacity style={styles.saveButton} activeOpacity={0.8}>
-              <Text style={styles.saveButtonText}>Salvar</Text>
+            <TouchableOpacity 
+              style={styles.saveButton} 
+              activeOpacity={0.8}
+              onPress={() => {
+                if (localTemp) {
+                  tempMutation.mutate(parseFloat(localTemp.replace(',','.')));
+                  setLocalTemp('');
+                }
+              }}
+            >
+              {tempMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Salvar</Text>}
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.lastReadingText}>✓ Última leitura: 36.7°C — Normal</Text>
+          <Text style={styles.lastReadingText}>✓ Última leitura: {lastTemp ? `${lastTemp}°C` : '--'}</Text>
         </View>
 
         {/* Medications List */}
@@ -100,20 +145,20 @@ export default function RoutineScreen() {
             
             {morningMeds.map(med => (
               <TouchableOpacity 
-                key={med.id} 
-                style={[styles.medItem, med.checked && styles.medItemChecked]} 
-                onPress={() => toggleMed(med.id)}
+                key={med.originalIndex} 
+                style={[styles.medItem, med.taken && styles.medItemChecked]} 
+                onPress={() => toggleMed(med.originalIndex)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.checkbox, med.checked && styles.checkboxChecked]}>
-                  {med.checked && <Check size={16} color="#ffffff" />}
+                <View style={[styles.checkbox, med.taken && styles.checkboxChecked]}>
+                  {med.taken && <Check size={16} color="#ffffff" />}
                 </View>
                 <View style={styles.medTextContainer}>
                   <View style={styles.medNameRow}>
-                    <Text style={[styles.medName, med.checked && styles.medNameChecked]}>{med.name}</Text>
-                    <Text style={[styles.medType, med.checked && styles.medTypeChecked]}>{med.type}</Text>
+                    <Text style={[styles.medName, med.taken && styles.medNameChecked]}>{med.name}</Text>
+                    <Text style={[styles.medType, med.taken && styles.medTypeChecked]}>{med.type || 'Med'}</Text>
                   </View>
-                  <Text style={[styles.medDose, med.checked && styles.medDoseChecked]}>{med.dose}</Text>
+                  <Text style={[styles.medDose, med.taken && styles.medDoseChecked]}>{med.dose || ''}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -128,20 +173,20 @@ export default function RoutineScreen() {
             
             {afternoonMeds.map(med => (
               <TouchableOpacity 
-                key={med.id} 
-                style={[styles.medItem, med.checked && styles.medItemChecked]} 
-                onPress={() => toggleMed(med.id)}
+                key={med.originalIndex} 
+                style={[styles.medItem, med.taken && styles.medItemChecked]} 
+                onPress={() => toggleMed(med.originalIndex)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.checkbox, med.checked && styles.checkboxChecked]}>
-                  {med.checked && <Check size={16} color="#ffffff" />}
+                <View style={[styles.checkbox, med.taken && styles.checkboxChecked]}>
+                  {med.taken && <Check size={16} color="#ffffff" />}
                 </View>
                 <View style={styles.medTextContainer}>
                   <View style={styles.medNameRow}>
-                    <Text style={[styles.medName, med.checked && styles.medNameChecked]}>{med.name}</Text>
-                    <Text style={[styles.medType, med.checked && styles.medTypeChecked]}>{med.type}</Text>
+                    <Text style={[styles.medName, med.taken && styles.medNameChecked]}>{med.name}</Text>
+                    <Text style={[styles.medType, med.taken && styles.medTypeChecked]}>{med.type || 'Med'}</Text>
                   </View>
-                  <Text style={[styles.medDose, med.checked && styles.medDoseChecked]}>{med.dose}</Text>
+                  <Text style={[styles.medDose, med.taken && styles.medDoseChecked]}>{med.dose || ''}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -176,7 +221,7 @@ export default function RoutineScreen() {
           <TouchableOpacity 
             style={styles.actionBtnBrown} 
             activeOpacity={0.8}
-            onPress={() => setHydration(Math.min(8, hydration + 1))}
+            onPress={() => hydraMutation.mutate(Math.min(8, hydration + 1))}
           >
             <Plus size={16} color="#ffffff" style={{marginRight: 8}} />
             <Text style={styles.actionBtnBrownText}>Bebi mais um copo</Text>
@@ -196,11 +241,17 @@ export default function RoutineScreen() {
             <View style={styles.sleepInputBox}>
               <Text style={styles.sleepInputLabel}>Horas dormidas</Text>
               <View style={styles.sleepControlRow}>
-                <TouchableOpacity onPress={() => setSleepHours(Math.max(0, sleepHours - 1))} style={styles.sleepControlBtn}>
+                <TouchableOpacity 
+                  onPress={() => sleepMutation.mutate({ hours: Math.max(0, sleepHours - 1), quality: routine?.sleep_quality || 5 })} 
+                  style={styles.sleepControlBtn}
+                >
                   <Minus size={16} color="#4a3931" />
                 </TouchableOpacity>
                 <Text style={styles.sleepValue}>{sleepHours}h</Text>
-                <TouchableOpacity onPress={() => setSleepHours(Math.min(24, sleepHours + 1))} style={styles.sleepControlBtn}>
+                <TouchableOpacity 
+                  onPress={() => sleepMutation.mutate({ hours: Math.min(24, sleepHours + 1), quality: routine?.sleep_quality || 5 })} 
+                  style={styles.sleepControlBtn}
+                >
                   <Plus size={16} color="#4a3931" />
                 </TouchableOpacity>
               </View>
@@ -210,7 +261,12 @@ export default function RoutineScreen() {
               <Text style={styles.sleepInputLabel}>Qualidade</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map(star => (
-                   <Star key={`star_${star}`} size={16} color="#f28b50" />
+                   <TouchableOpacity 
+                     key={`star_${star}`} 
+                     onPress={() => sleepMutation.mutate({ hours: sleepHours, quality: star })}
+                   >
+                     <Star size={16} color={star <= (routine?.sleep_quality || 5) ? "#f28b50" : "#e5e0dc"} />
+                   </TouchableOpacity>
                 ))}
               </View>
             </View>
@@ -227,7 +283,7 @@ export default function RoutineScreen() {
         <TouchableOpacity 
           style={styles.bigOrangeCta}
           activeOpacity={0.9}
-          onPress={() => router.push('/symptoms/bodymap')}
+          onPress={() => router.push('/(tabs)/body-map')}
         >
            <View style={{flex: 1}}>
              <Text style={styles.bigOrangeCtaTitle}>Registrar Sintomas / Body Map</Text>

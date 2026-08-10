@@ -1,12 +1,16 @@
+/**
+ * @fileoverview Implementation of HubPage.
+ *
+ * @module pages/hub/HubPagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HubPage — FSD: pages/hub
-// Main dashboard: greeting, Law 60 Days, quick actions, GenUI cards
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function HubPage() {
   return (
@@ -148,7 +152,7 @@ export function HubPage() {
 }
 
 const QUICK_ACTIONS = [
-  { id: 'body-map', emoji: '🗺️', label: 'Body Map', route: '/body-map' },
+  { id: 'body-map', emoji: '🗺️', label: 'Body Map', route: '/(tabs)/body-map' },
   { id: 'symptoms', emoji: '⚡', label: 'Sintomas CTCAE', route: '/symptom/ctcae' },
   { id: 'journaling', emoji: '📓', label: 'Diário', route: '/journaling' },
   { id: 'ticket', emoji: '🎫', label: 'Abrir Chamado', route: '/tickets/new' },

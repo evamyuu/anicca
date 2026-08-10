@@ -1,12 +1,11 @@
 """
-SQLAlchemy declarative base and metadata for all ORM models.
+Implementation of base.
 
-Module:    src.infrastructure.database.base
+Module:    apps.api.src.infrastructure.database.base
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from sqlalchemy.orm import DeclarativeBase, MappedColumn
 from sqlalchemy import MetaData
 

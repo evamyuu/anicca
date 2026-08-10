@@ -19,7 +19,6 @@ import type {
   UserProfileType,
 } from '@anicca/types';
 
-// ─── Auth Store ───────────────────────────────────────────────────────────────
 
 /**
  * Shape of the persisted authentication store.
@@ -77,7 +76,6 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// ─── Onboarding Store ─────────────────────────────────────────────────────────
 
 /**
  * Shape of the persisted onboarding store.
@@ -89,10 +87,40 @@ export interface OnboardingState {
   totalSteps: number;
   /** Profile type selected in step 2. */
   profileType: UserProfileType | null;
-  /** Cancer type selected in step 3. */
-  cancerType: CancerType | null;
-  /** Treatment modality selected in step 3. */
-  treatmentModality: TreatmentModality | null;
+  /** Patient's full name */
+  name: string | null;
+  /** Doctor's CRM number */
+  crmNumber: string | null;
+  /** Birth year */
+  birthYear: string | null;
+  /** Gender */
+  gender: string | null;
+  /** Cancer type */
+  cancerType: string | null;
+  /** Cancer stage */
+  stage: string | null;
+  /** Diagnosis date (month/year) */
+  diagnosisDate: string | null;
+  /** Treatment modality (SUS, etc) */
+  careModality: string | null;
+  /** Patient ZIP code */
+  zipCode: string | null;
+  /** Phase of journey */
+  journeyPhase: string | null;
+  /** Treatments selected */
+  treatments: string[];
+  /** Primary concerns (up to 2) */
+  concerns: string[];
+  /** Name of the patient the caregiver cares for */
+  caregiverName: string | null;
+  /** Caregiver's relationship/involvement */
+  caregiverRelationship: string | null;
+  /** Doctor's specialty */
+  doctorSpecialty: string | null;
+  /** Doctor's primary interests */
+  doctorInterests: string[];
+  /** WhatsApp intent flag */
+  whatsappIntent: boolean | null;
   /** Invite code for caregiver profile linking. */
   caregiverInviteCode: string | null;
   /** Ani personality selected in step 4. */
@@ -105,6 +133,10 @@ export interface OnboardingState {
   consentCamera: boolean;
   /** Whether the user consented to calendar access. */
   consentCalendar: boolean;
+  /** Whether the user consented to smartwatch access. */
+  consentWatch: boolean;
+  /** Whether the user consented to research data sharing. */
+  lgpdResearchConsent: boolean;
   /**
    * Navigates directly to a specific step.
    * @param step - The target step index (1-based).
@@ -120,15 +152,9 @@ export interface OnboardingState {
    */
   setProfileType: (type: UserProfileType) => void;
   /**
-   * Persists the selected cancer type.
-   * @param type - The selected {@link CancerType}.
+   * Updates partial state details.
    */
-  setCancerType: (type: CancerType) => void;
-  /**
-   * Persists the selected treatment modality.
-   * @param modality - The selected {@link TreatmentModality}.
-   */
-  setTreatmentModality: (modality: TreatmentModality) => void;
+  setDetails: (details: Partial<OnboardingState>) => void;
   /**
    * Persists the selected Ani personality.
    * @param personality - The selected {@link AniPersonality}.
@@ -141,10 +167,8 @@ export interface OnboardingState {
   setAvatarConfig: (config: Partial<AvatarConfig>) => void;
   /**
    * Sets a consent flag by key.
-   * @param field - The consent key (`'notifications'`, `'camera'`, or `'calendar'`).
-   * @param value - The consent value.
    */
-  setConsent: (field: 'notifications' | 'camera' | 'calendar', value: boolean) => void;
+  setConsent: (field: 'notifications' | 'camera' | 'calendar' | 'watch' | 'research', value: boolean) => void;
   /** Resets all onboarding state to initial values. */
   reset: () => void;
 }
@@ -153,19 +177,36 @@ export interface OnboardingState {
 const initialOnboardingState: Omit<
   OnboardingState,
   'setStep' | 'nextStep' | 'prevStep' | 'setProfileType' | 'setCancerType' |
-  'setTreatmentModality' | 'setAniPersonality' | 'setAvatarConfig' | 'setConsent' | 'reset'
+  'setTreatmentModality' | 'setAniPersonality' | 'setAvatarConfig' | 'setConsent' | 'reset' | 'setPatientDetails'
 > = {
   currentStep: 1,
-  totalSteps: 7,
+  totalSteps: 7, // Default, will be updated per profile
   profileType: null,
+  name: null,
+  crmNumber: null,
+  birthYear: null,
+  gender: null,
   cancerType: null,
-  treatmentModality: null,
+  stage: null,
+  diagnosisDate: null,
+  careModality: null,
+  zipCode: null,
+  journeyPhase: null,
+  treatments: [],
+  concerns: [],
+  caregiverName: null,
+  caregiverRelationship: null,
+  doctorSpecialty: null,
+  doctorInterests: [],
+  whatsappIntent: null,
   caregiverInviteCode: null,
   aniPersonality: null,
   avatarConfig: {},
-  consentNotifications: false,
+  consentNotifications: true, // Default active
   consentCamera: false,
   consentCalendar: false,
+  consentWatch: false,
+  lgpdResearchConsent: false,
 };
 
 /**
@@ -182,11 +223,13 @@ export const useOnboardingStore = create<OnboardingState>()(
       nextStep: () => set({ currentStep: Math.min(get().currentStep + 1, get().totalSteps) }),
       prevStep: () => set({ currentStep: Math.max(get().currentStep - 1, 1) }),
       setProfileType: (type) => set({ profileType: type }),
-      setCancerType: (type) => set({ cancerType: type }),
-      setTreatmentModality: (modality) => set({ treatmentModality: modality }),
-      setAniPersonality: (personality) => set({ aniPersonality: personality }),
+      setDetails: (details) => set((state) => ({ ...state, ...details })),
       setAvatarConfig: (config) => set({ avatarConfig: { ...get().avatarConfig, ...config } }),
       setConsent: (field, value) => {
+        if (field === 'research') {
+          set({ lgpdResearchConsent: value });
+          return;
+        }
         const key = `consent${field.charAt(0).toUpperCase() + field.slice(1)}` as keyof OnboardingState;
         set({ [key]: value } as Partial<OnboardingState>);
       },

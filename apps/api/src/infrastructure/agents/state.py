@@ -1,12 +1,11 @@
 """
-LangGraph state definitions for the Ani Multi-Agent System.
+Implementation of state.
 
-Module:    src.infrastructure.agents.state
+Module:    apps.api.src.infrastructure.agents.state
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Annotated, Any, Optional, TypedDict
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
@@ -28,6 +27,9 @@ class AniState(TypedDict):
         media_url: Optional URL of an attached image or document.
         user_id: The Anicca user UUID for canal-agnostic context and event publishing.
         catalog_event: Typed data event produced by the Catalog Agent, or ``None``.
+        routine_data: Structured routine extraction from the RoutineSyncNode, or ``None``.
+        journaling_data: Structured emotional extraction from the JournalingSyncNode, or ``None``.
+        specialist_context: Optional context string injected by specialist nodes for the synthesizer.
     """
     messages: Annotated[list[BaseMessage], add_messages]
     patient_context: dict
@@ -41,3 +43,6 @@ class AniState(TypedDict):
     media_url: Optional[str]
     user_id: Optional[str]
     catalog_event: Optional[dict]
+    routine_data: Optional[dict]
+    journaling_data: Optional[dict]
+    specialist_context: Optional[str]

@@ -1,15 +1,11 @@
 """
-Whatsmiau Cloud HTTP client for WhatsApp message delivery.
+Implementation of whatsmia_client.
 
-Encapsulates all outbound API calls to https://whatsmiau.dev and provides
-HMAC-SHA256 webhook signature verification for inbound requests.
-
-Module:    src.infrastructure.whatsapp.whatsmia_client
+Module:    apps.api.src.infrastructure.whatsapp.whatsmia_client
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import hmac
 import hashlib
 import httpx
@@ -134,6 +130,32 @@ class WhatsmiaClient:
             )
             response.raise_for_status()
             return response.json()
+
+    async def download_media(self, message_id: str) -> bytes | None:
+        """Download media bytes from a WhatsApp message via Whatsmiau.
+
+        Args:
+            message_id: The WhatsApp message ID (from the webhook key.id field).
+
+        Returns:
+            Raw media bytes, or ``None`` if download fails.
+        """
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(
+                    f"{self.base_url}/chat/getBase64FromMediaMessage/{self.instance_id}",
+                    headers=self.headers,
+                    params={"id": message_id, "convertToMp4": "false"},
+                )
+                response.raise_for_status()
+                data = response.json()
+                b64 = data.get("base64") or data.get("data") or ""
+                if b64:
+                    import base64
+                    return base64.b64decode(b64)
+        except Exception as exc:
+            print(f"[Whatsmiau] Failed to download media for {message_id}: {exc}")
+        return None
 
     def verify_webhook_signature(self, payload: bytes, signature: str) -> bool:
         """Verify the HMAC-SHA256 signature of an inbound Whatsmiau webhook request.

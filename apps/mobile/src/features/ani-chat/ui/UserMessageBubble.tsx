@@ -1,12 +1,16 @@
+/**
+ * @fileoverview Implementation of UserMessageBubble.
+ *
+ * @module features/ani-chat/ui/UserMessageBubblex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, Text } from 'react-native';
 
 import type { ConversationMessage } from '@anicca/types';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UserMessageBubble — Feature UI
-// Displays a message from the user (right-aligned)
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface UserMessageBubbleProps {
   message: ConversationMessage;

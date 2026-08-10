@@ -1,12 +1,11 @@
 """
-Main LangGraph definition for the Patient profile orchestration.
+Implementation of patient_graph.
 
-Module:    src.infrastructure.agents.graph.patient_graph
+Module:    apps.api.src.infrastructure.agents.graph.patient_graph
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Any
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import END, StateGraph
@@ -15,6 +14,8 @@ from src.infrastructure.agents.state import AniState
 from src.infrastructure.agents.nodes.supervisor_node import supervisor_node
 from src.infrastructure.agents.nodes.ctcae_classifier_node import ctcae_classifier_node
 from src.infrastructure.agents.nodes.documents_ocr_node import documents_ocr_node
+from src.infrastructure.agents.nodes.routine_sync_node import routine_sync_node
+from src.infrastructure.agents.nodes.journaling_sync_node import journaling_sync_node
 from src.infrastructure.agents.nodes.synthesizer_node import synthesizer_node
 from src.infrastructure.agents.nodes.catalog_agent import catalog_agent_node
 
@@ -27,6 +28,10 @@ def _route_by_supervisor(state: AniState) -> str:
         return "ctcae_classifier"
     elif intent == "ROUTE_DOCUMENT":
         return "documents_ocr"
+    elif intent == "ROUTE_ROUTINE":
+        return "routine_sync"
+    elif intent == "ROUTE_JOURNALING":
+        return "journaling_sync"
 
     return "synthesizer"
 
@@ -46,6 +51,8 @@ def build_patient_graph() -> Any:
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("ctcae_classifier", ctcae_classifier_node)
     graph.add_node("documents_ocr", documents_ocr_node)
+    graph.add_node("routine_sync", routine_sync_node)
+    graph.add_node("journaling_sync", journaling_sync_node)
     graph.add_node("synthesizer", synthesizer_node)
     graph.add_node("catalog", catalog_agent_node)
 
@@ -57,16 +64,21 @@ def build_patient_graph() -> Any:
         {
             "ctcae_classifier": "ctcae_classifier",
             "documents_ocr": "documents_ocr",
+            "routine_sync": "routine_sync",
+            "journaling_sync": "journaling_sync",
             "synthesizer": "synthesizer",
         },
     )
 
     graph.add_edge("ctcae_classifier", "synthesizer")
     graph.add_edge("documents_ocr", "synthesizer")
+    graph.add_edge("routine_sync", "synthesizer")
+    graph.add_edge("journaling_sync", "synthesizer")
     graph.add_edge("synthesizer", "catalog")
     graph.add_edge("catalog", END)
 
     return graph.compile()
+
 
 
 patient_graph = build_patient_graph()
@@ -115,6 +127,9 @@ async def run_patient_agent(
         "media_url": media_url,
         "user_id": user_id,
         "catalog_event": None,
+        "routine_data": None,
+        "journaling_data": None,
+        "specialist_context": None,
     }
 
     result = await patient_graph.ainvoke(initial_state)

@@ -1,12 +1,11 @@
 """
-Use cases: SendMessageUseCase and StartSessionUseCase.
+Implementation of send_message.
 
-Module:    src.application.use_cases.messages
+Module:    apps.api.src.application.use_cases.messages.send_message
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import uuid

@@ -7,8 +7,10 @@
  * @license MIT
  */
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeColors, lightColors, darkColors } from '../theme/colors';
 
 /** Supported theme identifiers. */
 export type Theme = 'light' | 'dark';
@@ -23,6 +25,8 @@ export interface ThemeContextValue {
   isDark: boolean;
   /** Toggles between `'dark'` and `'light'` themes. */
   toggleTheme: () => void;
+  /** Active theme color tokens */
+  colors: ThemeColors;
 }
 
 /** @internal */
@@ -50,18 +54,29 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemTheme = useColorScheme();
   const [overrideTheme, setOverrideTheme] = useState<Theme | null>(null);
 
+  useEffect(() => {
+    AsyncStorage.getItem('@theme_preference').then((savedTheme) => {
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        setOverrideTheme(savedTheme);
+      }
+    });
+  }, []);
+
   const theme: Theme = overrideTheme ?? (systemTheme === 'dark' ? 'dark' : 'light');
   const isDark = theme === 'dark';
 
   const toggleTheme = () => {
     setOverrideTheme((prev) => {
-      if (prev === null) return isDark ? 'light' : 'dark';
-      return prev === 'dark' ? 'light' : 'dark';
+      const newTheme = (prev === null ? isDark : prev === 'dark') ? 'light' : 'dark';
+      AsyncStorage.setItem('@theme_preference', newTheme);
+      return newTheme;
     });
   };
 
+  const colors = isDark ? darkColors : lightColors;
+
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, colors }}>
       {children}
     </ThemeContext.Provider>
   );

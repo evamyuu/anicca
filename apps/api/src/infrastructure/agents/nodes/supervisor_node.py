@@ -1,12 +1,11 @@
 """
-Supervisor Agent for Ani Orchestrator.
+Implementation of supervisor_node.
 
-Module:    src.infrastructure.agents.nodes.supervisor_node
+Module:    apps.api.src.infrastructure.agents.nodes.supervisor_node
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -23,7 +22,13 @@ _llm = ChatGoogleGenerativeAI(
 
 class RouteDecision(BaseModel):
     """Structured output for the Supervisor Router."""
-    route: Literal["ROUTE_SYMPTOM", "ROUTE_DOCUMENT", "ROUTE_GENERAL"] = Field(
+    route: Literal[
+        "ROUTE_SYMPTOM",
+        "ROUTE_DOCUMENT",
+        "ROUTE_ROUTINE",
+        "ROUTE_JOURNALING",
+        "ROUTE_GENERAL",
+    ] = Field(
         description="The target node to handle the user's request."
     )
 
@@ -37,7 +42,6 @@ async def supervisor_node(state: AniState) -> dict:
     Returns:
         A partial state update containing the decided `intent` route.
     """
-    # If a media URL is provided, forcefully route to document processor
     if state.get("media_url"):
         agents = list(state.get("agents_invoked", []))
         agents.append("supervisor (forced)")
@@ -48,9 +52,14 @@ async def supervisor_node(state: AniState) -> dict:
     system_msg = SystemMessage(content=(
         "You are the Supervisor Router for an oncology patient AI assistant. "
         "Analyze the user's message and select the most appropriate execution route:\n"
-        "- ROUTE_SYMPTOM: If the user is reporting physical pain, side effects, or symptoms.\n"
-        "- ROUTE_DOCUMENT: If the user is asking about exams, reports, or sending documents.\n"
-        "- ROUTE_GENERAL: For general chats, emotional support, rights, or any other query."
+        "- ROUTE_SYMPTOM: User is reporting physical pain, side effects, body discomfort, or symptoms.\n"
+        "- ROUTE_DOCUMENT: User is asking about exams, reports, or sending documents/images.\n"
+        "- ROUTE_ROUTINE: User is reporting daily routine data — temperature measurement, "
+        "taking medication/pills, drinking water/hydration, sleep quality or hours.\n"
+        "- ROUTE_JOURNALING: User is expressing emotions, mood, feelings, anxiety, fear, "
+        "gratitude, sadness, hope — any emotional check-in or diary entry.\n"
+        "- ROUTE_GENERAL: General questions, rights, logistics, or anything that doesn't "
+        "fit the above categories precisely."
     ))
     user_msg = HumanMessage(content=str(last_message))
 

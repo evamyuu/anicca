@@ -8,48 +8,73 @@
  * @license MIT
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Mic, User } from 'lucide-react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { Mic, User, Send } from 'lucide-react-native';
 
 import { ChecklistCard } from '../../src/features/chat/ui/ChecklistCard';
-
-// Simulated DB Model representation for the UI state
-type MessagePayload = {
-  id: string;
-  role: 'user' | 'ani';
-  text: string;
-  cards?: any[];
-};
+import { messagesApi, Message } from '@/shared/api/messages';
 
 export default function ChatScreen() {
   const [input, setInput] = useState('');
-  
-  // Simulated initial conversation based on Figma 2
-  const [messages, setMessages] = useState<MessagePayload[]>([
-    {
-      id: 'msg_1',
-      role: 'user',
-      text: 'Tô esquecendo de tudo hoje. O que eu tenho que perguntar pro Dr. Silva amanhã mesmo?'
-    },
-    {
-      id: 'msg_2',
-      role: 'ani',
-      text: 'Entendo o cansaço. Não precisa forçar a memória. Separei as dúvidas dela neste checklist simples e objetivo.',
-      cards: [
-        {
-          type: 'checklist',
-          title: 'Checklist Médico',
-          items: [
-            { id: 'c1', text: 'Relatar queimação no estômago.', completed: true },
-            { id: 'c2', text: 'Discutir laudo de Leucócitos (3.400).', completed: false }
-          ]
-        }
-      ]
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
-  const renderMessage = (msg: MessagePayload) => {
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const res = await messagesApi.startSession();
+        setSessionId(res.session_id);
+      } catch (error) {
+        console.error('Failed to start session', error);
+      }
+    };
+    initSession();
+  }, []);
+
+  const handleSend = async () => {
+    if (!input.trim() || !sessionId || isLoading) return;
+
+    const userText = input.trim();
+    setInput('');
+    setIsLoading(true);
+
+    const tempUserMsg: Message = {
+      id: `temp_${Date.now()}`,
+      session_id: sessionId,
+      role: 'user',
+      text: userText,
+      cards: [],
+      channel: 'app',
+      agents_invoked: [],
+      created_at: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, tempUserMsg]);
+
+    try {
+      const response = await messagesApi.sendMessage({
+        session_id: sessionId,
+        text: userText,
+      });
+
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.id !== tempUserMsg.id);
+        return [...filtered, response.user_message, response.ani_response];
+      });
+      
+    } catch (error) {
+      console.error('Failed to send message', error);
+      setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id));
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  };
+
+  const renderMessage = (msg: Message) => {
     const isUser = msg.role === 'user';
     
     return (
@@ -92,8 +117,24 @@ export default function ChatScreen() {
         </View>
 
         {/* Chat Stream */}
-        <ScrollView contentContainerStyle={styles.chatScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.chatScroll} 
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.length === 0 && !isLoading && (
+            <Text style={styles.emptyText}>Mande uma mensagem para iniciar o chat!</Text>
+          )}
           {messages.map(renderMessage)}
+          
+          {isLoading && (
+            <View style={[styles.messageWrapper, styles.messageWrapperLeft]}>
+              <View style={[styles.bubble, styles.aniBubble, { padding: 12 }]}>
+                <ActivityIndicator size="small" color="#f28b50" />
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Input Area */}
@@ -106,10 +147,17 @@ export default function ChatScreen() {
               value={input}
               onChangeText={setInput}
               multiline
+              onSubmitEditing={handleSend}
             />
-            <TouchableOpacity style={styles.micButton}>
-              <Mic size={20} color="#f28b50" />
-            </TouchableOpacity>
+            {input.trim().length > 0 ? (
+               <TouchableOpacity style={styles.micButton} onPress={handleSend} disabled={isLoading}>
+                 <Send size={20} color="#f28b50" />
+               </TouchableOpacity>
+            ) : (
+               <TouchableOpacity style={styles.micButton} disabled={isLoading}>
+                 <Mic size={20} color="#f28b50" />
+               </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -165,6 +213,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 40,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#a3988e',
+    marginTop: 20,
   },
   messageWrapper: {
     width: '100%',

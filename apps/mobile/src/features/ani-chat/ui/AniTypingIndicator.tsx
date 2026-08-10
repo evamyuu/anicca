@@ -1,10 +1,14 @@
+/**
+ * @fileoverview Implementation of AniTypingIndicator.
+ *
+ * @module features/ani-chat/ui/AniTypingIndicatorx
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, Text } from 'react-native';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AniTypingIndicator — Feature UI
-// Shows "Ani está digitando..." with animated dots
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function AniTypingIndicator() {
   return (

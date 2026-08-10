@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Implementation of RegisterPage.
+ *
+ * @module pages/auth/RegisterPagex
+ * @author Evelin Brandão Cordeiro
+ * @copyright 2026 Anicca. All rights reserved.
+ * @license MIT
+ */
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

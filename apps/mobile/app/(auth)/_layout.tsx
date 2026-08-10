@@ -24,7 +24,7 @@ export default function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   if (isAuthenticated) {
-    return <Redirect href="/(tabs)/hub" />;
+    return <Redirect href="/(tabs)/" />;
   }
 
   return (

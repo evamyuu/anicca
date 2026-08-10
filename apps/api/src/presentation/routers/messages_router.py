@@ -1,12 +1,11 @@
 """
-Messages router: Ani conversation session and message endpoints.
+Implementation of messages_router.
 
-Module:    src.presentation.routers.messages_router
+Module:    apps.api.src.presentation.routers.messages_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status

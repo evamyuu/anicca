@@ -1,12 +1,11 @@
 """
-Router registry: exports all concrete router instances for registration in main.py.
+Implementation of __init__.
 
-Module:    src.presentation.routers
+Module:    apps.api.src.presentation.routers.__init__
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from fastapi import APIRouter
 
 from src.presentation.routers.auth_router import router as auth_router

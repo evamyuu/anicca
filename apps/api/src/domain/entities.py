@@ -1,15 +1,11 @@
 """
-Domain entities as pure Python dataclasses, free of framework dependencies.
+Implementation of entities.
 
-These classes form the innermost layer of the Clean Architecture and MUST NOT
-import from FastAPI, SQLAlchemy, or any infrastructure module.
-
-Module:    src.domain.entities
+Module:    apps.api.src.domain.entities
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List
@@ -203,4 +199,3 @@ class Document:
     extracted_text: str
     summary: str
     created_at: datetime = field(default_factory=datetime.utcnow)
-

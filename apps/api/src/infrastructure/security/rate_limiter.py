@@ -1,14 +1,11 @@
 """
-Rate limiting middleware using Redis.
+Implementation of rate_limiter.
 
-Prevents brute-force attacks and limits API abuse per IP or user ID.
-
-Module:    src.infrastructure.security.rate_limiter
+Module:    apps.api.src.infrastructure.security.rate_limiter
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import time
 from typing import Callable, Awaitable
 
@@ -34,7 +31,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         """Enforce rate limits per IP address."""
-        # Skip rate limiting in test or local if needed
         if settings.ENVIRONMENT == "development":
             return await call_next(request)
 

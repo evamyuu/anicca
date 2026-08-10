@@ -20,21 +20,26 @@ export interface InputProps extends TextInputProps {
   error?: string;
   /** If true, renders a toggleable eye icon for passwords */
   isPassword?: boolean;
+  /** Optional style for the input container itself (border, height, etc) */
+  containerStyle?: any;
+  /** Optional style for the outermost wrapper (margins, etc) */
+  wrapperStyle?: any;
 }
 
-export function Input({ label, leftIcon, error, isPassword, ...props }: InputProps) {
+export function Input({ label, leftIcon, error, isPassword, containerStyle, wrapperStyle, ...props }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, wrapperStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
       
       <View 
         style={[
           styles.inputContainer,
           isFocused && styles.inputFocused,
-          error && styles.inputError
+          error && styles.inputError,
+          containerStyle
         ]}
         accessible={true}
         accessibilityRole="none"
@@ -98,12 +103,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffcf9',
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: '#E83752',
   },
   input: {
     flex: 1,
     height: '100%',
-    fontSize: 15,
+    fontSize: 16,
     color: '#3d2b1f',
   },
   leftIconContainer: {
@@ -116,7 +121,8 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 6,
     fontSize: 12,
-    color: '#ef4444',
+    color: '#E83752',
+    fontFamily: 'Nunito_600SemiBold',
     paddingLeft: 4,
   },
 });

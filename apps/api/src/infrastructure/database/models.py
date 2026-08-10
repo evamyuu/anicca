@@ -1,15 +1,11 @@
 """
-SQLAlchemy ORM models for the Anicca database schema.
+Implementation of models.
 
-Each model maps to a PostgreSQL table and provides the persistence
-representation of the corresponding domain entity.
-
-Module:    src.infrastructure.database.models
+Module:    apps.api.src.infrastructure.database.models
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import uuid
@@ -280,6 +276,7 @@ class UserModel(Base):
     patient_id: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False), ForeignKey("patients.id", ondelete="SET NULL"), nullable=True
     )
+    avatar_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     refresh_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     expo_push_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

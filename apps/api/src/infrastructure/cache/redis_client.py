@@ -1,12 +1,11 @@
 """
-Redis-backed session and OTP cache implementation.
+Implementation of redis_client.
 
-Module:    src.infrastructure.cache.redis_client
+Module:    apps.api.src.infrastructure.cache.redis_client
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 import json

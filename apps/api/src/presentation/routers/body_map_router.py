@@ -1,12 +1,11 @@
 """
-Body Map router — records and retrieves symptom entries on the SVG body map.
+Implementation of body_map_router.
 
-Module:    src.presentation.routers.body_map_router
+Module:    apps.api.src.presentation.routers.body_map_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -107,7 +106,6 @@ async def create_body_map_entry(
                 "ctcae_grade": suggested_ctcae,
             },
         )
-        # Background trigger: if user is not in the app anymore, ping them on WhatsApp
         async def _trigger_whatsapp():
             trigger_uc = NotifyWhatsAppTriggerUseCase(db, redis)
             await trigger_uc.execute_body_map_trigger(

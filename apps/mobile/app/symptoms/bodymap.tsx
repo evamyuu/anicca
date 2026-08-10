@@ -117,11 +117,6 @@ export default function BodyMapScreen() {
           </View>
         </View>
 
-        {/* Bottom Actions (Floating) */}
-        <View style={styles.bottomNavContainer}>
-           <Text style={styles.hubLinkText}>Voltar para o Hub</Text>
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );

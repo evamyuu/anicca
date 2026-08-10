@@ -1,12 +1,11 @@
 """
-Pydantic request and response schemas for the Auth and Messages endpoints.
+Implementation of schemas.
 
-Module:    src.presentation.schemas
+Module:    apps.api.src.presentation.schemas
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from __future__ import annotations
 
 from typing import List, Optional
@@ -100,9 +99,21 @@ class RegisterRequestSchema(BaseModel):
     """Schema for traditional user registration."""
     email: str = Field(..., description="User's email address")
     password: str = Field(..., description="Desired password")
+    username: Optional[str] = Field(None, description="Username")
     phone: Optional[str] = Field(None, description="Optional WhatsApp phone number")
     role: str = Field(default="patient", description="User role: patient, caregiver, doctor")
     crm_number: Optional[str] = Field(None, description="Required if role is doctor")
+    date_of_birth: Optional[str] = Field(None, description="Date of birth in YYYY-MM-DD")
+    patient_link_code: Optional[str] = Field(None, description="Patient link code for caregivers")
+    
+    cancer_type: Optional[str] = Field(None, description="Type of cancer (for patients)")
+    journey_phase: Optional[str] = Field(None, description="Current phase (for patients)")
+    treatment_modality: Optional[str] = Field(None, description="Modality (for patients)")
+    
+    ani_personality: Optional[str] = Field(default="default", description="Selected Ani personality")
+    avatar_config: dict = Field(default_factory=dict, description="Avatar customizations")
+    
+    consents: dict = Field(default_factory=dict, description="Dictionary of granted permissions")
 
 
 

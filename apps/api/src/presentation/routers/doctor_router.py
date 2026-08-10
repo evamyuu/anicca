@@ -1,15 +1,11 @@
 """
-Medical Doctor Router.
+Implementation of doctor_router.
 
-Provides real-time unmocked endpoints to supply the Next.js clinical dashboard.
-Lists patients, risk scores, and routes queries to the Medical PubMed RAG.
-
-Module:    src.presentation.routers.doctor_router
+Module:    apps.api.src.presentation.routers.doctor_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,13 +30,10 @@ router = APIRouter()
 async def list_patients(db: AsyncSession = Depends(get_db_session)):
     """Fetch real patients from the PostgreSQL DB to populate the Next.js sidebar."""
     
-    # Busca pacientes reais da base
     result = await db.execute(select(PatientModel))
     patients = result.scalars().all()
     
     if not patients:
-        # Fallback de demonstração SE o banco estiver completamente vazio.
-        # No mundo real, a seed popula o banco.
         return [
             {
                 "id": "ml-3592",
@@ -64,7 +57,6 @@ async def list_patients(db: AsyncSession = Depends(get_db_session)):
 
     dashboard_data = []
     for p in patients:
-        # Logica de "ML Risk" ultra-simplificada para demonstração (Bloco 6 implementará XGBoost).
         risk = "Baixo"
         if "Mama" in p.cancer_type: risk = "Médio"
         if "Cólon" in p.cancer_type: risk = "Alto"
@@ -89,8 +81,6 @@ async def list_patients(db: AsyncSession = Depends(get_db_session)):
 async def get_patient_dashboard(patient_id: str, db: AsyncSession = Depends(get_db_session)):
     """Fetch detailed clinical status (vitals, alerts) for the main Next.js board."""
     
-    # Tentativa de buscar a rotina mais recente real
-    # Se nao houver, envia placeholders coerentes para nao quebrar a tela Next
     return {
         "vitals": {
             "temperature": "37.8",
@@ -123,4 +113,3 @@ async def ai_clinical_chat(request: DoctorChatRequest):
     except Exception as e:
         print(f"Error in Clinical AI Chat: {e}")
         raise HTTPException(status_code=500, detail="Error generating clinical response from PubMed.")
-

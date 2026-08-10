@@ -9,11 +9,17 @@
  */
 
 import '../global.css';
-
+import React, { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+LogBox.ignoreLogs([
+  '"shadow*" style props are deprecated',
+  'Animated: `useNativeDriver` is not supported'
+]);
 
 import { FontProvider, useFontLoading } from '@/shared/providers/FontProvider';
 import { QueryProvider } from '@/shared/providers/QueryProvider';
@@ -21,6 +27,8 @@ import { ThemeProvider } from '@/shared/providers/ThemeProvider';
 import { AuthProvider } from '@/shared/providers/AuthProvider';
 import { SplashPage } from '@/pages/splash/SplashPage';
 import { useProtectedRoute } from '@/shared/hooks/useProtectedRoute';
+import { useHubSync } from '@/shared/hooks/useHubSync';
+import { useAuthStore } from '@/shared/lib/zustand-persist';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,11 +43,21 @@ SplashScreen.preventAutoHideAsync();
  */
 function AppContent() {
   const isLoading = useFontLoading();
+  const userId = useAuthStore((s) => s.userId);
+  const [minSplashTimePassed, setMinSplashTimePassed] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinSplashTimePassed(true);
+    }, 2500); // Enforce a 2.5s minimum splash duration
+    return () => clearTimeout(timer);
+  }, []);
   
-  // Enforces navigation boundaries based on Zustand auth state
   useProtectedRoute();
 
-  if (isLoading) {
+  useHubSync({ userId });
+
+  if (isLoading || !minSplashTimePassed) {
     return <SplashPage />;
   }
 
@@ -75,7 +93,7 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <FontProvider onFontsLoaded={() => SplashScreen.hideAsync()}>
+      <FontProvider onFontsLoaded={() => setTimeout(() => SplashScreen.hideAsync(), 2000)}>
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>

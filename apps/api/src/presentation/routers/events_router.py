@@ -1,17 +1,11 @@
 """
-Server-Sent Events (SSE) endpoint for real-time app updates.
+Implementation of events_router.
 
-When a WhatsApp interaction triggers an event (document uploaded, body map
-recorded, routine synced), the Catalog Agent publishes to Redis pub/sub channel
-``events:{user_id}``. This endpoint subscribes and streams those events to the
-React Native app in real time — no polling required.
-
-Module:    src.presentation.routers.events_router
+Module:    apps.api.src.presentation.routers.events_router
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 import asyncio
 import json
 from typing import AsyncGenerator

@@ -1,12 +1,11 @@
 """
-JWT Security utility.
+Implementation of jwt.
 
-Module:    src.infrastructure.security.jwt
+Module:    apps.api.src.infrastructure.security.jwt
 Author:    Evelin Brandão Cordeiro
 Copyright: 2026 Anicca. All rights reserved.
 License:   MIT
 """
-
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 

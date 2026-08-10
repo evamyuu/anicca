@@ -11,11 +11,28 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, User, Camera, ShieldCheck, FileBadge, Stethoscope, HeartHandshake, Scale } from 'lucide-react-native';
+import { ChevronLeft, User, Camera, ShieldCheck, FileBadge, Stethoscope, HeartHandshake, Scale, Settings } from 'lucide-react-native';
+
+import { useOnboardingStore } from '@/shared/lib/zustand-persist';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [isSUS, setIsSUS] = useState(true);
+  const { name, cpf, dateOfBirth, cancerType, profileType, treatmentModality } = useOnboardingStore();
+  
+  const [isSUS, setIsSUS] = useState(treatmentModality === 'sus');
+
+  const displayRole = profileType === 'caregiver' ? 'Cuidador(a)' : profileType === 'doctor' ? 'Médico(a)' : 'Paciente';
+  
+  let displayDob = 'Não informado';
+  if (dateOfBirth) {
+    const parts = dateOfBirth.split('-');
+    if (parts.length === 3) displayDob = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  let displayCpf = 'Não informado';
+  if (cpf && cpf.length === 14) {
+    displayCpf = `***.${cpf.slice(4, 7)}.${cpf.slice(8, 11)}-**`;
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -27,7 +44,9 @@ export default function ProfileScreen() {
             <ChevronLeft size={24} color="#ffffff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Meu Perfil</Text>
-          <View style={{width: 24}} />
+          <TouchableOpacity onPress={() => router.push('/profile/settings')} style={styles.backButton}>
+            <Settings size={24} color="#ffffff" />
+          </TouchableOpacity>
         </View>
 
         {/* Top Dark Area (Avatar) */}
@@ -38,8 +57,8 @@ export default function ProfileScreen() {
               <Camera size={16} color="#ffffff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Rosa Silva</Text>
-          <Text style={styles.userSub}>Paciente • Câncer de Mama</Text>
+          <Text style={styles.userName}>{name || 'Usuário'}</Text>
+          <Text style={styles.userSub}>{displayRole} {cancerType ? `• Câncer de ${cancerType.charAt(0).toUpperCase() + cancerType.slice(1)}` : ''}</Text>
         </View>
 
         {/* Content Area (Light) */}
@@ -56,12 +75,12 @@ export default function ProfileScreen() {
           <View style={styles.cardGroup}>
             <View style={styles.cardRow}>
               <Text style={styles.rowLabel}>CPF</Text>
-              <Text style={styles.rowValue}>***.456.789-**</Text>
+              <Text style={styles.rowValue}>{displayCpf}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.cardRow}>
               <Text style={styles.rowLabel}>Data de Nasc.</Text>
-              <Text style={styles.rowValue}>12/04/1975</Text>
+              <Text style={styles.rowValue}>{displayDob}</Text>
             </View>
           </View>
 

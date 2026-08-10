@@ -11,8 +11,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../lib/zustand-persist';
 
-// Expo's way of reading .env variables. 
-// Fallbacks to localhost for testing on emulators if EXPO_PUBLIC_API_URL is missing.
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /**
@@ -26,7 +24,6 @@ export const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT Token if available
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
@@ -38,12 +35,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle 401 Unauthorized globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Force logout if token is expired or invalid
       console.warn('API returned 401: Signing out user.');
       useAuthStore.getState().signOut();
     }
