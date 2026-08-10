@@ -63,13 +63,13 @@ class PatientModel(Base):
     name_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
     cpf_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     date_of_birth: Mapped[str] = mapped_column(String(10), nullable=False)
-    cancer_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    cancer_stage: Mapped[str] = mapped_column(String(20), nullable=False)
-    treatment_modality: Mapped[str] = mapped_column(String(20), nullable=False)
+    cancer_type: Mapped[str] = mapped_column(String(200), nullable=False)
+    cancer_stage: Mapped[str] = mapped_column(String(100), nullable=False)
+    treatment_modality: Mapped[str] = mapped_column(String(100), nullable=False)
     treatment_types: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
-    journey_phase: Mapped[str] = mapped_column(String(50), nullable=False)
+    journey_phase: Mapped[str] = mapped_column(String(100), nullable=False)
     diagnosis_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    ani_personality: Mapped[str] = mapped_column(String(20), nullable=False, default="default")
+    ani_personality: Mapped[str] = mapped_column(String(50), nullable=False, default="default")
     whatsapp_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
