@@ -131,21 +131,24 @@ class WhatsmiaClient:
             response.raise_for_status()
             return response.json()
 
-    async def download_media(self, message_id: str) -> bytes | None:
+    async def download_media(self, raw_message: dict) -> bytes | None:
         """Download media bytes from a WhatsApp message via Whatsmiau.
 
         Args:
-            message_id: The WhatsApp message ID (from the webhook key.id field).
+            raw_message: The raw WhatsApp message object dictionary.
 
         Returns:
             Raw media bytes, or ``None`` if download fails.
         """
+        if not raw_message:
+            return None
+            
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.get(
+                response = await client.post(
                     f"{self.base_url}/chat/getBase64FromMediaMessage/{self.instance_id}",
                     headers=self.headers,
-                    params={"id": message_id, "convertToMp4": "false"},
+                    json={"message": raw_message}
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -154,7 +157,7 @@ class WhatsmiaClient:
                     import base64
                     return base64.b64decode(b64)
         except Exception as exc:
-            print(f"[Whatsmiau] Failed to download media for {message_id}: {exc}")
+            print(f"[Whatsmiau] Failed to download media: {exc}")
         return None
 
     def verify_webhook_signature(self, payload: bytes, signature: str) -> bool:

@@ -102,7 +102,15 @@ async def register(
                 password=body.password, 
                 phone=body.phone,
                 role=body.role,
-                crm_number=body.crm_number
+                crm_number=body.crm_number,
+                date_of_birth=body.date_of_birth,
+                patient_link_code=body.patient_link_code,
+                cancer_type=body.cancer_type,
+                journey_phase=body.journey_phase,
+                treatment_modality=body.treatment_modality,
+                ani_personality=body.ani_personality,
+                avatar_config=body.avatar_config,
+                consents=body.consents
             )
         )
     except DomainError as exc:

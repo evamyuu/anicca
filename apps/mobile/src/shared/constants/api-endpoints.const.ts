@@ -180,6 +180,6 @@ export const API_ENDPOINTS = {
      * @param userId - The Anicca user UUID.
      * @returns The SSE stream URL for the given user.
      */
-    stream: (userId: string) => `/api/v1/events/stream/${userId}`,
+    stream: (userId: string) => `/events/stream/${userId}`,
   },
 } as const;

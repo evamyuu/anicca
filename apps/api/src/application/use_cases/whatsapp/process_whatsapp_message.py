@@ -42,6 +42,7 @@ class WhatsAppInboundMessage:
     text: str
     whatsapp_message_id: str
     media_url: Optional[str] = None
+    raw_message: Optional[dict] = None
 
 
 _WELCOME_MESSAGE = (
@@ -208,6 +209,25 @@ class ProcessWhatsAppMessageUseCase:
         )
 
         if catalog_event and self._redis:
+            if catalog_event["type"] == "body_map_updated" and "body_map_payload" in catalog_event:
+                from src.infrastructure.database.models import BodyMapEntryModel
+                payload = catalog_event["body_map_payload"]
+                intensity = payload.get("intensity", 0)
+                suggested_ctcae = 3 if intensity >= 7 else (2 if intensity >= 4 else 1)
+                
+                entry = BodyMapEntryModel(
+                    id=str(uuid.uuid4()),
+                    patient_id=patient.id,
+                    body_region=payload.get("body_region", "other"),
+                    body_view=payload.get("body_view", "front"),
+                    intensity=intensity,
+                    symptom_types=payload.get("symptom_types", []),
+                    description=catalog_event.get("summary", ""),
+                    suggested_ctcae_grade=suggested_ctcae,
+                )
+                self._patient_repo._session.add(entry)
+                await self._patient_repo._session.commit()
+
             await publish_catalog_event(
                 redis_client=self._redis,
                 user_id=patient.id,

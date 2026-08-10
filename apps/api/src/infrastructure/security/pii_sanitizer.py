@@ -41,7 +41,7 @@ class PIISanitizerMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """Sanitize URLs before they are logged or processed further."""
         safe_path = _sanitize_string(request.url.path)
-        safe_query = _sanitize_string(request.url.query.decode("utf-8")) if request.url.query else ""
+        safe_query = _sanitize_string(request.url.query) if request.url.query else ""
         
         request.state.safe_url = f"{safe_path}?{safe_query}" if safe_query else safe_path
 

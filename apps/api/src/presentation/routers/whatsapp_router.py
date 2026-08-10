@@ -83,6 +83,7 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
         message_id = event.get("key", {}).get("id") or event.get("messageId", "")
         media_url = (
             event.get("mediaUrl") or
+            message_data.get("mediaUrl") or
             event.get("body", {}).get("url") or 
             message_data.get("imageMessage", {}).get("url") or
             message_data.get("documentMessage", {}).get("url")
@@ -102,6 +103,7 @@ def _parse_whatsmiau_payload(data: dict) -> Optional[WhatsAppInboundMessage]:
             text=text,
             whatsapp_message_id=message_id,
             media_url=media_url,
+            raw_message=message_data,
         )
         
     return None
@@ -138,34 +140,36 @@ async def _process_in_background(inbound: WhatsAppInboundMessage):
         try:
             print(f"[BACKGROUND] Processing inbound from {inbound.phone}...")
             
-            if inbound.media_url or inbound.whatsapp_message_id:
-                if inbound.whatsapp_message_id and not (inbound.media_url or "").startswith("/app/uploads/"):
-                    print(f"[BACKGROUND] Attempting media download for message {inbound.whatsapp_message_id}...")
-                    media_bytes = await whatsmia_client.download_media(inbound.whatsapp_message_id)
-                    if media_bytes:
-                        import os, uuid as _uuid
-                        os.makedirs("/app/uploads", exist_ok=True)
-                        local_path = f"/app/uploads/{inbound.whatsapp_message_id}"
-                        with open(local_path, "wb") as f:
-                            f.write(media_bytes)
-                        print(f"[BACKGROUND] Media saved to {local_path} ({len(media_bytes)} bytes)")
-                        inbound = WhatsAppInboundMessage(
-                            phone=inbound.phone,
-                            text=inbound.text,
-                            whatsapp_message_id=inbound.whatsapp_message_id,
-                            media_url=local_path
-                        )
-                    else:
-                        print("[BACKGROUND] Media download returned no bytes, continuing without media.")
-                elif inbound.media_url and not inbound.media_url.startswith("/app/uploads/"):
-                    local_path = await _download_media(inbound.media_url, inbound.whatsapp_message_id)
-                    if local_path:
-                        inbound = WhatsAppInboundMessage(
-                            phone=inbound.phone,
-                            text=inbound.text,
-                            whatsapp_message_id=inbound.whatsapp_message_id,
-                            media_url=local_path
-                        )
+            if inbound.media_url and inbound.media_url.startswith("http"):
+                print(f"[BACKGROUND] Downloading direct mediaUrl: {inbound.media_url}")
+                local_path = await _download_media(inbound.media_url, inbound.whatsapp_message_id)
+                if local_path:
+                    inbound = WhatsAppInboundMessage(
+                        phone=inbound.phone,
+                        text=inbound.text,
+                        whatsapp_message_id=inbound.whatsapp_message_id,
+                        media_url=local_path,
+                        raw_message=inbound.raw_message
+                    )
+            elif inbound.whatsapp_message_id and not (inbound.media_url or "").startswith("/app/uploads/"):
+                print(f"[BACKGROUND] Attempting media download via Whatsmiau API for message {inbound.whatsapp_message_id}...")
+                media_bytes = await whatsmia_client.download_media(inbound.raw_message)
+                if media_bytes:
+                    import os, uuid as _uuid
+                    os.makedirs("/app/uploads", exist_ok=True)
+                    local_path = f"/app/uploads/{inbound.whatsapp_message_id}"
+                    with open(local_path, "wb") as f:
+                        f.write(media_bytes)
+                    print(f"[BACKGROUND] Media saved to {local_path} ({len(media_bytes)} bytes)")
+                    inbound = WhatsAppInboundMessage(
+                        phone=inbound.phone,
+                        text=inbound.text,
+                        whatsapp_message_id=inbound.whatsapp_message_id,
+                        media_url=local_path,
+                        raw_message=inbound.raw_message
+                    )
+                else:
+                    print("[BACKGROUND] Media download returned no bytes, continuing without media.")
                     
             await ProcessWhatsAppMessageUseCase(
                 patient_repo=patient_repo,
@@ -226,6 +230,13 @@ async def receive_whatsapp_webhook(
     if inbound is None:
         print("Ignored: non_text_or_unsupported_type")
         return {"status": "ignored", "reason": "non_text_or_unsupported_type"}
+
+    from src.config import settings
+    if settings.ENVIRONMENT == "development":
+        # Allow testing ONLY with the specific developer phone number
+        if inbound.phone != "+5511980991729":
+            print(f"Ignored: WhatsApp processing disabled in dev for number {inbound.phone}")
+            return {"status": "ignored", "reason": "development_mode"}
 
     background_tasks.add_task(_process_in_background, inbound)
 

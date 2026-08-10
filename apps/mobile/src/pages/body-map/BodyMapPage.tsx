@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  Modal, Pressable, TextInput, Alert, ActivityIndicator, Image
+  Modal, Pressable, TextInput, Alert, ActivityIndicator, Image, RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, G, Rect } from 'react-native-svg';
@@ -329,11 +329,19 @@ export function BodyMapPage() {
   const userId = useAuthStore(s => s.userId);
   const queryClient = useQueryClient();
 
-  const { data: history, isLoading } = useQuery({
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { data: history, isLoading, refetch } = useQuery({
     queryKey: ['body-map', userId],
     queryFn: () => getBodyMapHistory(userId!),
     enabled: !!userId,
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   const saveMutation = useMutation({
     mutationFn: (record: SymptomRecord) => 
@@ -381,7 +389,13 @@ export function BodyMapPage() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fbf9f6' }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 40 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[BRAND.PRIMARY.DEFAULT]} />
+        }
+      >
         
         {/* Header matching Figma */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
