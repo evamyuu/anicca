@@ -81,3 +81,11 @@ class RegisterInput:
     phone: Optional[str] = None
     role: str = "patient"
     crm_number: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    patient_link_code: Optional[str] = None
+    cancer_type: Optional[str] = None
+    journey_phase: Optional[str] = None
+    treatment_modality: Optional[str] = None
+    ani_personality: Optional[str] = "default"
+    avatar_config: Optional[dict] = None
+    consents: Optional[dict] = None

@@ -41,6 +41,14 @@ class RegisterUseCase:
         if result.scalars().first():
             raise DomainError("Este e-mail já está em uso.")
 
+        if params.phone:
+            phone_check = await self._db.execute(
+                select(PatientModel).where(PatientModel.whatsapp_phone == params.phone)
+            )
+            if phone_check.scalars().first():
+                raise DomainError("Este número de telefone já está em uso.")
+
+
         hashed_pw = pwd_context.hash(params.password)
 
         patient_id = None
