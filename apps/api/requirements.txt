@@ -16,11 +16,11 @@ redis==5.1.1
 # ── AWS ───────────────────────────────────────────────────────────────────────
 boto3==1.35.0
 
-# ── AI / LLM ─────────────────────────────────────────────────────────────────
-langchain
-langchain-google-genai
-langgraph
-langchain-community
+# 🤖 AI / LLM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+langchain==0.3.30
+langchain-google-genai==2.1.12
+langgraph==1.0.1
+langchain-community==0.3.27
 pgvector>=0.2.1
 
 # Auth
