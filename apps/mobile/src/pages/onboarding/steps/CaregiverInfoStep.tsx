@@ -14,6 +14,7 @@ import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { OptionCard } from '@/shared/ui/Onboarding/OptionCard';
 import { OnboardingInput } from '@/shared/ui/Onboarding/OnboardingInput';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 const INVOLVEMENT_OPTIONS = [
   { title: 'Moro junto', desc: 'Acompanho tudo de perto no dia a dia' },
@@ -66,10 +67,10 @@ export function CaregiverInfoStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,

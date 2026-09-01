@@ -10,6 +10,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 
 import type { ConversationMessage } from '@anicca/types';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 
 interface UserMessageBubbleProps {
@@ -21,8 +22,8 @@ export function UserMessageBubble({ message }: UserMessageBubbleProps) {
     <View className="flex-row justify-end px-4 mb-4" accessibilityRole="text">
       <View className="max-w-[80%]">
         <View
-          className="rounded-2xl rounded-tr-sm px-4 py-3"
-          style={{ backgroundColor: '#7e22ce' }} // primary-700
+          className="rounded-3xl rounded-tr-sm px-5 py-3"
+          style={{ backgroundColor: BRAND.PRIMARY[800] }}
         >
           <Text
             className="text-white text-base leading-6"
@@ -33,8 +34,8 @@ export function UserMessageBubble({ message }: UserMessageBubbleProps) {
           </Text>
         </View>
         <Text
-          className="text-neutral-500 text-xs mt-1 text-right mr-1"
-          style={{ fontFamily: 'Nunito_400Regular' }}
+          className="text-xs mt-1 text-right mr-1"
+          style={{ fontFamily: 'Nunito_400Regular', color: BRAND.PRIMARY[400] }}
         >
           {new Date(message.createdAt).toLocaleTimeString('pt-BR', {
             hour: '2-digit',

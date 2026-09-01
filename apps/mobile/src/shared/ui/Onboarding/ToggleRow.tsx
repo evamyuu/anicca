@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface ToggleRowProps {
   icon: React.ReactNode;
@@ -38,7 +39,7 @@ export function ToggleRow({
 
   const switchBackgroundColor = switchAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#E8DDD8', '#FF9A5C'],
+    outputRange: [BRAND.PRIMARY[200], BRAND.SECONDARY.DEFAULT],
   });
 
   const translateX = switchAnim.interpolate({
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 16,
     padding: 14,
     marginBottom: 11,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#F0E9E5',
+    backgroundColor: BRAND.BG.LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -92,12 +93,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   description: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Nunito_400Regular',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     marginTop: 3,
     lineHeight: 16,
   },
@@ -115,8 +116,8 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.18,
     shadowRadius: 3,

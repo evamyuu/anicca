@@ -129,7 +129,8 @@ class SendMessageUseCase:
             user_message=input_dto.text,
             session_history=history_dicts,
             patient_context=context,
-            personality=context.get("ani_personality", "default"),
+            personality=input_dto.personality or context.get("ani_personality", "default"),
+            user_id=input_dto.patient_id,
         )
 
         ani_msg = ConversationMessage(

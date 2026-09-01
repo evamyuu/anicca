@@ -181,3 +181,4 @@ class WhatsmiaClient:
 
 whatsmia_client = WhatsmiaClient()
 """Module-level singleton instance of :class:`WhatsmiaClient`."""
+

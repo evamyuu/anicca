@@ -46,3 +46,4 @@ class AniState(TypedDict):
     routine_data: Optional[dict]
     journaling_data: Optional[dict]
     specialist_context: Optional[str]
+    memory_updates: Optional[list[dict]]

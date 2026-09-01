@@ -9,11 +9,14 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch, Modal, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, User, Camera, ShieldCheck, FileBadge, Stethoscope, HeartHandshake, Scale, Settings } from 'lucide-react-native';
+import { ChevronLeft, User, Camera, ShieldCheck, FileBadge, Stethoscope, HeartHandshake, Scale, Settings, X } from 'lucide-react-native';
 
-import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { useOnboardingStore, useAuthStore } from '@/shared/lib/zustand-persist';
+import { httpClient } from '@/shared/api/http-client';
+import { GradientButton } from '@/shared/ui/GradientButton';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -34,6 +37,10 @@ export default function ProfileScreen() {
     displayCpf = `***.${cpf.slice(4, 7)}.${cpf.slice(8, 11)}-**`;
   }
 
+  const { userId } = useAuthStore();
+  const [linkedDoctor, setLinkedDoctor] = useState(true); // Default visual state, could be dynamic later
+  const [linkedCaregiver, setLinkedCaregiver] = useState(true);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -41,20 +48,20 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={24} color="#ffffff" />
+            <ChevronLeft size={24} color={BRAND.SURFACE.CARD} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Meu Perfil</Text>
           <TouchableOpacity onPress={() => router.push('/profile/settings')} style={styles.backButton}>
-            <Settings size={24} color="#ffffff" />
+            <Settings size={24} color={BRAND.SURFACE.CARD} />
           </TouchableOpacity>
         </View>
 
         {/* Top Dark Area (Avatar) */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            <User size={40} color="#a3988e" />
+            <User size={40} color={BRAND.PRIMARY[400]} />
             <TouchableOpacity style={styles.avatarEditBtn} activeOpacity={0.8}>
-              <Camera size={16} color="#ffffff" />
+              <Camera size={16} color={BRAND.SURFACE.CARD} />
             </TouchableOpacity>
           </View>
           <Text style={styles.userName}>{name || 'Usuário'}</Text>
@@ -66,7 +73,7 @@ export default function ProfileScreen() {
           
           {/* Security Banner */}
           <View style={styles.securityBanner}>
-            <ShieldCheck size={20} color="#a3e635" />
+            <ShieldCheck size={20} color={BRAND.PRIMARY[400]} />
             <Text style={styles.securityText}>Seus dados estão protegidos por criptografia de ponta a ponta (LGPD).</Text>
           </View>
 
@@ -87,12 +94,16 @@ export default function ProfileScreen() {
           {/* Section: Connections (Caregiver / Doctor) */}
           <Text style={styles.sectionTitle}>Rede de Apoio</Text>
           <View style={styles.cardGroup}>
-            <TouchableOpacity style={styles.cardRowAction} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.cardRowAction} 
+              activeOpacity={0.7}
+              onPress={() => router.push('/profile/caregiver')}
+            >
               <View style={styles.rowLeft}>
-                <HeartHandshake size={20} color="#f28b50" style={{marginRight: 12}} />
+                <HeartHandshake size={20} color={BRAND.SECONDARY.DEFAULT} style={{marginRight: 12}} />
                 <View>
-                  <Text style={styles.connectionTitle}>Cuidador Vinculado</Text>
-                  <Text style={styles.connectionSub}>João Silva (Filho)</Text>
+                  <Text style={styles.connectionTitle}>Meus Cuidadores</Text>
+                  <Text style={styles.connectionSub}>Gerencie seus cuidadores</Text>
                 </View>
               </View>
               <Text style={styles.actionChevron}>{'>'}</Text>
@@ -100,17 +111,23 @@ export default function ProfileScreen() {
             
             <View style={styles.divider} />
 
-            <TouchableOpacity style={styles.cardRowAction} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.cardRowAction} 
+              activeOpacity={0.7}
+              onPress={() => router.push('/profile/doctor')}
+            >
               <View style={styles.rowLeft}>
-                <Stethoscope size={20} color="#8c8078" style={{marginRight: 12}} />
+                <Stethoscope size={20} color={BRAND.PRIMARY[400]} style={{marginRight: 12}} />
                 <View>
-                  <Text style={styles.connectionTitle}>Clínica / Médico</Text>
-                  <Text style={styles.connectionSub}>Vincular via QRCode</Text>
+                  <Text style={styles.connectionTitle}>Equipe Médica</Text>
+                  <Text style={styles.connectionSub}>Gerencie seus médicos</Text>
                 </View>
               </View>
               <Text style={styles.actionChevron}>{'>'}</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Removed internal Modal entirely */}
 
           {/* Section: Healthcare System & Rights */}
           <Text style={styles.sectionTitle}>Sistema de Saúde e Direitos</Text>
@@ -124,21 +141,21 @@ export default function ProfileScreen() {
               <Switch 
                 value={isSUS}
                 onValueChange={setIsSUS}
-                trackColor={{ false: '#e5e0dc', true: '#f28b50' }}
-                thumbColor="#ffffff"
+                trackColor={{ false: BRAND.SURFACE.BORDER, true: BRAND.SECONDARY.DEFAULT }}
+                thumbColor={BRAND.SURFACE.CARD}
               />
             </View>
           </View>
 
           <TouchableOpacity style={styles.rightsBanner} activeOpacity={0.9}>
             <View style={styles.rightsIconBox}>
-              <Scale size={24} color="#ffffff" />
+              <Scale size={24} color={BRAND.SURFACE.CARD} />
             </View>
             <View style={{flex: 1}}>
                <Text style={styles.rightsTitle}>Meus Direitos</Text>
                <Text style={styles.rightsSubtitle}>Isenção de IR, Saque FGTS, Auxílio-Doença.</Text>
             </View>
-            <Text style={{fontSize: 20, color: '#ffffff', fontWeight: 'bold'}}>{'>'}</Text>
+            <Text style={{fontSize: 20, color: BRAND.SURFACE.CARD, fontWeight: 'bold'}}>{'>'}</Text>
           </TouchableOpacity>
 
         </View>
@@ -150,7 +167,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#4a3931',
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
   },
   scrollContent: {
     flexGrow: 1,
@@ -169,7 +186,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: BRAND.SURFACE.CARD,
   },
   avatarSection: {
     alignItems: 'center',
@@ -179,7 +196,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#efe9e4',
+    backgroundColor: BRAND.PRIMARY[100],
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -189,28 +206,28 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#f28b50',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#4a3931',
+    borderColor: BRAND.PRIMARY.DEFAULT,
   },
   userName: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: BRAND.SURFACE.CARD,
     marginBottom: 4,
   },
   userSub: {
-    fontSize: 14,
-    color: '#bdae9f',
+    fontSize: 16,
+    color: BRAND.PRIMARY[300],
   },
   contentArea: {
     flex: 1,
-    backgroundColor: '#fbf9f6',
+    backgroundColor: BRAND.BG.LIGHT,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
@@ -220,32 +237,32 @@ const styles = StyleSheet.create({
   securityBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 16,
     padding: 16,
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: '#e5e0dc',
+    borderColor: BRAND.SURFACE.BORDER,
   },
   securityText: {
     flex: 1,
     marginLeft: 12,
-    fontSize: 12,
-    color: '#8c8078',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
     lineHeight: 16,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
     marginBottom: 12,
     marginLeft: 4,
   },
   cardGroup: {
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 24,
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 10,
@@ -276,53 +293,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rowLabel: {
-    fontSize: 15,
-    color: '#8c8078',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
     fontWeight: '500',
   },
   rowLabelDark: {
-    fontSize: 15,
-    color: '#3d2b1f',
+    fontSize: 16,
+    color: BRAND.PRIMARY.DEFAULT,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   rowHelper: {
-    fontSize: 12,
-    color: '#a3988e',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
   },
   rowValue: {
-    fontSize: 15,
-    color: '#3d2b1f',
+    fontSize: 16,
+    color: BRAND.PRIMARY.DEFAULT,
     fontWeight: 'bold',
   },
   connectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
     marginBottom: 2,
   },
   connectionSub: {
-    fontSize: 12,
-    color: '#8c8078',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
   },
   actionChevron: {
     fontSize: 20,
-    color: '#a3988e',
+    color: BRAND.PRIMARY[400],
     fontWeight: 'bold',
   },
   divider: {
     height: 1,
-    backgroundColor: '#efe9e4',
+    backgroundColor: BRAND.PRIMARY[100],
     marginHorizontal: 20,
   },
   rightsBanner: {
     flexDirection: 'row',
-    backgroundColor: '#f28b50',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
     borderRadius: 24,
     padding: 20,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#f28b50',
+    shadowColor: BRAND.SECONDARY.DEFAULT,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -340,12 +357,82 @@ const styles = StyleSheet.create({
   rightsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: BRAND.SURFACE.CARD,
     marginBottom: 4,
   },
   rightsSubtitle: {
-    fontSize: 12,
+    fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
     lineHeight: 16,
-  }
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: BRAND.SURFACE.CARD,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 20,
+    color: BRAND.PRIMARY.DEFAULT,
+    marginBottom: 8,
+  },
+  modalSub: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
+    borderRadius: 8,
+    padding: 12,
+    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY.DEFAULT,
+    marginBottom: 20,
+  },
+  inputError: {
+    borderColor: BRAND.ERROR.DEFAULT,
+  },
+  feedbackBox: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  feedbackSuccess: {
+    backgroundColor: BRAND.BG.LIGHT,
+    borderWidth: 1,
+    borderColor: BRAND.PRIMARY[300],
+  },
+  feedbackError: {
+    backgroundColor: BRAND.SECONDARY[100],
+    borderWidth: 1,
+    borderColor: BRAND.SECONDARY[300],
+  },
+  feedbackText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  feedbackTextSuccess: {
+    color: BRAND.SURFACE.BORDER_DARK,
+  },
+  feedbackTextError: {
+    color: BRAND.ERROR.DARK,
+  },
+  modalActions: {
+    marginTop: 10,
+  },
+  loadingWrapper: {
+    height: 41,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

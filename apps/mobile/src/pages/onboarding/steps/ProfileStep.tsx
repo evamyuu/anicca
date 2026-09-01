@@ -15,6 +15,7 @@ import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { OptionCard } from '@/shared/ui/Onboarding/OptionCard';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
 import type { UserProfileType } from '@anicca/types';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function ProfileStep() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export function ProfileStep() {
       <OptionCard
         title="Sou Paciente"
         description="Estou em tratamento ou acompanhamento"
-        icon={<User size={20} color={profileType === 'patient' ? '#FFFFFF' : '#9C8880'} />}
+        icon={<User size={20} color={profileType === 'patient' ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400]} />}
         selected={profileType === 'patient'}
         onPress={() => handleSelect('patient')}
       />
@@ -52,7 +53,7 @@ export function ProfileStep() {
       <OptionCard
         title="Sou Cuidador(a)"
         description="Apoio um familiar ou amigo"
-        icon={<Heart size={20} color={profileType === 'caregiver' ? '#FFFFFF' : '#9C8880'} />}
+        icon={<Heart size={20} color={profileType === 'caregiver' ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400]} />}
         selected={profileType === 'caregiver'}
         onPress={() => handleSelect('caregiver')}
       />
@@ -60,7 +61,7 @@ export function ProfileStep() {
       <OptionCard
         title="Sou Médico(a) ou Enfermeiro(a)"
         description="Acesso clínico e monitoramento"
-        icon={<Stethoscope size={20} color={profileType === 'doctor' ? '#FFFFFF' : '#9C8880'} />}
+        icon={<Stethoscope size={20} color={profileType === 'doctor' ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400]} />}
         selected={profileType === 'doctor'}
         onPress={() => handleSelect('doctor')}
         badge={<Text style={styles.badgeText}>Requer verificação CRM/Coren</Text>}
@@ -73,22 +74,22 @@ export function ProfileStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,
   },
   hint: {
     textAlign: 'center',
-    fontSize: 11.5,
-    color: '#9C8880',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
     marginTop: 10,
   },
   badgeText: {
-    fontSize: 11,
-    color: '#9C8880',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
   }
 });

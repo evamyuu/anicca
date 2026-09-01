@@ -16,7 +16,7 @@ from src.domain.entities import AniPersonality
 from src.infrastructure.agents.state import AniState
 
 _llm = ChatGoogleGenerativeAI(
-    model="gemini-flash-latest",
+    model="gemini-2.0-flash",
     google_api_key=settings.GEMINI_API_KEY,
     temperature=0.7,
 )
@@ -32,7 +32,7 @@ class GenUIButton(BaseModel):
 class GenUICard(BaseModel):
     """A rich card rendered in the app interface (GenUI)."""
 
-    type: str = Field(description="Type of card: 'button_group', 'ctcae_grade', 'timeline', 'document_preview'")
+    type: str = Field(description="Type of card: 'button_group', 'ctcae_grade', 'timeline', 'document_preview', 'ask_user_form'")
     text: Optional[str] = Field(default=None, description="Optional text inside the card")
     buttons: Optional[List[GenUIButton]] = Field(default=None, description="Buttons if type is button_group")
     data: Optional[dict] = Field(default=None, description="Arbitrary payload for specialized cards")
@@ -60,6 +60,11 @@ class WhatsAppListSection(BaseModel):
     rows: List[WhatsAppListRow] = Field(description="Up to 10 rows in this section")
 
 
+class MemoryUpdate(BaseModel):
+    """An instruction to save a new memory fact about the patient."""
+    action: str = Field(description="Action to perform: 'save' or 'delete'")
+    content: str = Field(description="The memory fact to save or delete")
+
 class AniFinalResponse(BaseModel):
     """Complete Ani response with text, GenUI cards, and WhatsApp interactions."""
 
@@ -67,6 +72,10 @@ class AniFinalResponse(BaseModel):
     cards: List[GenUICard] = Field(
         default_factory=list,
         description="Interactive cards rendered in the app interface"
+    )
+    memory_updates: Optional[List[MemoryUpdate]] = Field(
+        default=None,
+        description="List of facts to save or delete from the patient's long-term memory."
     )
     whatsapp_buttons: Optional[List[WhatsAppButton]] = Field(
         default=None,
@@ -153,47 +162,31 @@ def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> 
     )
 
     personality_instructions = {
-        AniPersonality.DEFAULT: (
-            "PERSONALITY: DEFAULT\n"
-            "You are balanced, polite, and helpful. You act as a reliable standard companion. "
-            "Your tone is warm but professional, clear, and reassuring without being overly casual."
+        AniPersonality.MENTOR: (
+            "PERSONALITY: MENTOR\n"
+            "You are encouraging, empathetic, and warm. You celebrate every milestone "
+            "and focus on emotional support."
         ),
-        AniPersonality.BESTIE: (
-            "PERSONALITY: BESTIE (GenZ Vibe)\n"
-            "You are the patient's absolute best friend. You are extremely informal, deeply supportive, and relatable. "
-            "CRITICAL: Use GenZ Brazilian slang (e.g., 'mano', 'tlgd', 'tb', 'agr', 'mt'). "
-            "CRITICAL: Never use capital letters at the beginning of sentences (type in lowercase). "
-            "CRITICAL: Use kaomojis like ';-;' or 'T-T' or common emojis often. Be dramatic but loving."
+        AniPersonality.REALIST: (
+            "PERSONALITY: REALIST\n"
+            "You are direct and factual. You prioritize clarity over comfort. "
+            "You provide objective medical information without sugarcoating."
         ),
-        AniPersonality.PROTECTOR: (
-            "PERSONALITY: PROTECTOR (Parental Vibe)\n"
-            "You are extremely warm, caring, and slightly protective, like a loving parent. "
-            "Use terms of endearment ('meu bem', 'querido(a)', 'meu anjo'). "
-            "Always express concern for their sleep, hydration, and comfort. Be immensely comforting."
+        AniPersonality.OPTIMIST: (
+            "PERSONALITY: OPTIMIST\n"
+            "You are positive, hopeful, and light-hearted. You focus on what the patient can control. "
+            "You use analogies to explain complex topics."
         ),
-        AniPersonality.NERD: (
-            "PERSONALITY: NERD (Geek Vibe)\n"
-            "You are highly analytical, curious, and friendly. "
-            "Explain clinical concepts or logistics using fun pop-culture analogies (video games, RPGs, movies, Bob Esponja, anime). "
-            "You focus on the logic but in a cool, accessible, 'nerd' way."
-        ),
-        AniPersonality.CHILL: (
-            "PERSONALITY: CHILL (Laid-back Vibe)\n"
-            "You are direct, objective, relaxed, and zero-drama. "
-            "You don't write long texts. You keep things practical ('fica de boa', 'tranquilo', 'vamo resolver isso'). "
-            "Provide objective reassurance without overreacting."
-        ),
-        AniPersonality.GENTLE: (
-            "PERSONALITY: GENTLE (Older Adult Vibe)\n"
-            "You are extremely patient, respectful, and clear, tailored for an older generation. "
-            "Speak slowly (using short, clear sentences), use respectful pronouns ('o senhor', 'a senhora' if appropriate), "
-            "and avoid modern slang or complex technical terms. Be the most polite and affectionate companion."
+        AniPersonality.SPECIALIST: (
+            "PERSONALITY: SPECIALIST\n"
+            "You are highly technical, detailed, and clinical. "
+            "You provide in-depth information about mechanisms of action and clinical guidelines."
         ),
     }
 
     selected_persona = personality_instructions.get(
         AniPersonality(personality),
-        personality_instructions[AniPersonality.DEFAULT]
+        personality_instructions[AniPersonality.MENTOR]
     )
 
     cancer_type = patient_context.get("cancer_type", "oncological condition")
@@ -213,11 +206,12 @@ def _build_system_prompt(personality: AniPersonality, patient_context: dict) -> 
 async def synthesizer_node(state: AniState) -> dict:
     """Synthesize the final response with personality, GenUI cards, and WhatsApp buttons."""
     try:
-        personality = AniPersonality(state.get("personality", "default"))
+        personality = AniPersonality(state.get("personality", "mentor"))
     except ValueError:
-        personality = AniPersonality.DEFAULT
+        personality = AniPersonality.MENTOR
 
     system_prompt = _build_system_prompt(personality, state.get("patient_context", {}))
+
 
     messages_to_send = [SystemMessage(content=system_prompt)] + state["messages"]
 
@@ -231,6 +225,7 @@ async def synthesizer_node(state: AniState) -> dict:
     cards_dicts = [card.model_dump() for card in response.cards]
     buttons_dicts = [b.model_dump() for b in response.whatsapp_buttons] if response.whatsapp_buttons else None
     list_dicts = [s.model_dump() for s in response.whatsapp_list_sections] if response.whatsapp_list_sections else None
+    memory_updates_dicts = [m.model_dump() for m in response.memory_updates] if response.memory_updates else []
 
     return {
         "final_response": response.text,
@@ -238,4 +233,5 @@ async def synthesizer_node(state: AniState) -> dict:
         "whatsapp_buttons": buttons_dicts,
         "whatsapp_list_sections": list_dicts,
         "agents_invoked": agents,
+        "memory_updates": memory_updates_dicts,
     }

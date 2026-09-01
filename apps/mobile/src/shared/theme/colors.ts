@@ -1,3 +1,4 @@
+import { BRAND } from '@/shared/constants/brand-colors.const';
 /**
  * @fileoverview Theme color definitions for Anicca.
  */
@@ -15,25 +16,25 @@ export interface ThemeColors {
 }
 
 export const lightColors: ThemeColors = {
-  background: '#F5EFEB',
-  card: '#ffffff',
-  text: '#3d2b1f',
-  textMuted: '#a3988e',
-  primary: '#FF9A5C',
-  border: '#efe9e4',
-  danger: '#ef4444',
+  background: BRAND.PRIMARY[50],
+  card: BRAND.SURFACE.CARD,
+  text: BRAND.PRIMARY.DEFAULT,
+  textMuted: BRAND.PRIMARY[400],
+  primary: BRAND.SECONDARY.DEFAULT,
+  border: BRAND.PRIMARY[100],
+  danger: BRAND.ERROR.DEFAULT,
   dangerBg: 'rgba(239, 68, 68, 0.1)',
-  iconBg: '#efe9e4',
+  iconBg: BRAND.PRIMARY[100],
 };
 
 export const darkColors: ThemeColors = {
-  background: '#121212',
-  card: '#1e1e1e',
-  text: '#fbf9f6',
-  textMuted: '#8c8078',
-  primary: '#FF9A5C',
-  border: '#2a2a2a',
-  danger: '#ef4444',
+  background: BRAND.PRIMARY[900],
+  card: BRAND.BG.DARK,
+  text: BRAND.BG.LIGHT,
+  textMuted: BRAND.PRIMARY[400],
+  primary: BRAND.SECONDARY.DEFAULT,
+  border: BRAND.SURFACE.CARD_DARK,
+  danger: BRAND.ERROR.DEFAULT,
   dangerBg: 'rgba(239, 68, 68, 0.2)',
-  iconBg: '#2a2a2a',
+  iconBg: BRAND.SURFACE.CARD_DARK,
 };

@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface TileProps {
   title: string;
@@ -35,7 +36,7 @@ export function Tile({ title, description, selected, onPress }: TileProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1, // Will stretch in a flex row
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 13,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -43,24 +44,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   containerSelected: {
-    borderColor: '#FF9A5C',
-    backgroundColor: '#FFF0E8',
+    borderColor: BRAND.SECONDARY.DEFAULT,
+    backgroundColor: BRAND.PRIMARY[50],
   },
   containerPressed: {
     transform: [{ scale: 0.97 }],
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   titleSelected: {
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   description: {
-    fontSize: 12,
+    fontSize: 16,
     fontFamily: 'Nunito_400Regular',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     marginTop: 2,
   },
 });

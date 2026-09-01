@@ -141,6 +141,7 @@ class SendMessageSchema(BaseModel):
     text: str = Field(..., min_length=1, max_length=4096)
     channel: str = Field(default="app", pattern=r"^(app|web|whatsapp)$")
     document_url: Optional[str] = None
+    personality: Optional[str] = None
 
 
 class MessageSchema(BaseModel):

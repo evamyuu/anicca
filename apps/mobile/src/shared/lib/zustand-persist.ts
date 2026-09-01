@@ -224,6 +224,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       prevStep: () => set({ currentStep: Math.max(get().currentStep - 1, 1) }),
       setProfileType: (type) => set({ profileType: type }),
       setDetails: (details) => set((state) => ({ ...state, ...details })),
+      setAniPersonality: (personality) => set({ aniPersonality: personality }),
       setAvatarConfig: (config) => set({ avatarConfig: { ...get().avatarConfig, ...config } }),
       setConsent: (field, value) => {
         if (field === 'research') {

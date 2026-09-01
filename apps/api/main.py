@@ -32,7 +32,9 @@ from src.presentation.routers import (
 from src.presentation.routers.events_router import router as events_router
 from src.infrastructure.security.pii_sanitizer import PIISanitizerMiddleware
 from src.infrastructure.security.rate_limiter import RateLimiterMiddleware
+from fastapi.staticfiles import StaticFiles
 from src.config import settings
+import os
 
 app = FastAPI(
     title="Anicca API",
@@ -41,6 +43,9 @@ app = FastAPI(
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
+
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

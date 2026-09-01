@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface OptionCardProps {
   title: string;
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -78,8 +79,8 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   containerSelected: {
-    borderColor: '#FF9A5C',
-    backgroundColor: '#FFF0E8',
+    borderColor: BRAND.SECONDARY.DEFAULT,
+    backgroundColor: BRAND.PRIMARY[50],
   },
   containerPressed: {
     transform: [{ scale: 0.98 }],
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#FF9A5C',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
     opacity: 0.07,
   },
   blobSelected: {
@@ -101,12 +102,12 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 11,
-    backgroundColor: '#F0E9E5',
+    backgroundColor: BRAND.BG.LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconContainerSelected: {
-    backgroundColor: '#FF9A5C',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
   },
   textContainer: {
     flex: 1,
@@ -114,14 +115,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   titleSmall: {
-    fontSize: 13.5,
+    fontSize: 16,
   },
   description: {
-    fontSize: 14,
-    color: '#9C8880',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
     marginTop: 2,
     lineHeight: 18,
     fontFamily: 'Nunito_400Regular',
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#F0E9E5',
+    backgroundColor: BRAND.BG.LIGHT,
     borderRadius: 20,
     paddingVertical: 2,
     paddingHorizontal: 9,

@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: BRAND.PRIMARY[900],
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 20,
   },
   descriptionUnselected: {

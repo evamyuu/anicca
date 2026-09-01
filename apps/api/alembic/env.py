@@ -22,11 +22,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from src.config import settings
 from src.infrastructure.database.base import Base
-from src.infrastructure.database.models import (  # noqa: F401 — import triggers model registration
+from src.infrastructure.database.models import (  # noqa: F401
     PatientModel,
     MessageModel,
     BodyMapEntryModel,
     TicketModel,
+    AuditLogModel,
 )
 
 config = context.config

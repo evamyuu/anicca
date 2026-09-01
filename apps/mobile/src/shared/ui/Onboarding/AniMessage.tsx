@@ -15,6 +15,7 @@ interface AniMessageProps {
 }
 
 import AniAvatar from '../../../../assets/images/ani-geral/ani-profile-icon.svg';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function AniMessage({ children }: AniMessageProps) {
   return (
@@ -41,21 +42,21 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#403229',
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   messageBubble: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderTopRightRadius: 14,
     borderBottomRightRadius: 14,
     borderBottomLeftRadius: 14,
     borderTopLeftRadius: 4,
     paddingVertical: 11,
     paddingHorizontal: 14,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
     fontFamily: 'Nunito_600SemiBold',
   },
 });

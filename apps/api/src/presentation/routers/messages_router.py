@@ -97,6 +97,7 @@ async def send_message(
             text=body.text,
             channel=body.channel,
             document_url=body.document_url,
+            personality=body.personality,
         )
     )
 

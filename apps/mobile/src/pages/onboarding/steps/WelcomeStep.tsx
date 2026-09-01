@@ -24,6 +24,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useResponsive } from '@/shared/hooks/useResponsive';
 import { GradientButton } from '@/shared/ui/GradientButton';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 interface WelcomeSlide {
   id: string;
   topBg: string;
@@ -40,41 +41,41 @@ interface WelcomeSlide {
 const SLIDES: WelcomeSlide[] = [
   {
     id: 'navegar',
-    topBg: '#FF9A5C', // Orange
-    cardColor: '#403229', // Dark Brown
+    topBg: BRAND.SECONDARY.DEFAULT, // Orange
+    cardColor: BRAND.PRIMARY.DEFAULT, // Dark Brown
     title: 'Navegando com você',
-    titleColor: '#FFFFFF',
+    titleColor: BRAND.SURFACE.CARD,
     description: 'Ani é o seu companheiro digital.\nEstamos aqui para organizar o seu tratamento,\nexplicar laudos e te dar suporte contínuo\nvia WhatsApp e App.',
-    descColor: '#FFFFFF',
+    descColor: BRAND.SURFACE.CARD,
     image: require('../../../../assets/images/onboarding/ani-navigating.png'),
     imageStyle: { width: 620, height: 360, bottom: -75 }, // Navigating is wider
-    dotActive: '#A68D7E',
+    dotActive: BRAND.PRIMARY[400],
     dotInactive: 'rgba(166, 141, 126, 0.2)',
   },
   {
     id: 'entenda',
-    topBg: '#FFD45C', // Yellow
-    cardColor: '#F0E9E5', // Light Cream
+    topBg: BRAND.SECONDARY[300], // Yellow
+    cardColor: BRAND.BG.LIGHT, // Light Cream
     title: 'Entenda e cuide de você',
-    titleColor: '#403229',
+    titleColor: BRAND.PRIMARY.DEFAULT,
     description: 'Registre seus sintomas e emoções diariamente.\nAcompanhe a evolução do seu bem-estar e\ncompartilhe informações valiosas\ncom a sua equipe médica.',
-    descColor: '#403229',
+    descColor: BRAND.PRIMARY.DEFAULT,
     image: require('../../../../assets/images/onboarding/ani-care.png'),
     imageStyle: { width: 280, height: 280, bottom: -35 }, // Care is roughly square
-    dotActive: '#FF9A5C',
+    dotActive: BRAND.SECONDARY.DEFAULT,
     dotInactive: 'rgba(255, 154, 92, 0.2)',
   },
   {
     id: 'tudo',
-    topBg: '#FF9A5C', // Orange
-    cardColor: '#403229', // Dark Brown
+    topBg: BRAND.SECONDARY.DEFAULT, // Orange
+    cardColor: BRAND.PRIMARY.DEFAULT, // Dark Brown
     title: 'Tudo que você precisa,\nem um só lugar',
-    titleColor: '#FFFFFF',
+    titleColor: BRAND.SURFACE.CARD,
     description: 'Acesse os seus direitos facilmente,\nguarde documentos com segurança\ne receba orientações personalizadas\npara a sua rotina.',
-    descColor: '#FFFFFF',
+    descColor: BRAND.SURFACE.CARD,
     image: require('../../../../assets/images/onboarding/ani-omnichannel.png'),
     imageStyle: { width: 360, height: 360, bottom: -40 },
-    dotActive: '#A68D7E',
+    dotActive: BRAND.PRIMARY[400],
     dotInactive: 'rgba(166, 141, 126, 0.2)',
   },
 ];
@@ -159,7 +160,7 @@ function FeatureSlide({
           <GradientButton
             title="Continuar"
             onPress={onNext}
-            colors={['#FF9A5C', '#E87A3E']}
+            colors={[BRAND.SECONDARY.DEFAULT, BRAND.SECONDARY[600]]}
             style={{ width: '100%', borderRadius: 24 }}
           />
         </View>
@@ -177,7 +178,7 @@ const featStyles = StyleSheet.create({
     paddingTop: 32,
     alignItems: 'center',
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -257,7 +258,7 @@ export function WelcomeStep() {
     [width, height, handleNext, activeIndex, insets],
   );
   return (
-    <View style={{ flex: 1, backgroundColor: '#FF9A5C' }}>
+    <View style={{ flex: 1, backgroundColor: BRAND.SECONDARY.DEFAULT }}>
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -286,7 +287,7 @@ export function WelcomeStep() {
           elevation: 30,
         }}
       >
-        <ArrowLeft size={24} color="#FFFFFF" />
+        <ArrowLeft size={24} color={BRAND.SURFACE.CARD} />
       </TouchableOpacity>
     </View>
   );

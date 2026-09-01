@@ -387,3 +387,4 @@ async def verify_whatsapp_otp(
     )
 
     return {"status": "linked", "message": "WhatsApp vinculado com sucesso!"}
+

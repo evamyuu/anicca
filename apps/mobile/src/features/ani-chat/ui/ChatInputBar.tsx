@@ -1,3 +1,4 @@
+import { BRAND } from '@/shared/constants/brand-colors.const';
 /**
  * @fileoverview Renders the message input bar for the Ani chat screen.
  *
@@ -12,68 +13,31 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Text,
   Animated,
   Platform,
   KeyboardAvoidingView,
+  Modal,
+  Text,
 } from 'react-native';
+import { Plus, Mic, AudioLines, Send } from 'lucide-react-native';
+import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import type { AniPersonality } from '@anicca/types';
 
 /** @internal Scale animation duration in milliseconds. */
 const SCALE_ANIMATION_DURATION_MS = 80;
-
-/** @internal Compressed scale factor for the send button press animation. */
 const SCALE_COMPRESSED = 0.9;
-
-/** @internal Default scale for the send button. */
 const SCALE_DEFAULT = 1;
 
-/**
- * Props for {@link ChatInputBar}.
- */
 export interface ChatInputBarProps {
-  /**
-   * Callback fired when the user submits a non-empty message.
-   * @param text - The trimmed message string.
-   */
   onSend: (text: string) => void;
-
-  /**
-   * When `true`, the input is disabled and the send button is inactive,
-   * indicating that Ani is generating a response.
-   */
   isTyping: boolean;
-
-  /**
-   * Placeholder text for the input field.
-   * @defaultValue 'Fale com a Ani...'
-   */
   placeholder?: string;
 }
 
-/**
- * Renders a multi-line text input with an animated send button.
- *
- * @remarks
- * - Uses {@link KeyboardAvoidingView} for iOS padding and Android height adjustment.
- * - The send button animates with a scale bounce on press.
- * - Complies with WCAG 2.1 AA: `accessibilityLabel`, `accessibilityHint`, and
- *   `accessibilityState` are set on all interactive elements.
- *
- * @param props - See {@link ChatInputBarProps}.
- * @returns The chat input bar component.
- *
- * @example
- * ```tsx
- * <ChatInputBar
- *   onSend={(text) => send(text)}
- *   isTyping={isTyping}
- * />
- * ```
- */
 export function ChatInputBar({
   onSend,
   isTyping,
-  placeholder = 'Fale com a Ani...',
+  placeholder = 'Escreva uma mensagem...',
 }: ChatInputBarProps) {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -101,77 +65,158 @@ export function ChatInputBar({
   };
 
   const canSend = text.trim().length > 0 && !isTyping;
+  
+  const inputBgColor = BRAND.SURFACE.CARD;
+  const iconColor = BRAND.PRIMARY[400];
+  const textColor = BRAND.PRIMARY[900];
+
+  const { aniPersonality, setAniPersonality } = useOnboardingStore();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const personalities: { id: AniPersonality; label: string }[] = [
+    { id: 'mentor', label: 'Mentora (Empática)' },
+    { id: 'realist', label: 'Realista (Direta)' },
+    { id: 'optimist', label: 'Otimista (Lúdica)' },
+    { id: 'specialist', label: 'Especialista' },
+  ];
+
+  const currentPersonality = personalities.find(p => p.id === aniPersonality) || personalities[0];
 
   return (
-    <KeyboardAvoidingView
+    <>
+      <Modal visible={isModalVisible} transparent animationType="slide">
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: BRAND.SURFACE.CARD, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 18, color: BRAND.PRIMARY.DEFAULT, marginBottom: 16 }}>
+              Selecionar Personalidade
+            </Text>
+            {personalities.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => {
+                  setAniPersonality(p.id);
+                  setIsModalVisible(false);
+                }}
+                style={{
+                  paddingVertical: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: BRAND.SURFACE.BORDER,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 16, color: aniPersonality === p.id ? BRAND.SECONDARY.DEFAULT : BRAND.PRIMARY[800] }}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{ marginTop: 24, alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'Nunito_700Bold', color: BRAND.PRIMARY[400] }}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      style={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
     >
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'flex-end',
           marginHorizontal: 16,
           marginBottom: 16,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          borderRadius: 16,
+          padding: 12,
+          borderRadius: 24,
+          backgroundColor: inputBgColor,
           borderWidth: 1,
-          borderColor: isFocused ? '#a855f7' : '#2d2540',
-          backgroundColor: '#1E1433',
-          shadowColor: isFocused ? '#a855f7' : '#000',
-          shadowOpacity: isFocused ? 0.2 : 0.1,
-          shadowRadius: isFocused ? 8 : 4,
-          elevation: isFocused ? 4 : 2,
+          borderColor: isFocused ? BRAND.SECONDARY.DEFAULT : 'transparent',
         }}
       >
         <TextInput
           style={{
-            flex: 1,
-            color: '#fff',
+            color: textColor,
             fontSize: 16,
             fontFamily: 'Nunito_400Regular',
             maxHeight: 120,
-            marginRight: 12,
+            paddingHorizontal: 4,
+            paddingTop: Platform.OS === 'ios' ? 8 : 4,
+            paddingBottom: 16,
           }}
           placeholder={placeholder}
-          placeholderTextColor="#8f86a0"
+          placeholderTextColor={iconColor}
           value={text}
           onChangeText={setText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           multiline
-          textAlignVertical="center"
+          textAlignVertical="top"
           onSubmitEditing={handleSend}
           returnKeyType="send"
           editable={!isTyping}
-          accessibilityLabel="Message field for Ani"
-          accessibilityHint="Type your message and tap send"
+          accessibilityLabel="Message input field"
         />
 
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <TouchableOpacity
-            onPress={() => {
-              animateSendButton();
-              handleSend();
-            }}
-            disabled={!canSend}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: canSend ? '#a855f7' : '#4e4960',
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Send message"
-            accessibilityState={{ disabled: !canSend }}
-          >
-            <Text style={{ color: '#fff', fontSize: 16 }}>↑</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity 
+              style={{ padding: 8, marginRight: 8, backgroundColor: BRAND.PRIMARY[100], borderRadius: 20 }}
+              accessibilityLabel="Add attachment"
+            >
+              <Plus size={20} color={iconColor} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(true)}
+              style={{
+                backgroundColor: BRAND.PRIMARY[100],
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 20,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 14, color: textColor }}>
+                {currentPersonality.label}
+              </Text>
+            </TouchableOpacity>
+
+
+          </View>
+
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            {canSend ? (
+              <TouchableOpacity
+                onPress={() => {
+                  animateSendButton();
+                  handleSend();
+                }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: BRAND.SECONDARY.DEFAULT,
+                }}
+              >
+                <Send size={18} color="#FFFFFF" style={{ marginLeft: 2 }} />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity style={{ padding: 8 }}>
+                  <Mic size={20} color={iconColor} />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ padding: 8, backgroundColor: BRAND.SURFACE.CARD, borderRadius: 20, marginLeft: 4, elevation: 1, shadowColor: BRAND.PRIMARY[900], shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
+                  <AudioLines size={18} color={BRAND.PRIMARY.DEFAULT} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
+        </View>
       </View>
     </KeyboardAvoidingView>
+    </>
   );
 }

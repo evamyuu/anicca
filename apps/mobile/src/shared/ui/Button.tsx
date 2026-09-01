@@ -80,7 +80,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? BRAND.PRIMARY.DEFAULT : '#FFFFFF'}
+          color={variant === 'outline' || variant === 'ghost' ? BRAND.PRIMARY.DEFAULT : BRAND.SURFACE.CARD}
         />
       ) : (
         <Text
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.SECONDARY.DEFAULT,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: BRAND.PRIMARY[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.18,
         shadowRadius: 8,
@@ -162,10 +162,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   primaryText: {
-    color: '#FFFFFF',
+    color: BRAND.SURFACE.CARD,
   },
   secondaryText: {
-    color: '#FFFFFF',
+    color: BRAND.SURFACE.CARD,
   },
   outlineText: {
     color: BRAND.PRIMARY.DEFAULT,

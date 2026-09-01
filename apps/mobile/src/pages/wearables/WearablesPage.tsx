@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { ChevronLeft, Watch, Heart, Moon, Activity, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { useTheme } from '@/shared/providers/ThemeProvider';
 import { ThemeColors } from '@/shared/theme/colors';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function WearablesPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export function WearablesPage() {
         {/* Banner Section */}
         <View style={styles.bannerContainer}>
           <View style={styles.iconCircle}>
-            <Watch size={32} color="#f28b50" />
+            <Watch size={32} color={BRAND.SECONDARY.DEFAULT} />
           </View>
           <Text style={styles.bannerTitle}>Conecte seu Smartwatch</Text>
           <Text style={styles.bannerDesc}>
@@ -66,7 +67,7 @@ export function WearablesPage() {
             >
               {isConnecting ? (
                 <>
-                  <ActivityIndicator color="#ffffff" size="small" style={{ marginRight: 8 }} />
+                  <ActivityIndicator color={BRAND.SURFACE.CARD} size="small" style={{ marginRight: 8 }} />
                   <Text style={styles.connectBtnText}>Sincronizando com Health Hub...</Text>
                 </>
               ) : (
@@ -75,14 +76,14 @@ export function WearablesPage() {
             </TouchableOpacity>
 
             <View style={styles.privacyNote}>
-              <AlertCircle size={14} color="#8c8078" />
+              <AlertCircle size={14} color={BRAND.PRIMARY[400]} />
               <Text style={styles.privacyText}>Acesso seguro de ponta a ponta. Você controla seus dados.</Text>
             </View>
           </View>
         ) : (
           <View style={styles.connectedState}>
             <View style={styles.statusBadge}>
-              <CheckCircle2 size={16} color="#10b981" />
+              <CheckCircle2 size={16} color={BRAND.SEMANTIC.SUCCESS} />
               <Text style={styles.statusBadgeText}>Conectado e Sincronizando</Text>
             </View>
             <Text style={styles.connectedDevice}>Apple Watch Series 9</Text>
@@ -92,8 +93,8 @@ export function WearablesPage() {
               
               <View style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <View style={[styles.metricIconBg, { backgroundColor: '#fef2f2' }]}>
-                    <Heart size={20} color="#ef4444" />
+                  <View style={[styles.metricIconBg, { backgroundColor: BRAND.ERROR.LIGHT }]}>
+                    <Heart size={20} color={BRAND.ERROR.DEFAULT} />
                   </View>
                   <Text style={styles.metricLabel}>Batimentos</Text>
                 </View>
@@ -103,19 +104,19 @@ export function WearablesPage() {
 
               <View style={styles.metricCard}>
                 <View style={styles.metricHeader}>
-                  <View style={[styles.metricIconBg, { backgroundColor: '#eff6ff' }]}>
-                    <Moon size={20} color="#3b82f6" />
+                  <View style={[styles.metricIconBg, { backgroundColor: BRAND.PRIMARY[50] }]}>
+                    <Moon size={20} color={BRAND.AUX.BLUE} />
                   </View>
                   <Text style={styles.metricLabel}>Sono (Noite)</Text>
                 </View>
                 <Text style={styles.metricValue}>7h 12m</Text>
-                <Text style={[styles.metricTrend, { color: '#f59e0b' }]}>2 interrupções</Text>
+                <Text style={[styles.metricTrend, { color: BRAND.SECONDARY.DEFAULT }]}>2 interrupções</Text>
               </View>
 
               <View style={[styles.metricCard, { width: '100%' }]}>
                 <View style={styles.metricHeader}>
-                  <View style={[styles.metricIconBg, { backgroundColor: '#ecfdf5' }]}>
-                    <Activity size={20} color="#10b981" />
+                  <View style={[styles.metricIconBg, { backgroundColor: BRAND.PRIMARY[50] }]}>
+                    <Activity size={20} color={BRAND.SEMANTIC.SUCCESS} />
                   </View>
                   <Text style={styles.metricLabel}>Atividade (Passos)</Text>
                 </View>
@@ -173,7 +174,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   bannerDesc: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
@@ -182,7 +183,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
@@ -196,13 +197,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   connectSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textMuted,
     marginBottom: 24,
     textAlign: 'center',
   },
   connectBtn: {
-    backgroundColor: '#3d2b1f',
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -213,10 +214,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 16,
   },
   connectBtnLoading: {
-    backgroundColor: '#a3988e',
+    backgroundColor: BRAND.PRIMARY[400],
   },
   connectBtnText: {
-    color: '#ffffff',
+    color: BRAND.SURFACE.CARD,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -226,7 +227,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   privacyText: {
-    fontSize: 12,
+    fontSize: 16,
     color: colors.textMuted,
   },
   connectedState: {
@@ -235,7 +236,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: BRAND.PRIMARY[50],
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -243,9 +244,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   statusBadgeText: {
-    color: '#10b981',
+    color: BRAND.SEMANTIC.SUCCESS,
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 16,
   },
   connectedDevice: {
     fontSize: 22,
@@ -254,7 +255,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   lastSync: {
-    fontSize: 13,
+    fontSize: 16,
     color: colors.textMuted,
     marginBottom: 24,
   },
@@ -270,7 +271,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     width: '47%',
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
@@ -291,7 +292,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   metricLabel: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.textMuted,
   },
@@ -302,13 +303,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   metricUnit: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'normal',
     color: colors.textMuted,
   },
   metricTrend: {
-    fontSize: 11,
-    color: '#10b981',
+    fontSize: 16,
+    color: BRAND.SEMANTIC.SUCCESS,
     fontWeight: 'bold',
   },
   disconnectBtn: {
@@ -322,6 +323,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   disconnectBtnText: {
     color: colors.danger,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   }
 });

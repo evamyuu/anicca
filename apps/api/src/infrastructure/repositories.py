@@ -415,3 +415,4 @@ def _document_model_to_entity(model: DocumentModel) -> Document:
         summary=model.summary,
         created_at=model.created_at,
     )
+

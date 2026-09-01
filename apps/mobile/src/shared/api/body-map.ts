@@ -47,3 +47,20 @@ export async function getBodyMapHistory(patientId: string, limit: number = 50): 
   });
   return data;
 }
+/**
+ * Upload a photo for a body map entry.
+ */
+export async function uploadBodyMapPhoto(entryId: string, imageUri: string): Promise<any> {
+  const formData = new FormData();
+  const filename = imageUri.split('/').pop();
+  const match = /\\.(\\w+)$/.exec(filename || '');
+  const type = match ? 'image/' : 'image/jpeg';
+
+  formData.append('file', { uri: imageUri, name: filename || 'photo.jpg', type } as any);
+
+  const response = await api.post(/body-map//photo, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data;
+}
+

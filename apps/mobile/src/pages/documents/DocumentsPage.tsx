@@ -25,15 +25,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera, Image as ImageIcon, FileText, X, ChevronDown, ChevronUp } from 'lucide-react-native';
 
 import { useDocuments, useUploadDocument, type Document } from '@/features/documents/hooks/useDocuments';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 
 const DOC_TYPE_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  laudo_biopsia:      { label: 'Laudo / Biópsia',      emoji: '🔬', color: '#a855f7' },
-  hemograma:          { label: 'Hemograma',             emoji: '🩸', color: '#ef4444' },
-  imagem_tc:          { label: 'Imagem / TC / RM',      emoji: '🩻', color: '#3b82f6' },
-  receita:            { label: 'Receita',               emoji: '💊', color: '#22c55e' },
-  relatorio_consulta: { label: 'Relatório de Consulta', emoji: '📋', color: '#f59e0b' },
-  documento:          { label: 'Documento',             emoji: '📄', color: '#6b7280' },
+  laudo_biopsia:      { label: 'Laudo / Biópsia',      emoji: '🔬', color: BRAND.AUX.PURPLE },
+  hemograma:          { label: 'Hemograma',             emoji: '🩸', color: BRAND.ERROR.DEFAULT },
+  imagem_tc:          { label: 'Imagem / TC / RM',      emoji: '🩻', color: BRAND.AUX.BLUE },
+  receita:            { label: 'Receita',               emoji: '💊', color: BRAND.SEMANTIC.SUCCESS },
+  relatorio_consulta: { label: 'Relatório de Consulta', emoji: '📋', color: BRAND.SECONDARY.DEFAULT },
+  documento:          { label: 'Documento',             emoji: '📄', color: BRAND.PRIMARY[400] },
 };
 
 function getDocMeta(type: string) {
@@ -58,10 +59,10 @@ function DocumentCard({ doc }: { doc: Document }) {
       accessibilityRole="button"
       accessibilityLabel={`Documento: ${meta.label}`}
       style={{
-        backgroundColor: '#1E1433',
+        backgroundColor: BRAND.SURFACE.CARD_DARK,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#2d2540',
+        borderColor: BRAND.SURFACE.BORDER_DARK,
         marginBottom: 12,
         overflow: 'hidden',
       }}
@@ -84,25 +85,25 @@ function DocumentCard({ doc }: { doc: Document }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text
-                style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 15 }}
+                style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 16 }}
                 numberOfLines={1}
               >
                 {meta.label}
               </Text>
-              <Text style={{ color: '#6b7280', fontFamily: 'Nunito_400Regular', fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16, marginTop: 2 }}>
                 {formatDate(doc.created_at)} · {doc.source_channel}
               </Text>
             </View>
           </View>
           {expanded
-            ? <ChevronUp size={18} color="#6b7280" />
-            : <ChevronDown size={18} color="#6b7280" />}
+            ? <ChevronUp size={18} color={BRAND.PRIMARY[400]} />
+            : <ChevronDown size={18} color={BRAND.PRIMARY[400]} />}
         </View>
 
         {/* Summary — always visible */}
         <Text
           style={{
-            color: '#d1d5db', fontFamily: 'Nunito_400Regular', fontSize: 14,
+            color: BRAND.SURFACE.BORDER, fontFamily: 'Nunito_400Regular', fontSize: 16,
             lineHeight: 20, marginTop: 12,
           }}
           numberOfLines={expanded ? undefined : 2}
@@ -121,10 +122,10 @@ function DocumentCard({ doc }: { doc: Document }) {
                   borderLeftWidth: 3, borderLeftColor: meta.color,
                 }}
               >
-                <Text style={{ color: meta.color, fontFamily: 'Nunito_700Bold', fontSize: 12, marginBottom: 4 }}>
+                <Text style={{ color: meta.color, fontFamily: 'Nunito_700Bold', fontSize: 16, marginBottom: 4 }}>
                   📌 Achado principal
                 </Text>
-                <Text style={{ color: '#e5e7eb', fontFamily: 'Nunito_400Regular', fontSize: 13, lineHeight: 18 }}>
+                <Text style={{ color: BRAND.SURFACE.BORDER, fontFamily: 'Nunito_400Regular', fontSize: 16, lineHeight: 18 }}>
                   {doc.key_finding}
                 </Text>
               </View>
@@ -132,15 +133,15 @@ function DocumentCard({ doc }: { doc: Document }) {
 
             {doc.ai_questions.length > 0 && (
               <View style={{ marginTop: 12 }}>
-                <Text style={{ color: '#9ca3af', fontFamily: 'Nunito_700Bold', fontSize: 12, marginBottom: 8 }}>
+                <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16, marginBottom: 8 }}>
                   💬 Perguntas para o seu médico
                 </Text>
                 {doc.ai_questions.map((q, i) => (
                   <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <Text style={{ color: '#a855f7', fontFamily: 'Nunito_700Bold', fontSize: 13, marginRight: 6 }}>
+                    <Text style={{ color: BRAND.AUX.PURPLE, fontFamily: 'Nunito_700Bold', fontSize: 16, marginRight: 6 }}>
                       {i + 1}.
                     </Text>
-                    <Text style={{ color: '#d1d5db', fontFamily: 'Nunito_400Regular', fontSize: 13, flex: 1, lineHeight: 18 }}>
+                    <Text style={{ color: BRAND.SURFACE.BORDER, fontFamily: 'Nunito_400Regular', fontSize: 16, flex: 1, lineHeight: 18 }}>
                       {q}
                     </Text>
                   </View>
@@ -174,21 +175,21 @@ function UploadModal({
       >
         <Pressable
           style={{
-            backgroundColor: '#1E1433',
+            backgroundColor: BRAND.SURFACE.CARD_DARK,
             borderTopLeftRadius: 24, borderTopRightRadius: 24,
             padding: 24, paddingBottom: 40,
           }}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={{ color: '#fff', fontFamily: 'Nunito_800ExtraBold', fontSize: 18 }}>
+            <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_800ExtraBold', fontSize: 18 }}>
               Adicionar Documento
             </Text>
             <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar">
-              <X size={22} color="#6b7280" />
+              <X size={22} color={BRAND.PRIMARY[400]} />
             </TouchableOpacity>
           </View>
 
-          <Text style={{ color: '#9ca3af', fontFamily: 'Nunito_400Regular', fontSize: 13, marginBottom: 20 }}>
+          <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16, marginBottom: 20 }}>
             A Ani vai ler e explicar o documento para você em linguagem simples.
           </Text>
 
@@ -198,15 +199,15 @@ function UploadModal({
             accessibilityLabel="Tirar foto"
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 14,
-              backgroundColor: '#7e22ce', borderRadius: 14, padding: 16, marginBottom: 12,
+              backgroundColor: BRAND.AUX.PURPLE, borderRadius: 14, padding: 16, marginBottom: 12,
             }}
           >
-            <Camera size={24} color="#fff" />
+            <Camera size={24} color={BRAND.SURFACE.CARD} />
             <View>
-              <Text style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 15 }}>
+              <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
                 Tirar foto agora
               </Text>
-              <Text style={{ color: '#d8b4fe', fontFamily: 'Nunito_400Regular', fontSize: 12 }}>
+              <Text style={{ color: BRAND.AUX.PURPLE, fontFamily: 'Nunito_400Regular', fontSize: 16 }}>
                 Use a câmera para fotografar o laudo
               </Text>
             </View>
@@ -218,16 +219,16 @@ function UploadModal({
             accessibilityLabel="Escolher da galeria"
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 14,
-              backgroundColor: '#2d2540', borderRadius: 14, padding: 16,
-              borderWidth: 1, borderColor: '#4c3a6b',
+              backgroundColor: BRAND.SURFACE.BORDER_DARK, borderRadius: 14, padding: 16,
+              borderWidth: 1, borderColor: BRAND.SURFACE.BORDER_DARK,
             }}
           >
-            <ImageIcon size={24} color="#a855f7" />
+            <ImageIcon size={24} color={BRAND.AUX.PURPLE} />
             <View>
-              <Text style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 15 }}>
+              <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
                 Escolher da Galeria
               </Text>
-              <Text style={{ color: '#9ca3af', fontFamily: 'Nunito_400Regular', fontSize: 12 }}>
+              <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16 }}>
                 Selecione uma foto ou PDF existente
               </Text>
             </View>
@@ -248,11 +249,11 @@ function ProcessingOverlay() {
         alignItems: 'center', justifyContent: 'center', zIndex: 100,
       }}
     >
-      <ActivityIndicator size="large" color="#a855f7" />
-      <Text style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 16, marginTop: 16 }}>
+      <ActivityIndicator size="large" color={BRAND.AUX.PURPLE} />
+      <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 16, marginTop: 16 }}>
         Ani está lendo seu documento...
       </Text>
-      <Text style={{ color: '#9ca3af', fontFamily: 'Nunito_400Regular', fontSize: 13, marginTop: 6, textAlign: 'center', paddingHorizontal: 40 }}>
+      <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16, marginTop: 6, textAlign: 'center', paddingHorizontal: 40 }}>
         Extraindo texto e gerando resumo. Isso pode levar alguns segundos.
       </Text>
     </View>
@@ -318,22 +319,22 @@ export function DocumentsPage() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0A1A' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BRAND.BG.DARK }}>
       {uploadMutation.isPending && <ProcessingOverlay />}
 
       {/* Header */}
       <View
         style={{
           paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14,
-          borderBottomWidth: 1, borderBottomColor: '#2d2540',
+          borderBottomWidth: 1, borderBottomColor: BRAND.SURFACE.BORDER_DARK,
           flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
         <View>
-          <Text style={{ color: '#fff', fontSize: 24, fontFamily: 'Nunito_800ExtraBold' }}>
+          <Text style={{ color: BRAND.SURFACE.CARD, fontSize: 24, fontFamily: 'Nunito_800ExtraBold' }}>
             Meus Documentos
           </Text>
-          <Text style={{ color: '#6b7280', fontSize: 13, fontFamily: 'Nunito_400Regular', marginTop: 2 }}>
+          <Text style={{ color: BRAND.PRIMARY[400], fontSize: 16, fontFamily: 'Nunito_400Regular', marginTop: 2 }}>
             Laudos, exames e prescrições
           </Text>
         </View>
@@ -342,11 +343,11 @@ export function DocumentsPage() {
           accessibilityRole="button"
           accessibilityLabel="Adicionar documento"
           style={{
-            backgroundColor: '#7e22ce', width: 42, height: 42,
+            backgroundColor: BRAND.AUX.PURPLE, width: 42, height: 42,
             borderRadius: 14, alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <FileText size={20} color="#fff" />
+          <FileText size={20} color={BRAND.SURFACE.CARD} />
         </TouchableOpacity>
       </View>
 
@@ -358,8 +359,8 @@ export function DocumentsPage() {
         {/* Loading state */}
         {isLoading && (
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <ActivityIndicator size="large" color="#a855f7" />
-            <Text style={{ color: '#6b7280', fontFamily: 'Nunito_400Regular', marginTop: 12 }}>
+            <ActivityIndicator size="large" color={BRAND.AUX.PURPLE} />
+            <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', marginTop: 12 }}>
               Carregando documentos...
             </Text>
           </View>
@@ -369,10 +370,10 @@ export function DocumentsPage() {
         {error && !isLoading && (
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
             <Text style={{ fontSize: 40, marginBottom: 12 }}>⚠️</Text>
-            <Text style={{ color: '#ef4444', fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
+            <Text style={{ color: BRAND.ERROR.DEFAULT, fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
               Erro ao carregar documentos
             </Text>
-            <Text style={{ color: '#6b7280', fontFamily: 'Nunito_400Regular', fontSize: 13, marginTop: 4 }}>
+            <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16, marginTop: 4 }}>
               Verifique sua conexão com a internet.
             </Text>
           </View>
@@ -382,10 +383,10 @@ export function DocumentsPage() {
         {!isLoading && !error && (!documents || documents.length === 0) && (
           <View style={{ alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 }}>
             <Text style={{ fontSize: 56, marginBottom: 16 }}>📄</Text>
-            <Text style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
+            <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
               Nenhum documento ainda
             </Text>
-            <Text style={{ color: '#6b7280', fontFamily: 'Nunito_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
+            <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_400Regular', fontSize: 16, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
               Adicione laudos e exames para que a Ani possa explicá-los em linguagem simples e gerar perguntas para o seu médico.
             </Text>
             <TouchableOpacity
@@ -393,12 +394,12 @@ export function DocumentsPage() {
               accessibilityRole="button"
               accessibilityLabel="Adicionar primeiro documento"
               style={{
-                backgroundColor: '#7e22ce', paddingVertical: 14, paddingHorizontal: 28,
+                backgroundColor: BRAND.AUX.PURPLE, paddingVertical: 14, paddingHorizontal: 28,
                 borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8,
               }}
             >
-              <FileText size={18} color="#fff" />
-              <Text style={{ color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 15 }}>
+              <FileText size={18} color={BRAND.SURFACE.CARD} />
+              <Text style={{ color: BRAND.SURFACE.CARD, fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
                 Adicionar Documento
               </Text>
             </TouchableOpacity>
@@ -408,7 +409,7 @@ export function DocumentsPage() {
         {/* Document list */}
         {!isLoading && documents && documents.length > 0 && (
           <>
-            <Text style={{ color: '#6b7280', fontFamily: 'Nunito_600SemiBold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+            <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_600SemiBold', fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
               {documents.length} {documents.length === 1 ? 'documento' : 'documentos'}
             </Text>
             {documents.map((doc) => (

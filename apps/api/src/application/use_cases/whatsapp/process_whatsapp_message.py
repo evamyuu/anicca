@@ -25,6 +25,8 @@ from src.infrastructure.agents.graph.patient_graph import run_patient_agent
 from src.infrastructure.agents.nodes.catalog_agent import publish_catalog_event
 from src.infrastructure.whatsapp.whatsmia_client import whatsmia_client
 from src.application.use_cases.documents.process_document_use_case import ProcessDocumentUseCase
+from src.infrastructure.trust_layer.masking import PIIMasker
+from src.infrastructure.trust_layer.audit_trail import log_llm_interaction
 
 
 @dataclass(frozen=True)
@@ -174,13 +176,33 @@ class ProcessWhatsAppMessageUseCase:
 
         user_message_to_llm = inbound.text + extracted_ocr_text
 
+        # [Trust Layer] Masking PII before hitting the LLM
+        masker = PIIMasker()
+        safe_message_to_llm = masker.mask(user_message_to_llm)
+
+        start_time = datetime.now(timezone.utc)
         ani_result = await run_patient_agent(
-            user_message=user_message_to_llm,
+            user_message=safe_message_to_llm,
             session_history=history_dicts,
             patient_context=context,
             personality=context.get("ani_personality", "default"),
             media_url=inbound.media_url,
             user_id=patient.id,
+        )
+        latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+
+        # [Trust Layer] Demasking PII before sending back to patient
+        unmasked_text = masker.unmask(ani_result["response_text"])
+
+        # [Trust Layer] Log interaction to Audit Trail without PII
+        await log_llm_interaction(
+            db=self._patient_repo._session,
+            model_name="gemini-1.5-flash",
+            prompt_tokens=len(safe_message_to_llm.split()),
+            completion_tokens=len(unmasked_text.split()),
+            latency_ms=latency_ms,
+            session_id=session_key.value,
+            patient_id=patient.id,
         )
 
         cards = ani_result.get("cards", [])
@@ -193,7 +215,7 @@ class ProcessWhatsAppMessageUseCase:
             session_id=session_key.value,
             patient_id=patient.id,
             role="ani",
-            text=ani_result["response_text"],
+            text=unmasked_text,
             channel=MessageChannel.WHATSAPP,
             cards=cards,
             agents_invoked=ani_result.get("agents_invoked", []),
@@ -203,7 +225,7 @@ class ProcessWhatsAppMessageUseCase:
 
         await self._deliver_whatsapp_response(
             phone=phone.value,
-            text=ani_result["response_text"],
+            text=unmasked_text,
             buttons=whatsapp_buttons,
             list_sections=whatsapp_list_sections,
         )
@@ -288,3 +310,4 @@ class ProcessWhatsAppMessageUseCase:
                 await whatsmia_client.send_text(to=phone, text=text)
             except Exception as fallback_exc:
                 print(f"[WhatsApp fallback also failed] {fallback_exc}")
+

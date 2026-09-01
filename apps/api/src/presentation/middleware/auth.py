@@ -53,7 +53,10 @@ async def get_current_patient_id(
             settings.SECRET_KEY,
             algorithms=[_JWT_ALGORITHM],
         )
-        patient_id: str | None = payload.get("sub")
+        patient_id: str | None = payload.get("patient_id")
+        if not patient_id:
+            patient_id = payload.get("sub")
+            
         if patient_id is None:
             raise credentials_exception
         return patient_id

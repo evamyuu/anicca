@@ -130,6 +130,7 @@ async def run_patient_agent(
         "routine_data": None,
         "journaling_data": None,
         "specialist_context": None,
+        "memory_updates": None,
     }
 
     result = await patient_graph.ainvoke(initial_state)

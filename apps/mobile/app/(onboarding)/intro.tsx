@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import IntroBackground from '../../assets/images/onboarding/anicca-intro-background.svg';
 import { GradientButton } from '@/shared/ui/GradientButton';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function IntroScreen() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function IntroScreen() {
       <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, 30) }]}>
         <GradientButton
           title="INICIAR"
-          colors={['#FF9A5C', '#E87A3E']}
+          colors={[BRAND.SECONDARY.DEFAULT, BRAND.SECONDARY[600]]}
           onPress={() => router.push('/(onboarding)/step-1-welcome')}
         />
         
@@ -38,7 +39,7 @@ export default function IntroScreen() {
 
         <GradientButton
           title="JÁ TENHO UMA CONTA"
-          colors={['#403229', '#A6826A']}
+          colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]}
           onPress={() => router.push('/(auth)/login')}
         />
       </View>
@@ -49,7 +50,7 @@ export default function IntroScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F5EFEB', // Fallback color
+    backgroundColor: BRAND.PRIMARY[50], // Fallback color
   },
   bottomArea: {
     position: 'absolute',

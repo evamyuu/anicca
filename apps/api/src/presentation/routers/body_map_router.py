@@ -10,14 +10,14 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.use_cases.whatsapp.notify_whatsapp_trigger import NotifyWhatsAppTriggerUseCase
 from src.infrastructure.database.models import BodyMapEntryModel
-from src.infrastructure.database.session import get_db_session
+from src.infrastructure.database.session import get_db_session, _AsyncSessionFactory
 from src.infrastructure.cache.redis_client import create_redis_client
 from src.infrastructure.agents.nodes.catalog_agent import publish_catalog_event
 
@@ -179,3 +179,64 @@ async def get_body_map_history(
         )
         for e in entries
     ]
+@router.post(
+    "/{entry_id}/photo",
+    summary="Anexar foto a um registro do Body Map",
+)
+async def attach_photo(
+    entry_id: str,
+    file: UploadFile,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db_session),
+):
+    from src.infrastructure.agents.nodes.cv_analysis_node import run_cv_analysis
+    import boto3
+    from src.config import settings
+
+    entry = await db.get(BodyMapEntryModel, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    file_bytes = await file.read()
+    content_type = file.content_type or "image/jpeg"
+    
+    async def _process_cv_background(entry_id: str, bytes_data: bytes, mime_type: str):
+        async with _AsyncSessionFactory() as session:
+            entry = await session.get(BodyMapEntryModel, entry_id)
+            if not entry:
+                return
+
+            # 1. Upload to S3
+            s3 = boto3.client(
+                "s3", 
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
+            key = f"bodymap_cv/{entry_id}_{file.filename}"
+            try:
+                s3.put_object(Bucket=settings.AWS_S3_BUCKET, Key=key, Body=bytes_data, ContentType=mime_type)
+                photo_url = f"https://{settings.AWS_S3_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
+                entry.photo_url = photo_url
+            except Exception as e:
+                print(f"[BodyMap CV] S3 Upload failed: {e}")
+                return
+
+            # 2. Run CV Analysis (Gemini Multimodal)
+            patient_symptom = ", ".join(entry.symptom_types)
+            cv_result = await run_cv_analysis(
+                file_bytes=bytes_data, 
+                mime_type=mime_type, 
+                patient_symptom=patient_symptom, 
+                patient_intensity=entry.intensity
+            )
+            
+            entry.cv_classification = cv_result
+            entry.cv_processed_at = datetime.now(timezone.utc)
+            
+            await session.commit()
+
+    background_tasks.add_task(_process_cv_background, entry_id, file_bytes, content_type)
+    return {"message": "Foto recebida e em processamento na IA."}
+
+

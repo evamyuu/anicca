@@ -1,7 +1,8 @@
+import { BRAND } from '@/shared/constants/brand-colors.const';
 /**
  * @fileoverview Implementation of AniChatPage.
  *
- * @module pages/ani/AniChatPagex
+ * @module pages/ani/AniChatPage
  * @author Evelin Brandão Cordeiro
  * @copyright 2026 Anicca. All rights reserved.
  * @license MIT
@@ -9,6 +10,8 @@
 import React from 'react';
 import { View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MoreVertical } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 import {
   useAniChat,
@@ -20,7 +23,13 @@ import {
 
 
 export function AniChatPage() {
-  const { messages, isTyping, isLoading, error, send, retry } = useAniChat();
+  const { messages, isTyping, error, send, retry } = useAniChat();
+  const router = useRouter();
+  
+  const bgColor = BRAND.BG.LIGHT;
+  const textColor = BRAND.PRIMARY[900];
+  const headerBorderColor = BRAND.SURFACE.BORDER;
+
   const flatListRef = React.useRef<FlatList>(null);
 
   React.useEffect(() => {
@@ -29,43 +38,21 @@ export function AniChatPage() {
     }
   }, [messages.length]);
 
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center" style={{ backgroundColor: '#0F0A1A' }}>
-        <Text className="text-neutral-400 text-base" style={{ fontFamily: 'Nunito_400Regular' }}>
-          Iniciando conversa com Ani...
-        </Text>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#0F0A1A' }}>
-      {/* Header */}
+    <SafeAreaView className="flex-1" style={{ backgroundColor: bgColor }}>
+      {/* Header: only settings icon */}
       <View
-        className="flex-row items-center px-4 py-3"
-        style={{ borderBottomWidth: 1, borderBottomColor: '#2d2540' }}
+        className="flex-row items-center justify-end px-4 py-3"
+        style={{ borderBottomWidth: 1, borderBottomColor: headerBorderColor, backgroundColor: bgColor }}
       >
-        <Text style={{ fontSize: 24, marginRight: 8 }}>🐱</Text>
-        <View>
-          <Text
-            className="text-white font-bold text-lg"
-            style={{ fontFamily: 'Nunito_700Bold' }}
-          >
-            Ani
-          </Text>
-          <Text
-            className="text-primary-400 text-sm"
-            style={{ fontFamily: 'Nunito_400Regular', color: '#c084fc' }}
-          >
-            {isTyping ? 'Digitando...' : 'Online'}
-          </Text>
-        </View>
+        <TouchableOpacity onPress={() => router.push('/ani/settings')} hitSlop={10} style={{ padding: 8 }}>
+          <MoreVertical size={24} color={BRAND.PRIMARY[400]} />
+        </TouchableOpacity>
       </View>
 
       {/* Error state */}
       {error && (
-        <View className="mx-4 mt-2 p-3 rounded-xl" style={{ backgroundColor: '#7f1d1d' }}>
+        <View className="mx-4 mt-2 p-3 rounded-xl" style={{ backgroundColor: BRAND.SECONDARY[900] }}>
           <Text className="text-red-200 text-sm" style={{ fontFamily: 'Nunito_400Regular' }}>
             {error}
           </Text>
@@ -95,20 +82,20 @@ export function AniChatPage() {
         }}
         contentContainerStyle={{ paddingVertical: 16 }}
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center py-16 px-8">
-            <Text style={{ fontSize: 48, marginBottom: 16 }}>🐱</Text>
-            <Text
-              className="text-white text-xl font-bold text-center mb-2"
-              style={{ fontFamily: 'Nunito_700Bold' }}
-            >
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 }}>
+            <View style={{
+              width: 72, height: 72, borderRadius: 36,
+              backgroundColor: BRAND.PRIMARY[800],
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: 20,
+            }}>
+              <Text style={{ color: '#fff', fontSize: 22, fontFamily: 'Nunito_800ExtraBold' }}>Ai</Text>
+            </View>
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 18, color: textColor, textAlign: 'center', marginBottom: 8 }}>
               Olá! Eu sou a Ani.
             </Text>
-            <Text
-              className="text-neutral-400 text-center text-base leading-6"
-              style={{ fontFamily: 'Nunito_400Regular' }}
-            >
-              Pode me perguntar sobre seu diagnóstico, sintomas, direitos, ou qualquer dúvida
-              sobre sua jornada oncológica.
+            <Text style={{ fontFamily: 'Nunito_400Regular', fontSize: 15, color: BRAND.PRIMARY[400], textAlign: 'center', lineHeight: 22 }}>
+              Pode me perguntar sobre seu diagnóstico, sintomas, direitos, ou qualquer dúvida sobre sua jornada oncológica.
             </Text>
           </View>
         }
