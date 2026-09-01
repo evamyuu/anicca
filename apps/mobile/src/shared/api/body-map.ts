@@ -52,15 +52,21 @@ export async function getBodyMapHistory(patientId: string, limit: number = 50): 
  */
 export async function uploadBodyMapPhoto(entryId: string, imageUri: string): Promise<any> {
   const formData = new FormData();
-  const filename = imageUri.split('/').pop();
-  const match = /\\.(\\w+)$/.exec(filename || '');
+  const filename = imageUri.split('/').pop() || 'photo.jpg';
+  const match = /\.(\w+)$/.exec(filename);
   const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-  formData.append('file', { uri: imageUri, name: filename || 'photo.jpg', type } as any);
+  if (typeof window !== 'undefined' && (imageUri.startsWith('blob:') || imageUri.startsWith('data:'))) {
+    const res = await fetch(imageUri);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: blob.type || type });
+    formData.append('file', file);
+  } else {
+    formData.append('file', { uri: imageUri, name: filename, type } as any);
+  }
 
   const response = await api.post(`/api/v1/body-map/${entryId}/photo`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 }
-
