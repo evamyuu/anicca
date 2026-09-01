@@ -34,7 +34,7 @@ export interface BodyMapEntryResponse {
  * Record a new symptom pin on the patient's body map.
  */
 export async function createBodyMapEntry(data: BodyMapEntryCreate): Promise<BodyMapEntryResponse> {
-  const response = await api.post('/body-map', data);
+  const response = await api.post('/api/v1/body-map', data);
   return response.data;
 }
 
@@ -42,7 +42,7 @@ export async function createBodyMapEntry(data: BodyMapEntryCreate): Promise<Body
  * Get body map history for a patient.
  */
 export async function getBodyMapHistory(patientId: string, limit: number = 50): Promise<BodyMapEntryResponse[]> {
-  const { data } = await api.get(`/body-map/${patientId}/history`, {
+  const { data } = await api.get(`/api/v1/body-map/${patientId}/history`, {
     params: { limit },
   });
   return data;
@@ -54,11 +54,11 @@ export async function uploadBodyMapPhoto(entryId: string, imageUri: string): Pro
   const formData = new FormData();
   const filename = imageUri.split('/').pop();
   const match = /\\.(\\w+)$/.exec(filename || '');
-  const type = match ? 'image/' : 'image/jpeg';
+  const type = match ? `image/${match[1]}` : 'image/jpeg';
 
   formData.append('file', { uri: imageUri, name: filename || 'photo.jpg', type } as any);
 
-  const response = await api.post(/body-map//photo, formData, {
+  const response = await api.post(`/api/v1/body-map/${entryId}/photo`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
