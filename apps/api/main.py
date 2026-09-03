@@ -32,7 +32,9 @@ from src.presentation.routers import (
 from src.presentation.routers.events_router import router as events_router
 from src.infrastructure.security.pii_sanitizer import PIISanitizerMiddleware
 from src.infrastructure.security.rate_limiter import RateLimiterMiddleware
+from fastapi.staticfiles import StaticFiles
 from src.config import settings
+import os
 
 app = FastAPI(
     title="Anicca API",
@@ -41,6 +43,9 @@ app = FastAPI(
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
+
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,3 +92,7 @@ async def health_check() -> dict:
         A dictionary with ``status``, ``service``, and ``version`` fields.
     """
     return {"status": "healthy", "service": "anicca-api", "version": "1.0.0"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

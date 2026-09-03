@@ -13,6 +13,7 @@ export interface DocumentResponse {
   id: string;
   patient_id: string;
   document_type: string;
+  title?: string;
   source_channel: string;
   summary: string;
   key_finding?: string;
@@ -33,7 +34,7 @@ export async function listDocuments(
   if (documentType) params.document_type = documentType;
   if (sourceChannel) params.source_channel = sourceChannel;
   
-  const { data } = await api.get(`/documents/${patientId}`, { params });
+  const { data } = await api.get(`/api/v1/documents/${patientId}`, { params });
   return data;
 }
 
@@ -56,10 +57,17 @@ export async function uploadDocument(
     type: fileType,
   } as any);
 
-  const { data } = await api.post(`/documents/upload`, formData, {
+  const { data } = await api.post(`/api/v1/documents/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
   return data;
+}
+
+/**
+ * Delete a document by ID.
+ */
+export async function deleteDocument(documentId: string): Promise<void> {
+  await api.delete(`/api/v1/documents/${documentId}`);
 }

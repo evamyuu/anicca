@@ -14,6 +14,7 @@ import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { OnboardingInput } from '@/shared/ui/Onboarding/OnboardingInput';
 import { Tile } from '@/shared/ui/Onboarding/Tile';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function AgeGenderStep() {
   const router = useRouter();
@@ -82,10 +83,10 @@ export function AgeGenderStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,

@@ -21,23 +21,45 @@ from src.infrastructure.ocr.textract_client import textract_client
 from src.infrastructure.agents.nodes.catalog_agent import publish_catalog_event
 
 _llm = ChatGoogleGenerativeAI(
-    model="gemini-flash-latest",
+    model="gemini-2.0-flash",
     google_api_key=settings.GEMINI_API_KEY,
     temperature=0.3,
 )
 
 _SIMPLIFY_SYSTEM = """
-You are Ani, an oncology companion. You received the OCR text of a medical document.
-Your task is to:
-1. Identify the document type (e.g., "laudo_biopsia", "hemograma", "imagem_tc", "receita", "relatorio_consulta").
+You are Ani, an oncology companion AI. You received the OCR text of a medical document.
+
+Your tasks:
+1. Identify the document type. You MUST use ONLY one of these exact values:
+   - "hemograma"           (blood count, CBC)
+   - "exame_sangue"        (other blood tests: chemistry, tumor markers, etc.)
+   - "bioquimica"          (metabolic panel, kidney/liver function)
+   - "coagulograma"        (coagulation tests)
+   - "imagem_tc"           (CT scan, PET-CT)
+   - "imagem_rm"           (MRI)
+   - "imagem_rx"           (X-ray)
+   - "imagem_eco"          (ultrasound/ecography)
+   - "imagem_pet"          (PET scan)
+   - "laudo_biopsia"       (biopsy report)
+   - "anatomia_patologica" (pathology, histopathology, cytology)
+   - "relatorio_consulta"  (consultation report, clinical notes, discharge summary)
+   - "receita"             (prescription, medication list)
+   - "plano_saude"         (health insurance authorization, reimbursement, guide)
+   - "tfd"                 (TFD — Tratamento Fora do Domicílio)
+   - "inss"                (INSS benefit, disability, work incapacity)
+   - "sus_direitos"        (SUS rights, Lei dos 60 dias, ouvidoria)
+   - "outros"              (anything that does not fit the above categories)
+
 2. Write a short, clear summary in Brazilian Portuguese (CEFR A2 level) — maximum 3 sentences.
    Use simple words. No medical jargon unless immediately explained.
 3. Generate exactly 3 questions the patient should ask their doctor about this document.
 4. Extract the single most important finding (one sentence).
+5. Suggest a short human-readable title for this document (max 6 words, in Portuguese).
 
 Respond ONLY with a valid JSON object:
 {
-  "document_type": "...",
+  "document_type": "<one of the values above>",
+  "title": "<short human-readable title>",
   "summary": "...",
   "key_finding": "...",
   "questions_for_doctor": ["...", "...", "..."]
@@ -60,6 +82,7 @@ class ProcessedDocument:
 
     document_id: str
     document_type: str
+    title: str
     summary: str
     key_finding: str
     questions_for_doctor: list[str]
@@ -85,6 +108,7 @@ class ProcessDocumentUseCase:
         patient_id: str,
         source_channel: str = "upload",
         filename: Optional[str] = None,
+        file_url: Optional[str] = None,
     ) -> ProcessedDocument:
         """Execute the document processing pipeline.
 
@@ -114,6 +138,7 @@ class ProcessDocumentUseCase:
             ai_result=ai_result,
             source_channel=source_channel,
             filename=filename,
+            file_url=file_url,
         )
 
         if self._redis:
@@ -131,7 +156,8 @@ class ProcessDocumentUseCase:
 
         return ProcessedDocument(
             document_id=document_id,
-            document_type=ai_result.get("document_type", "documento"),
+            document_type=ai_result.get("document_type", "outros"),
+            title=ai_result.get("title", ""),
             summary=ai_result.get("summary", ""),
             key_finding=ai_result.get("key_finding", ""),
             questions_for_doctor=ai_result.get("questions_for_doctor", []),
@@ -183,6 +209,7 @@ class ProcessDocumentUseCase:
         ai_result: dict,
         source_channel: str,
         filename: Optional[str],
+        file_url: Optional[str] = None,
     ) -> None:
         """Persist the processed document to the database.
 
@@ -199,12 +226,15 @@ class ProcessDocumentUseCase:
         doc = DocumentModel(
             id=document_id,
             patient_id=patient_id,
-            file_url=f"s3://{settings.AWS_S3_BUCKET}/documents/{filename or document_id}",
-            document_type=ai_result.get("document_type", "documento"),
+            file_url=file_url or f"s3://{settings.AWS_S3_BUCKET}/documents/{filename or document_id}",
+            document_type=ai_result.get("document_type", "outros"),
+            title=ai_result.get("title", ""),
             source_channel=source_channel,
             extracted_text=extracted_text,
             summary=ai_result.get("summary", ""),
+            key_finding=ai_result.get("key_finding", ""),
             ai_questions=ai_result.get("questions_for_doctor", []),
         )
         self._db.add(doc)
         await self._db.flush()
+

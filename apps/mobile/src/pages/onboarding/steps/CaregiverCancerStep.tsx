@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { OptionCard } from '@/shared/ui/Onboarding/OptionCard';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 const CANCER_TYPES = [
   'Câncer de Mama',
@@ -66,10 +67,10 @@ export function CaregiverCancerStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,

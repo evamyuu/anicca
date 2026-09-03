@@ -15,6 +15,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { ProgressBar } from './ProgressBar';
 import { AniMessage } from './AniMessage';
 import { GradientButton } from '@/shared/ui/GradientButton';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface BaseStepLayoutProps {
   currentStep: number;
@@ -62,7 +63,7 @@ export function BaseStepLayout({
       <View style={styles.topNav}>
         {showBack ? (
           <TouchableOpacity onPress={handleBack} style={styles.btnBack} hitSlop={10}>
-            <ArrowLeft size={24} color="#403229" />
+            <ArrowLeft size={24} color={BRAND.PRIMARY.DEFAULT} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 32 }} />
@@ -104,7 +105,7 @@ export function BaseStepLayout({
               title={nextLabel}
               onPress={onNext || (() => {})}
               disabled={nextDisabled}
-              colors={['#FF9A5C', '#E87A3E']}
+              colors={[BRAND.SECONDARY.DEFAULT, BRAND.SECONDARY[600]]}
               style={styles.btnMain}
             />
           </View>
@@ -117,7 +118,7 @@ export function BaseStepLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0E9E5',
+    backgroundColor: BRAND.BG.LIGHT,
   },
   topNav: {
     flexDirection: 'row',
@@ -130,8 +131,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   btnSkip: {
-    color: '#9C8880',
-    fontSize: 14,
+    color: BRAND.PRIMARY[400],
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
   },
   keyboardView: {

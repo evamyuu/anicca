@@ -10,23 +10,26 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-
+import { BRAND } from '@/shared/constants/brand-colors.const';
+import { useAuthStore } from '@/shared/lib/zustand-persist';
 
 export function LoginPage() {
   const [phone, setPhone] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const signIn = useAuthStore((s) => s.signIn);
 
   const handleLogin = async () => {
     if (!phone.trim()) return;
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      router.replace('/(onboarding)/step-1-welcome');
+      signIn('8bfc7103-b7ca-4fde-ac74-c155d6cff8d0', 'patient', 'mock-token');
+      router.replace('/(tabs)/home');
     }, 1000);
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#0F0A1A' }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: BRAND.BG.DARK }}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
@@ -60,7 +63,7 @@ export function LoginPage() {
             </Text>
             <View
               className="flex-row items-center rounded-xl px-4"
-              style={{ backgroundColor: '#1E1433', borderWidth: 1, borderColor: '#2d2540', height: 52 }}
+              style={{ backgroundColor: BRAND.SURFACE.CARD_DARK, borderWidth: 1, borderColor: BRAND.SURFACE.BORDER_DARK, height: 52 }}
             >
               <Text className="text-neutral-400 mr-2" style={{ fontFamily: 'Nunito_400Regular' }}>
                 🇧🇷 +55
@@ -69,7 +72,7 @@ export function LoginPage() {
                 className="flex-1 text-white text-base"
                 style={{ fontFamily: 'Nunito_400Regular' }}
                 placeholder="(11) 99999-9999"
-                placeholderTextColor="#8f86a0"
+                placeholderTextColor={BRAND.PRIMARY[400]}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
@@ -82,7 +85,7 @@ export function LoginPage() {
               onPress={handleLogin}
               disabled={isLoading || !phone.trim()}
               className="py-4 rounded-xl items-center mt-4"
-              style={{ backgroundColor: phone.trim() ? '#a855f7' : '#2d2540' }}
+              style={{ backgroundColor: phone.trim() ? BRAND.AUX.PURPLE : BRAND.SURFACE.BORDER_DARK }}
               accessibilityRole="button"
               accessibilityLabel="Entrar"
               accessibilityState={{ disabled: isLoading || !phone.trim() }}
@@ -102,7 +105,7 @@ export function LoginPage() {
               Não tem conta?{' '}
             </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text className="text-primary-400 text-sm font-semibold" style={{ fontFamily: 'Nunito_600SemiBold', color: '#c084fc' }}>
+              <Text className="text-primary-400 text-sm font-semibold" style={{ fontFamily: 'Nunito_600SemiBold', color: BRAND.PRIMARY[200] }}>
                 Criar conta
               </Text>
             </TouchableOpacity>

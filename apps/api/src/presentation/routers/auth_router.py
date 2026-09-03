@@ -199,3 +199,101 @@ async def verify_otp(
         is_new_user=result.is_new_user,
         patient_id=result.patient_id,
     )
+@router.post(
+    "/link-doctor",
+    summary="Link a patient to a doctor using CRM",
+)
+async def link_doctor(
+    patient_id: str,
+    crm: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserModel, PatientModel, doctor_patients
+
+    # Find doctor by CRM
+    result = await db.execute(select(UserModel).where(UserModel.crm_number == crm, UserModel.role == "doctor"))
+    doctor = result.scalar_one_or_none()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor with given CRM not found.")
+
+    # Find patient
+    result_p = await db.execute(select(PatientModel).where(PatientModel.id == patient_id))
+    patient = result_p.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+
+    # Insert into doctor_patients
+    try:
+        await db.execute(doctor_patients.insert().values(doctor_id=doctor.id, patient_id=patient.id))
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        print(e)
+        # Assume already linked if unique constraint fails
+        pass
+
+    return {"message": "Doctor linked successfully"}
+
+
+@router.post(
+    "/link-caregiver",
+    summary="Link a patient to a caregiver using email",
+)
+async def link_caregiver(
+    patient_id: str,
+    email: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserModel
+
+    # Find caregiver by email
+    result = await db.execute(select(UserModel).where(UserModel.email == email, UserModel.role == "caregiver"))
+    caregiver = result.scalar_one_or_none()
+    if not caregiver:
+        raise HTTPException(status_code=404, detail="Caregiver with given email not found.")
+
+    # Link them
+    caregiver.patient_id = patient_id
+    await db.commit()
+
+    return {"message": "Caregiver linked successfully"}
+
+
+@router.get("/caregivers/{patient_id}")
+async def get_caregivers(patient_id: str, db: AsyncSession = Depends(get_db_session)):
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserModel
+    result = await db.execute(select(UserModel).where(UserModel.patient_id == patient_id, UserModel.role == "caregiver"))
+    caregivers = result.scalars().all()
+    return [{"id": c.id, "name": c.name or "Cuidador", "email": c.email} for c in caregivers]
+
+@router.get("/doctors/{patient_id}")
+async def get_doctors(patient_id: str, db: AsyncSession = Depends(get_db_session)):
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserModel, doctor_patients
+    stmt = select(UserModel).join(doctor_patients, UserModel.id == doctor_patients.c.doctor_id).where(doctor_patients.c.patient_id == patient_id)
+    result = await db.execute(stmt)
+    doctors = result.scalars().all()
+    return [{"id": d.id, "name": d.name or "Médico", "crm": d.crm_number} for d in doctors]
+
+@router.post("/unlink-caregiver")
+async def unlink_caregiver(patient_id: str, caregiver_id: str, db: AsyncSession = Depends(get_db_session)):
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserModel
+    result = await db.execute(select(UserModel).where(UserModel.id == caregiver_id, UserModel.patient_id == patient_id))
+    caregiver = result.scalar_one_or_none()
+    if caregiver:
+        caregiver.patient_id = None
+        await db.commit()
+    return {"message": "Unlinked successfully"}
+
+@router.post("/unlink-doctor")
+async def unlink_doctor(patient_id: str, doctor_id: str, db: AsyncSession = Depends(get_db_session)):
+    from src.infrastructure.database.models import doctor_patients
+    stmt = doctor_patients.delete().where(doctor_patients.c.doctor_id == doctor_id, doctor_patients.c.patient_id == patient_id)
+    await db.execute(stmt)
+    await db.commit()
+    return {"message": "Unlinked successfully"}
+

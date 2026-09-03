@@ -28,6 +28,7 @@ class DocumentResponse(BaseModel):
     id: str
     patient_id: str
     document_type: str
+    title: Optional[str] = None
     source_channel: str
     summary: str
     key_finding: Optional[str] = None
@@ -75,6 +76,17 @@ async def upload_document(
             detail="File too large. Maximum size is 10MB.",
         )
 
+    import os
+    import uuid
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
+    local_filename = f"{uuid.uuid4()}{file_ext}"
+    local_path = os.path.join("uploads", local_filename)
+    with open(local_path, "wb") as f:
+        f.write(file_bytes)
+    
+    # Local dev URL
+    file_url = f"http://localhost:8000/uploads/{local_filename}"
+
     redis = None
     try:
         redis = await create_redis_client()
@@ -85,6 +97,7 @@ async def upload_document(
             patient_id=patient_id,
             source_channel=source_channel,
             filename=file.filename,
+            file_url=file_url,
         )
         await db.commit()
     finally:
@@ -97,6 +110,7 @@ async def upload_document(
         id=result.document_id,
         patient_id=patient_id,
         document_type=result.document_type,
+        title=result.title,
         source_channel=source_channel,
         summary=result.summary,
         key_finding=result.key_finding,
@@ -148,12 +162,36 @@ async def list_documents(
             id=d.id,
             patient_id=d.patient_id,
             document_type=d.document_type,
+            title=d.title,
             source_channel=d.source_channel,
             summary=d.summary,
-            key_finding=None,
+            key_finding=d.key_finding,
             ai_questions=d.ai_questions or [],
             file_url=d.file_url,
             created_at=d.created_at,
         )
         for d in docs
     ]
+
+
+@router.delete(
+    "/{document_id}",
+    summary="Delete a medical document",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_document(
+    document_id: str,
+    db: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Delete a medical document by ID.
+    
+    Args:
+        document_id: The document's UUID.
+        db: Injected async database session.
+    """
+    doc = await db.get(DocumentModel, document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    await db.delete(doc)
+    await db.commit()

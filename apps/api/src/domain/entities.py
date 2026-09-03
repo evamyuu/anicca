@@ -38,12 +38,10 @@ class AniPersonality(str, Enum):
         SPECIALIST: Technical and detailed. Provides clinical-grade information.
     """
 
-    DEFAULT = "default"
-    BESTIE = "bestie"
-    PROTECTOR = "protector"
-    NERD = "nerd"
-    CHILL = "chill"
-    GENTLE = "gentle"
+    MENTOR = "mentor"
+    REALIST = "realist"
+    OPTIMIST = "optimist"
+    SPECIALIST = "specialist"
 
 
 class MessageChannel(str, Enum):
@@ -143,6 +141,14 @@ class BodyMapEntry:
     description: Optional[str]
     suggested_ctcae_grade: Optional[int]
     registered_at: datetime = field(default_factory=datetime.utcnow)
+
+@dataclass
+class PatientMemory:
+    """Represents a fact or preference learned by the AI about the patient."""
+    id: str
+    patient_id: str
+    content: str
+    created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass

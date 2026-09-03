@@ -8,19 +8,20 @@
  */
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { useAuthStore } from '@/shared/lib/zustand-persist';
 
 import { PatientHome } from '../../src/features/home/ui/PatientHome';
 import { CaregiverHome } from '../../src/features/home/ui/CaregiverHome';
 import { DoctorHome } from '../../src/features/home/ui/DoctorHome';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function HubScreen() {
-  const profileType = useOnboardingStore(s => s.profileType);
+  const profileType = useAuthStore(s => s.profileType);
 
   if (!profileType) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fbf9f6'}}>
-        <ActivityIndicator size="large" color="#f28b50" />
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BRAND.BG.LIGHT}}>
+        <ActivityIndicator size="large" color={BRAND.SECONDARY.DEFAULT} />
       </View>
     );
   }

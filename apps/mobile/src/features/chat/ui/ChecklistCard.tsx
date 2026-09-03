@@ -11,6 +11,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { CheckSquare, Share2, Check } from 'lucide-react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface ChecklistItem {
   id: string;
@@ -36,11 +37,11 @@ export function ChecklistCard({ title, items: initialItems }: ChecklistCardProps
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <CheckSquare size={16} color="#f28b50" />
+          <CheckSquare size={16} color={BRAND.SECONDARY.DEFAULT} />
           <Text style={styles.title}>{title}</Text>
         </View>
         <TouchableOpacity>
-          <Share2 size={16} color="#8c8078" />
+          <Share2 size={16} color={BRAND.PRIMARY[400]} />
         </TouchableOpacity>
       </View>
 
@@ -53,7 +54,7 @@ export function ChecklistCard({ title, items: initialItems }: ChecklistCardProps
             activeOpacity={0.7}
           >
             <View style={[styles.checkbox, item.completed && styles.checkboxChecked]}>
-              {item.completed && <Check size={14} color="#ffffff" />}
+              {item.completed && <Check size={14} color={BRAND.SURFACE.CARD} />}
             </View>
             <Text style={[styles.itemText, item.completed && styles.itemTextCompleted]}>
               {item.text}
@@ -67,12 +68,12 @@ export function ChecklistCard({ title, items: initialItems }: ChecklistCardProps
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#efe9e4',
+    backgroundColor: BRAND.PRIMARY[100],
     borderRadius: 16,
     padding: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#e5e0dc',
+    borderColor: BRAND.SURFACE.BORDER,
   },
   header: {
     flexDirection: 'row',
@@ -85,9 +86,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
     marginLeft: 8,
   },
   itemsContainer: {
@@ -103,22 +104,22 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#a3988e',
+    borderColor: BRAND.PRIMARY[400],
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#f28b50',
-    borderColor: '#f28b50',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    borderColor: BRAND.SECONDARY.DEFAULT,
   },
   itemText: {
     flex: 1,
-    fontSize: 14,
-    color: '#3d2b1f',
+    fontSize: 16,
+    color: BRAND.PRIMARY.DEFAULT,
     lineHeight: 20,
   },
   itemTextCompleted: {
-    color: '#8c8078',
+    color: BRAND.PRIMARY[400],
   }
 });

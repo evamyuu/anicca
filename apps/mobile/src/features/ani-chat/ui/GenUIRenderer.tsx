@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 import {
   View,
   Text,
@@ -82,9 +83,38 @@ function CardRenderer({
       return <DocumentPreviewCard card={card} />;
     case 'timeline':
       return <TimelineCard card={card} />;
+    case 'ask_user_form':
+      return <AskUserFormCard card={card} onButtonPress={onButtonPress} />;
     default:
       return null;
   }
+}
+
+function AskUserFormCard({
+  card,
+  onButtonPress,
+}: {
+  card: GenUICard;
+  onButtonPress?: (button: GenUIButton) => void;
+}) {
+  return (
+    <View style={styles.askUserCard}>
+      <Text style={styles.askUserTitle}>{card.text ?? 'Por favor, responda:'}</Text>
+      {card.buttons && card.buttons.length > 0 && (
+        <View style={styles.askUserButtons}>
+          {card.buttons.map(btn => (
+            <TouchableOpacity
+              key={btn.id}
+              style={styles.askUserBtn}
+              onPress={() => onButtonPress?.(btn)}
+            >
+              <Text style={styles.askUserBtnText}>{btn.text}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
 }
 
 function ButtonGroupCard({
@@ -118,7 +148,7 @@ function ButtonGroupCard({
   );
 }
 
-const CTCAE_COLORS = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#7f1d1d'];
+const CTCAE_COLORS = [BRAND.AUX.GREEN, BRAND.SECONDARY[600], BRAND.SECONDARY[600], BRAND.ERROR.VIVID, BRAND.ERROR.DARK];
 const CTCAE_LABELS = ['Ausente', 'Leve', 'Moderado', 'Grave', 'Risco de Vida'];
 
 function CtcaeGradeCard({ card }: { card: GenUICard }) {
@@ -167,7 +197,7 @@ function TimelineCard({ card }: { card: GenUICard }) {
   const daysLeft = (card.data?.days_left as number) ?? 0;
   const totalDays = 60;
   const progress = Math.max(0, Math.min(1, (totalDays - daysLeft) / totalDays));
-  const color = daysLeft > 20 ? '#22c55e' : daysLeft > 7 ? '#eab308' : '#ef4444';
+  const color = daysLeft > 20 ? BRAND.AUX.GREEN : daysLeft > 7 ? BRAND.SECONDARY.DEFAULT : BRAND.ERROR.VIVID;
 
   return (
     <View style={styles.timelineCard}>
@@ -188,14 +218,42 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonGroupCard: {
-    backgroundColor: '#1E1433',
+    backgroundColor: BRAND.SURFACE.CARD_DARK,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#2d2540',
+    borderColor: BRAND.SURFACE.BORDER_DARK,
+  },
+  askUserCard: {
+    backgroundColor: BRAND.SURFACE.CARD_DARK,
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: BRAND.AUX.PURPLE,
+  },
+  askUserTitle: {
+    color: BRAND.SURFACE.CARD,
+    fontSize: 16,
+    fontFamily: 'Nunito_700Bold',
+    marginBottom: 12,
+  },
+  askUserButtons: {
+    gap: 8,
+  },
+  askUserBtn: {
+    backgroundColor: BRAND.PRIMARY[700],
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  askUserBtnText: {
+    color: BRAND.SURFACE.CARD,
+    fontFamily: 'Nunito_700Bold',
   },
   cardSubtext: {
-    color: '#ada5bc',
+    color: BRAND.PRIMARY[400],
     fontSize: 13,
     fontFamily: 'Nunito_400Regular',
     marginBottom: 8,
@@ -206,21 +264,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: BRAND.PRIMARY[700],
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     flexShrink: 1,
   },
   actionButtonText: {
-    color: '#fff',
+    color: BRAND.SURFACE.CARD,
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
   },
   ctcaeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1433',
+    backgroundColor: BRAND.SURFACE.CARD_DARK,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1.5,
@@ -234,7 +292,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ctcaeBadgeText: {
-    color: '#fff',
+    color: BRAND.SURFACE.CARD,
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
   },
@@ -242,66 +300,74 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ctcaeSeverity: {
-    color: '#fff',
+    color: BRAND.SURFACE.CARD,
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
   },
   ctcaeSymptom: {
-    color: '#ada5bc',
-    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY[400],
     fontSize: 13,
+    fontFamily: 'Nunito_400Regular',
     marginTop: 2,
   },
   documentCard: {
-    backgroundColor: '#1E1433',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#2d2540',
-    gap: 8,
-  },
-  documentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  documentIcon: {
-    fontSize: 20,
-  },
-  documentTypeBadge: {
-    backgroundColor: '#2d2540',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  documentTypeBadgeText: {
-    color: '#a78bfa',
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 11,
-    textTransform: 'capitalize',
-  },
-  documentSummary: {
-    color: '#ada5bc',
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  timelineCard: {
-    backgroundColor: '#1E1433',
+    backgroundColor: BRAND.SURFACE.CARD_DARK,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#2d2540',
-    gap: 8,
+    borderColor: BRAND.SURFACE.BORDER_DARK,
+  },
+  documentHeader: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: BRAND.SURFACE.BORDER_DARK,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  documentIcon: {
+    fontSize: 24,
+  },
+  documentTypeBadge: {
+    position: 'absolute',
+    bottom: -6,
+    backgroundColor: BRAND.AUX.PURPLE,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  documentTypeBadgeText: {
+    color: BRAND.SURFACE.CARD,
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
+    textTransform: 'uppercase',
+  },
+  documentSummary: {
+    flex: 1,
+    color: BRAND.PRIMARY[400],
+    fontSize: 14,
+    fontFamily: 'Nunito_400Regular',
+    lineHeight: 20,
+  },
+  timelineCard: {
+    backgroundColor: BRAND.SURFACE.CARD_DARK,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER_DARK,
   },
   timelineTitle: {
-    color: '#fff',
+    color: BRAND.SURFACE.CARD,
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
+    marginBottom: 12,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: '#2d2540',
+    height: 8,
+    backgroundColor: BRAND.SURFACE.BORDER_DARK,
     borderRadius: 3,
     overflow: 'hidden',
   },

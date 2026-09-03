@@ -8,10 +8,11 @@
  */
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function OnboardingLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: '#F0E9E5' }}>
+    <View style={{ flex: 1, backgroundColor: BRAND.BG.LIGHT }}>
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         <Stack.Screen name="intro" />
         <Stack.Screen name="step-1-welcome" />

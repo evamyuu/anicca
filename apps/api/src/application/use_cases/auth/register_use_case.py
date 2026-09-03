@@ -60,7 +60,7 @@ class RegisterUseCase:
             new_status = "pending_approval"
         elif params.role == "patient":
             new_patient = PatientModel(
-                name_encrypted="[Paciente Anonimizado]",  # Filled during onboarding or later
+                name_encrypted=params.username or "[Paciente Anonimizado]",  # Filled during onboarding or later
                 date_of_birth=params.date_of_birth or "2000-01-01",
                 cancer_type=params.cancer_type or "Não informado",
                 cancer_stage=params.journey_phase or "Não informado",

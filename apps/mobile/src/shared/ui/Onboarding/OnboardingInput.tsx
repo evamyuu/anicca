@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface OnboardingInputProps extends TextInputProps {
   label?: string;
@@ -26,7 +27,7 @@ export function OnboardingInput({ label, hint, style, ...props }: OnboardingInpu
           isFocused && styles.inputFocused,
           style
         ]}
-        placeholderTextColor="#9C8880"
+        placeholderTextColor={BRAND.PRIMARY[400]}
         onFocus={(e) => {
           setIsFocused(true);
           props.onFocus?.(e);
@@ -47,33 +48,33 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,
   },
   input: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderWidth: 2,
-    borderColor: '#E8DDD8',
+    borderColor: BRAND.PRIMARY[200],
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
     fontSize: 16,
     fontFamily: 'Nunito_400Regular',
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   inputFocused: {
-    borderColor: '#FF9A5C',
+    borderColor: BRAND.SECONDARY.DEFAULT,
   },
   hint: {
-    fontSize: 12,
+    fontSize: 16,
     fontFamily: 'Nunito_400Regular',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     lineHeight: 16,
     marginTop: 4,
     paddingHorizontal: 2,

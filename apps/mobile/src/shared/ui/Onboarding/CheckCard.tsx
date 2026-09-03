@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Check } from 'lucide-react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface CheckCardProps {
   label: string;
@@ -29,7 +30,7 @@ export function CheckCard({ label, selected, onPress, disabled }: CheckCardProps
       ]}
     >
       <View style={[styles.checkBox, selected && styles.checkBoxSelected]}>
-        {selected && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+        {selected && <Check size={14} color={BRAND.SURFACE.CARD} strokeWidth={3} />}
       </View>
       <Text style={[styles.label, disabled && !selected && styles.labelDisabled]}>
         {label}
@@ -43,7 +44,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 11,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -52,8 +53,8 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   containerSelected: {
-    borderColor: '#FF9A5C',
-    backgroundColor: '#FFF0E8',
+    borderColor: BRAND.SECONDARY.DEFAULT,
+    backgroundColor: BRAND.PRIMARY[50],
   },
   containerPressed: {
     opacity: 0.8,
@@ -66,22 +67,22 @@ const styles = StyleSheet.create({
     height: 21,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#E8DDD8',
+    borderColor: BRAND.PRIMARY[200],
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkBoxSelected: {
-    backgroundColor: '#FF9A5C',
-    borderColor: '#FF9A5C',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    borderColor: BRAND.SECONDARY.DEFAULT,
   },
   label: {
     flex: 1,
     fontSize: 16,
     fontFamily: 'Nunito_600SemiBold',
-    color: '#403229',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   labelDisabled: {
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
   },
 });
 

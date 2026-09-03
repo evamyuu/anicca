@@ -14,19 +14,20 @@ import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Home, MessageSquare, Pill, FileText } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#f28b50', // Anicca Orange
-        tabBarInactiveTintColor: '#a3988e', // Soft Gray/Brown
+        tabBarActiveTintColor: BRAND.SECONDARY.DEFAULT, // Anicca Orange
+        tabBarInactiveTintColor: BRAND.PRIMARY[400], // Soft Gray/Brown
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarBackground: () => (
           <LinearGradient
-            colors={['#403229', '#736760']}
+            colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.tabBarBackground}
@@ -89,9 +90,9 @@ const styles = StyleSheet.create({
     right: 0,
     elevation: 0,
     borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderRightWidth: 4,
-    borderColor: '#ffffff',
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderColor: BRAND.SURFACE.CARD,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     backgroundColor: 'transparent',
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
   },
   tabBarLabel: {
-    fontSize: 10,
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
     marginTop: 4,
   }

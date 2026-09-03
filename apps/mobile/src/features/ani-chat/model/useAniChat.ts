@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect } from 'react';
+import { useOnboardingStore } from '@/shared/lib/zustand-persist';
 
 import type { ConversationMessage } from '@anicca/types';
 
@@ -71,7 +72,8 @@ export function useAniChat() {
       if (history.length > 0) {
         setMessages(history);
       }
-    } catch {
+    } catch (err: any) {
+      console.error('Failed to init session:', err?.response?.data || err);
       setError('Não foi possível iniciar a conversa. Verifique sua conexão.');
     } finally {
       setIsLoading(false);
@@ -112,6 +114,7 @@ export function useAniChat() {
           sessionId,
           text: text.trim(),
           channel: 'app',
+          personality: useOnboardingStore.getState().aniPersonality || 'mentor',
         });
 
         setMessages([

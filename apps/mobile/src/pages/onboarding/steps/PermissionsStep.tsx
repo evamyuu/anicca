@@ -14,6 +14,7 @@ import { Bell, Camera, Calendar, Watch, Microscope } from 'lucide-react-native';
 import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { ToggleRow } from '@/shared/ui/Onboarding/ToggleRow';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function PermissionsStep() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function PermissionsStep() {
         <Text style={styles.sectionTitle}>Permissões do dispositivo</Text>
         
         <ToggleRow
-          icon={<Bell size={18} color="#9C8880" />}
+          icon={<Bell size={18} color={BRAND.PRIMARY[400]} />}
           title="Notificações essenciais"
           description="Lembretes de medicamentos, consultas e alertas"
           value={consentNotifications}
@@ -56,7 +57,7 @@ export function PermissionsStep() {
 
         {!isDoctor && (
           <ToggleRow
-            icon={<Camera size={18} color="#9C8880" />}
+            icon={<Camera size={18} color={BRAND.PRIMARY[400]} />}
             title="Câmera e Fotos"
             description="Para fotografar laudos — leitura automática por OCR"
             value={consentCamera}
@@ -65,7 +66,7 @@ export function PermissionsStep() {
         )}
 
         <ToggleRow
-          icon={<Calendar size={18} color="#9C8880" />}
+          icon={<Calendar size={18} color={BRAND.PRIMARY[400]} />}
           title="Sincronizar Calendário"
           description="Exportar consultas e tratamentos para sua agenda"
           value={consentCalendar}
@@ -74,7 +75,7 @@ export function PermissionsStep() {
 
         {!isDoctor && (
           <ToggleRow
-            icon={<Watch size={18} color="#9C8880" />}
+            icon={<Watch size={18} color={BRAND.PRIMARY[400]} />}
             title="Smartwatch"
             description="Passos, sono e frequência cardíaca via Google Health Connect"
             value={consentWatch}
@@ -86,7 +87,7 @@ export function PermissionsStep() {
           <>
             <Text style={[styles.sectionTitle, { marginTop: 4 }]}>Pesquisa científica</Text>
             <ToggleRow
-              icon={<Microscope size={18} color="#9C8880" />}
+              icon={<Microscope size={18} color={BRAND.PRIMARY[400]} />}
               title="Contribuir com pesquisa médica"
               description="Compartilhe seus dados de saúde de forma 100% anônima. Isso ajuda nossa IA a descobrir padrões, melhorar os comparativos clínicos e ajudar no avanço da pesquisa oncológica."
               value={lgpdResearchConsent}
@@ -101,10 +102,10 @@ export function PermissionsStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,

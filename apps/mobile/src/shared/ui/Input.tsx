@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export interface InputProps extends TextInputProps {
   /** Label for the input, mapped for accessibility */
@@ -48,7 +49,7 @@ export function Input({ label, leftIcon, error, isPassword, containerStyle, wrap
         
         <TextInput
           style={styles.input}
-          placeholderTextColor="#a3988e"
+          placeholderTextColor={BRAND.PRIMARY[400]}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={isPassword && !isPasswordVisible}
@@ -64,9 +65,9 @@ export function Input({ label, leftIcon, error, isPassword, containerStyle, wrap
             accessibilityLabel={isPasswordVisible ? "Hide password" : "Show password"}
           >
             {isPasswordVisible ? (
-              <EyeOff size={20} color="#a3988e" />
+              <EyeOff size={20} color={BRAND.PRIMARY[400]} />
             ) : (
-              <Eye size={20} color="#a3988e" />
+              <Eye size={20} color={BRAND.PRIMARY[400]} />
             )}
           </TouchableOpacity>
         ) : null}
@@ -83,33 +84,33 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderWidth: 1,
-    borderColor: '#e5e0dc',
+    borderColor: BRAND.SURFACE.BORDER,
     borderRadius: 24, // Rounder design matching Figma
     height: 52,
     paddingHorizontal: 16,
   },
   inputFocused: {
-    borderColor: '#f28b50',
-    backgroundColor: '#fffcf9',
+    borderColor: BRAND.SECONDARY.DEFAULT,
+    backgroundColor: BRAND.BG.LIGHT,
   },
   inputError: {
-    borderColor: '#E83752',
+    borderColor: BRAND.ERROR.VIVID,
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 16,
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   leftIconContainer: {
     marginRight: 12,
@@ -120,8 +121,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: 6,
-    fontSize: 12,
-    color: '#E83752',
+    fontSize: 16,
+    color: BRAND.ERROR.VIVID,
     fontFamily: 'Nunito_600SemiBold',
     paddingLeft: 4,
   },

@@ -19,6 +19,7 @@ import { loginUser, registerUser, loginWithGoogle } from '../../src/shared/api/a
 import { useAuthStore, useOnboardingStore } from '../../src/shared/lib/zustand-persist';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import DetailsBackground from '../../assets/images/login/details-background.svg';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 if (Platform.OS !== 'web') {
   GoogleSignin.configure({
@@ -98,7 +99,7 @@ export default function LoginScreen() {
            journey_phase: obState.journeyPhase,
            treatment_modality: obState.careModality,
            ani_personality: obState.aniPersonality,
-           avatar_config: { type: 'initial', color: '#403229', text: username[0]?.toUpperCase() || 'A' },
+           avatar_config: { type: 'initial', color: BRAND.PRIMARY.DEFAULT, text: username[0]?.toUpperCase() || 'A' },
            consents: { 
              notifications: obState.consentNotifications, 
              camera: obState.consentCamera, 
@@ -157,7 +158,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       {/* Background Gradients & SVG */}
-      <LinearGradient colors={['#403229', '#A6826A']} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]} style={StyleSheet.absoluteFillObject} />
       
       <View style={styles.detailsBackground}>
         <DetailsBackground width="100%" height="100%" preserveAspectRatio="xMidYMin slice" />
@@ -166,7 +167,7 @@ export default function LoginScreen() {
         onPress={() => router.back()}
         style={[styles.backButton, { top: insets.top + 20 }]}
       >
-        <ArrowLeft size={24} color="#FFFFFF" />
+        <ArrowLeft size={24} color={BRAND.SURFACE.CARD} />
       </TouchableOpacity>
       <KeyboardAvoidingView 
         style={styles.keyboardView} 
@@ -213,7 +214,7 @@ export default function LoginScreen() {
                       value={username}
                       onChangeText={(val) => { setUsername(val); setUsernameError(''); }}
                       error={usernameError}
-                      leftIcon={<User size={20} color="#FF9A5C" />}
+                      leftIcon={<User size={20} color={BRAND.SECONDARY.DEFAULT} />}
                       containerStyle={styles.inputHeight}
                       wrapperStyle={{ marginBottom: 0 }}
                     />
@@ -221,7 +222,7 @@ export default function LoginScreen() {
                       placeholder="Telefone (Opcional)"
                       value={phone}
                       onChangeText={(val) => setPhone(val)}
-                      leftIcon={<Phone size={20} color="#FF9A5C" />}
+                      leftIcon={<Phone size={20} color={BRAND.SECONDARY.DEFAULT} />}
                       keyboardType="phone-pad"
                       containerStyle={styles.inputHeight}
                       wrapperStyle={{ marginBottom: 0 }}
@@ -233,7 +234,7 @@ export default function LoginScreen() {
                   value={email}
                   onChangeText={(val) => { setEmail(val); setEmailError(''); }}
                   error={emailError}
-                  leftIcon={<AtSign size={20} color="#FF9A5C" />}
+                  leftIcon={<AtSign size={20} color={BRAND.SECONDARY.DEFAULT} />}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   containerStyle={styles.inputHeight}
@@ -245,7 +246,7 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={(val) => { setPassword(val); setPasswordError(''); }}
                   error={passwordError}
-                  leftIcon={<Lock size={20} color="#FF9A5C" />}
+                  leftIcon={<Lock size={20} color={BRAND.SECONDARY.DEFAULT} />}
                   isPassword={true}
                   containerStyle={styles.inputHeight}
                   wrapperStyle={{ marginBottom: 0 }}
@@ -274,7 +275,7 @@ export default function LoginScreen() {
               <GradientButton
                 title={loading ? "Carregando..." : activeTab === 'register' ? "CRIAR CONTA" : "ENTRAR"}
                 onPress={handleAuthAction}
-                colors={['#FF9A5C', '#E87A3E']}
+                colors={[BRAND.SECONDARY.DEFAULT, BRAND.SECONDARY[600]]}
                 disabled={loading}
                 style={{ marginTop: 25 }}
               />
@@ -287,14 +288,14 @@ export default function LoginScreen() {
               {/* Social Logins */}
               <View style={styles.socialContainer}>
                 <TouchableOpacity style={styles.socialButton}>
-                  <FontAwesome5 name="facebook-f" size={24} color="#403229" />
+                  <FontAwesome5 name="facebook-f" size={24} color={BRAND.PRIMARY.DEFAULT} />
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignIn} disabled={loading}>
-                  <FontAwesome5 name="google" size={24} color="#403229" />
+                  <FontAwesome5 name="google" size={24} color={BRAND.PRIMARY.DEFAULT} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.socialButton}>
-                  <FontAwesome5 name="instagram" size={24} color="#403229" />
+                  <FontAwesome5 name="instagram" size={24} color={BRAND.PRIMARY.DEFAULT} />
                 </TouchableOpacity>
               </View>
               {/* Terms */}
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
     height: 250,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     flexShrink: 1, // Wraps content but shrinks if keyboard opens
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 24,
     paddingTop: 32,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E8DDD9',
+    backgroundColor: BRAND.PRIMARY[100],
     borderRadius: 20, 
     padding: 4,
     height: 41, // Same height as inputs
@@ -379,8 +380,8 @@ const styles = StyleSheet.create({
     height: 33, // 41 minus 8px padding
   },
   activeTab: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     fontFamily: 'Nunito_700Bold',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   formSpacing: {
     gap: 25, 
@@ -420,12 +421,12 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 16,
-    color: '#FF9A5C',
+    color: BRAND.SECONDARY.DEFAULT,
     fontWeight: '600',
   },
   errorText: {
-    color: '#E83752',
-    fontSize: 14,
+    color: BRAND.ERROR.VIVID,
+    fontSize: 16,
     fontFamily: 'Nunito_700Bold',
     flex: 1,
   },
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e5e0dc',
+    backgroundColor: BRAND.SURFACE.BORDER,
   },
   dividerText: {
     marginHorizontal: 12,
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: '#E8DDD9',
+    backgroundColor: BRAND.PRIMARY[100],
     alignItems: 'center',
     justifyContent: 'center',
   },

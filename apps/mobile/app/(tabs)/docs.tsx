@@ -1,7 +1,6 @@
 /**
- * @fileoverview Documents Tab Screen.
- * Implements the Figma designs for Document Management and Categorization.
- * Includes the Add Document modal.
+ * @fileoverview Meus Documentos Screen.
+ * Implements categorization, intelligent summaries, and search.
  *
  * @module pages/tabs/docs
  * @author Evelin Brandão Cordeiro
@@ -9,21 +8,105 @@
  * @license MIT
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Platform, RefreshControl } from 'react-native';
-import { Plus, Sparkles, Camera, MessageSquare, Mic, Upload, Search, Droplet, Activity, Heart, Pill, X } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Platform,
+  RefreshControl,
+  LayoutAnimation,
+  UIManager,
+} from 'react-native';
+import {
+  Plus,
+  Sparkles,
+  Camera,
+  MessageSquare,
+  Mic,
+  Upload,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Droplet,
+  Activity,
+  Heart,
+  Pill,
+  ShieldAlert,
+  FileText,
+  MoreHorizontal
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 
 import { BRAND } from '@/shared/constants/brand-colors.const';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
-import { listDocuments } from '@/shared/api/documents';
+import { listDocuments, type DocumentResponse } from '@/shared/api/documents';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// ── CONSTANTS & MAPPINGS ──
+
+const DOC_CATEGORIES = [
+  { id: 'exames', label: 'Exames de Sangue', icon: Droplet },
+  { id: 'imagens', label: 'Imagens e Laudos', icon: Activity },
+  { id: 'anatomia', label: 'Anatomia Patológica', icon: FileText },
+  { id: 'consultas', label: 'Consultas e Resumos', icon: Heart },
+  { id: 'prescricoes', label: 'Prescrições', icon: Pill },
+  { id: 'plano', label: 'Plano de Saúde', icon: ShieldAlert },
+  { id: 'sus', label: 'SUS / INSS / Direitos', icon: ShieldAlert },
+  { id: 'outros', label: 'Outros', icon: MoreHorizontal },
+] as const;
+
+const mapDocTypeToCategory = (type: string) => {
+  const t = type.toLowerCase();
+  if (['hemograma', 'exame_sangue', 'bioquimica', 'coagulograma'].includes(t)) return 'exames';
+  if (['imagem_tc', 'imagem_rm', 'imagem_rx', 'imagem_eco', 'imagem_pet', 'laudo_biopsia'].includes(t)) return 'imagens';
+  if (['anatomia_patologica'].includes(t)) return 'anatomia';
+  if (['relatorio_consulta'].includes(t)) return 'consultas';
+  if (['receita'].includes(t)) return 'prescricoes';
+  if (['plano_saude'].includes(t)) return 'plano';
+  if (['tfd', 'inss', 'sus_direitos'].includes(t)) return 'sus';
+  return 'outros';
+};
+
+const mapSourceIcon = (source: string) => {
+  switch (source) {
+    case 'upload': return <Upload size={10} color={BRAND.AUX.BLUE} />;
+    case 'camera': return <Camera size={10} color={BRAND.SECONDARY.DEFAULT} />;
+    case 'whatsapp': return <MessageSquare size={10} color={BRAND.AUX.GREEN} />;
+    case 'quick_action': return <Sparkles size={10} color={BRAND.PRIMARY[400]} />;
+    case 'chat':
+    default: return <MessageSquare size={10} color={BRAND.PRIMARY.DEFAULT} />;
+  }
+};
+
+const humanizeType = (type: string) => {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// ── COMPONENT ──
 
 export default function DocsScreen() {
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string>('Todos');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    exames: true, imagens: true, consultas: true,
+  });
+
   const userId = useAuthStore(s => s.userId);
 
   const { data: documents, refetch } = useQuery({
@@ -32,134 +115,200 @@ export default function DocsScreen() {
     enabled: !!userId,
   });
 
-  const docsCount = documents?.length || 0;
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
   };
 
+  const toggleCategory = (catId: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
+  // ── FILTERING & GROUPING ──
+
+  const allYears = useMemo(() => {
+    if (!documents) return ['Todos'];
+    const years = new Set(documents.map(d => new Date(d.created_at).getFullYear().toString()));
+    return ['Todos', ...Array.from(years).sort().reverse()];
+  }, [documents]);
+
+  const filteredDocs = useMemo(() => {
+    if (!documents) return [];
+    return documents.filter(doc => {
+      const matchesYear = selectedYear === 'Todos' || new Date(doc.created_at).getFullYear().toString() === selectedYear;
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = q === '' || 
+        (doc.title && doc.title.toLowerCase().includes(q)) ||
+        (doc.document_type.toLowerCase().includes(q)) ||
+        (doc.summary && doc.summary.toLowerCase().includes(q));
+      return matchesYear && matchesSearch;
+    });
+  }, [documents, selectedYear, searchQuery]);
+
+  const groupedDocs = useMemo(() => {
+    const groups: Record<string, DocumentResponse[]> = {};
+    DOC_CATEGORIES.forEach(c => groups[c.id] = []);
+    
+    filteredDocs.forEach(doc => {
+      const catId = mapDocTypeToCategory(doc.document_type);
+      if (!groups[catId]) groups[catId] = [];
+      groups[catId].push(doc);
+    });
+    return groups;
+  }, [filteredDocs]);
+
+  // Order categories: those with docs first
+  const displayCategories = useMemo(() => {
+    return [...DOC_CATEGORIES].sort((a, b) => {
+      const aLen = (groupedDocs[a.id] || []).length;
+      const bLen = (groupedDocs[b.id] || []).length;
+      if (aLen === 0 && bLen > 0) return 1;
+      if (bLen === 0 && aLen > 0) return -1;
+      return 0;
+    });
+  }, [groupedDocs]);
+
   return (
-    <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#ffffff" colors={[BRAND.PRIMARY.DEFAULT]} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       >
         
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTextContainer}>
+        {/* ── HEADER ── */}
+        <LinearGradient
+          colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Meus Documentos</Text>
-            <Text style={styles.headerSubtitle}>{docsCount} documentos organizados pela Ani</Text>
+            <Text style={styles.headerSubtitle}>{documents?.length || 0} documentos organizados pela Ani</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.addButton} 
-            activeOpacity={0.8}
-            onPress={() => setModalVisible(true)}
-          >
-            <Plus size={24} color="#ffffff" />
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+            <Plus size={24} color="#fff" />
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
-        {/* AI Banner */}
+        {/* ── AI BANNER ── */}
         <View style={styles.aiBanner}>
-          <Sparkles size={24} color="#f28b50" style={{ marginTop: 2, marginRight: 12 }} />
+          <Sparkles size={20} color={BRAND.SECONDARY.DEFAULT} style={{ marginTop: 2, marginRight: 12 }} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.aiBannerTitle}>Ani catalogou {docsCount} documentos</Text>
+            <Text style={styles.aiBannerTitle}>Ani catalogou {documents?.length || 0} documentos</Text>
             <Text style={styles.aiBannerDesc}>
-              A partir de fotos, conversas, WhatsApp e quick actions — tudo organizado automaticamente.
+              A partir de fotos, conversas, WhatsApp e uploads — tudo organizado automaticamente.
             </Text>
           </View>
         </View>
 
-        {/* Source Tags */}
-        <View style={styles.tagsContainer}>
-          <View style={styles.tag}><Camera size={12} color="#f28b50" /><Text style={styles.tagTextOrange}>Foto enviada</Text></View>
-          <View style={styles.tag}><MessageSquare size={12} color="#a3988e" /><Text style={styles.tagTextDark}>Chat com Ani</Text></View>
-          <View style={styles.tag}><MessageSquare size={12} color="#a3988e" /><Text style={styles.tagTextDark}>WhatsApp</Text></View>
-          <View style={styles.tag}><Sparkles size={12} color="#a3988e" /><Text style={styles.tagTextDark}>Quick action</Text></View>
-          <View style={styles.tag}><Upload size={12} color="#a3988e" /><Text style={styles.tagTextDark}>Upload</Text></View>
-        </View>
-
-        {/* Search Bar */}
+        {/* ── BUSCA E FILTROS ── */}
         <View style={styles.searchContainer}>
-          <Search size={20} color="#a3988e" />
+          <Search size={20} color={BRAND.PRIMARY[400]} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar em todos os documentos..."
-            placeholderTextColor="#a3988e"
+            placeholderTextColor={BRAND.PRIMARY[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
 
-        {/* Categories Row */}
-        <View style={styles.categoriesRow}>
-          <TouchableOpacity style={styles.categoryCard}>
-            <Droplet size={20} color="#f28b50" />
-            <Text style={styles.categoryCountOrange}>5</Text>
-            <Text style={styles.categoryLabel}>Exames</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryCard}>
-            <Activity size={20} color="#8c8078" />
-            <Text style={styles.categoryCountDark}>3</Text>
-            <Text style={styles.categoryLabel}>Imagens</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryCard}>
-            <Heart size={20} color="#8c8078" />
-            <Text style={styles.categoryCountDark}>3</Text>
-            <Text style={styles.categoryLabel}>Consultas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryCard}>
-            <Pill size={20} color="#8c8078" />
-            <Text style={styles.categoryCountDark}>2</Text>
-            <Text style={styles.categoryLabel}>Receitas</Text>
-          </TouchableOpacity>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.yearScroll} contentContainerStyle={{ paddingHorizontal: 20 }}>
+          {allYears.map(year => (
+            <TouchableOpacity 
+              key={year}
+              style={[styles.yearChip, selectedYear === year && styles.yearChipActive]}
+              onPress={() => setSelectedYear(year)}
+            >
+              <Text style={[styles.yearChipText, selectedYear === year && styles.yearChipTextActive]}>{year}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── ACORDEÕES ── */}
+        <View style={styles.accordionsWrapper}>
+          {displayCategories.map(cat => {
+            const catDocs = groupedDocs[cat.id] || [];
+            const isExpanded = expandedCategories[cat.id];
+            const hasDocs = catDocs.length > 0;
+            const Icon = cat.icon;
+
+            return (
+              <View key={cat.id} style={[styles.accordion, !hasDocs && styles.accordionEmpty]}>
+                <TouchableOpacity 
+                  style={styles.accordionHeader} 
+                  activeOpacity={0.7}
+                  onPress={() => toggleCategory(cat.id)}
+                >
+                  <View style={styles.accordionHeaderLeft}>
+                    <Icon size={20} color={hasDocs ? BRAND.SECONDARY.DEFAULT : BRAND.PRIMARY[400]} />
+                    <View style={{ marginLeft: 12 }}>
+                      <Text style={[styles.accordionTitle, !hasDocs && { color: BRAND.PRIMARY[400] }]}>{cat.label}</Text>
+                      <Text style={styles.accordionSubtitle}>{catDocs.length} documento{catDocs.length !== 1 && 's'}</Text>
+                    </View>
+                  </View>
+                  {isExpanded ? <ChevronUp size={20} color={BRAND.PRIMARY[400]} /> : <ChevronDown size={20} color={BRAND.PRIMARY[400]} />}
+                </TouchableOpacity>
+
+                {isExpanded && (
+                  <View style={styles.accordionBody}>
+                    {!hasDocs ? (
+                      <Text style={styles.emptyText}>Nenhum documento nesta categoria para o filtro selecionado.</Text>
+                    ) : (
+                      catDocs.map((doc, idx) => (
+                        <TouchableOpacity 
+                          key={doc.id} 
+                          style={[styles.docCard, idx === catDocs.length - 1 && { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}
+                          activeOpacity={0.7}
+                          onPress={() => router.push({ pathname: '/document/[id]', params: { id: doc.id, docData: JSON.stringify(doc) } })}
+                        >
+                          <View style={styles.docCardHeader}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.docTitle}>{doc.title || humanizeType(doc.document_type)}</Text>
+                              <Text style={styles.docDate}>{new Date(doc.created_at).toLocaleDateString('pt-BR')}</Text>
+                            </View>
+                            <View style={styles.docSourceTag}>
+                              {mapSourceIcon(doc.source_channel)}
+                              <Text style={styles.docSourceText}>{humanizeType(doc.source_channel)}</Text>
+                            </View>
+                          </View>
+                          {doc.summary && (
+                            <View style={styles.docSummaryBox}>
+                              <Text style={styles.docSummaryArrow}>↳</Text>
+                              <Text style={styles.docSummaryText}>{doc.summary}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
 
-        {/* Document Section */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderLeft}>
-            <View style={styles.sectionIconBox}>
-              <Droplet size={18} color="#ffffff" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Todos os Documentos</Text>
-              <Text style={styles.sectionSubtitle}>{docsCount} documentos</Text>
-            </View>
+        {/* ── CTA BOTTOM ── */}
+        <TouchableOpacity 
+          style={styles.bigOrangeCta}
+          activeOpacity={0.9}
+          onPress={() => setModalVisible(true)}
+        >
+          <View style={{flex: 1}}>
+            <Text style={styles.bigOrangeCtaTitle}>Adicionar documento</Text>
+            <Text style={styles.bigOrangeCtaSubtitle}>Foto, PDF, áudio ou descreva para a Ani</Text>
           </View>
-          <Text style={{ fontSize: 14, color: '#ffffff', fontWeight: 'bold' }}>▲</Text>
-        </View>
-
-        {/* Document Items */}
-        {/* Document Items */}
-        {documents?.map(doc => (
-          <View key={doc.id} style={styles.documentItem}>
-            <View style={styles.docItemHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.docItemTitle}>{doc.document_type || 'Documento'}</Text>
-                <Text style={styles.docItemDate}>{new Date(doc.created_at).toLocaleDateString('pt-BR')}</Text>
-              </View>
-              <View style={styles.docItemTag}>
-                {doc.source_channel === 'upload' ? <Upload size={10} color="#f28b50" /> : <Camera size={10} color="#f28b50" />}
-                <Text style={styles.docItemTagText}>{doc.source_channel}</Text>
-              </View>
-            </View>
-            <View style={styles.docItemContent}>
-              <Text style={styles.docItemDash}>—</Text>
-              <Text style={styles.docItemSummary}>{doc.summary}</Text>
-            </View>
-          </View>
-        ))}
+          <Plus size={24} color={BRAND.SURFACE.CARD} />
+        </TouchableOpacity>
 
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Add Document Modal */}
+      {/* ── MODAL ── */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -167,13 +316,13 @@ export default function DocsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Adicionar documento</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
-                <X size={20} color="#4a3931" />
+                <X size={20} color={BRAND.PRIMARY.DEFAULT} />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
               <View style={styles.actionIconBox}>
-                <Camera size={20} color="#f28b50" />
+                <Camera size={20} color={BRAND.SECONDARY.DEFAULT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>Tirar foto ou enviar imagem</Text>
@@ -183,7 +332,7 @@ export default function DocsScreen() {
 
             <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
               <View style={styles.actionIconBoxDark}>
-                <MessageSquare size={20} color="#4a3931" />
+                <MessageSquare size={20} color={BRAND.PRIMARY.DEFAULT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>Descrever para a Ani</Text>
@@ -193,17 +342,17 @@ export default function DocsScreen() {
 
             <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
               <View style={styles.actionIconBox}>
-                <Mic size={20} color="#f28b50" />
+                <Mic size={20} color={BRAND.SECONDARY.DEFAULT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>Áudio — Fui ao médico hoje</Text>
-                <Text style={styles.actionSubtitle}>Grave um resumo rápido da consulta, a Ani transcreve e salva</Text>
+                <Text style={styles.actionSubtitle}>Grave um resumo da consulta, a Ani transcreve e salva</Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
               <View style={styles.actionIconBoxDark}>
-                <Upload size={20} color="#4a3931" />
+                <Upload size={20} color={BRAND.PRIMARY.DEFAULT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>Upload de PDF</Text>
@@ -217,7 +366,6 @@ export default function DocsScreen() {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -225,230 +373,246 @@ export default function DocsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BRAND.BG.LIGHT, // #F0E9E5
+    backgroundColor: BRAND.BG.LIGHT,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 40,
   },
+
+  /* Header */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 20 : 16,
+    paddingBottom: 24,
   },
-  headerTextContainer: {
+  headerLeft: {
     flex: 1,
   },
   headerTitle: {
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 24,
-    color: BRAND.PRIMARY.DEFAULT, // #403229
+    fontSize: 22,
+    color: '#fff',
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 14,
-    color: BRAND.PRIMARY[600],
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.75)',
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: BRAND.SECONDARY.DEFAULT, // #FF9A5C
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: BRAND.SECONDARY.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
+
+  /* Banner AI */
   aiBanner: {
     flexDirection: 'row',
     backgroundColor: BRAND.PRIMARY.DEFAULT,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 20,
+    marginTop: -16, // overlap
   },
   aiBannerTitle: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: '#ffffff',
+    fontSize: 14,
+    color: '#fff',
     marginBottom: 4,
   },
   aiBannerDesc: {
     fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
     lineHeight: 18,
   },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  tagTextOrange: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 12,
-    color: BRAND.SECONDARY.DEFAULT,
-  },
-  tagTextDark: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    color: BRAND.PRIMARY[400],
-  },
+
+  /* Search & Filters */
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    height: 48,
     paddingHorizontal: 16,
-    height: 56,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
     fontFamily: 'Nunito_400Regular',
     fontSize: 15,
     color: BRAND.PRIMARY.DEFAULT,
   },
-  categoriesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 32,
+  yearScroll: {
+    marginTop: 16,
+    marginBottom: 4,
   },
-  categoryCard: {
-    backgroundColor: BRAND.SURFACE.CARD,
+  yearChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    padding: 16,
-    alignItems: 'center',
-    width: '23%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
+    marginRight: 8,
   },
-  categoryCountOrange: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 20,
-    color: BRAND.SECONDARY.DEFAULT,
-    marginTop: 8,
+  yearChipActive: {
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
+    borderColor: BRAND.PRIMARY.DEFAULT,
   },
-  categoryCountDark: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 20,
-    color: BRAND.PRIMARY.DEFAULT,
-    marginTop: 8,
-  },
-  categoryLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
+  yearChipText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
     color: BRAND.PRIMARY[600],
-    marginTop: 4,
   },
-  sectionHeader: {
+  yearChipTextActive: {
+    color: '#fff',
+  },
+
+  /* Accordions */
+  accordionsWrapper: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+    gap: 12,
+  },
+  accordion: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
+    overflow: 'hidden',
+  },
+  accordionEmpty: {
+    backgroundColor: BRAND.PRIMARY[50],
+    borderColor: 'transparent',
+  },
+  accordionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: BRAND.SECONDARY.DEFAULT,
-    borderRadius: 20,
     padding: 16,
-    marginBottom: 16,
   },
-  sectionHeaderLeft: {
+  accordionHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  sectionIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  sectionTitle: {
+  accordionTitle: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: '#ffffff',
+    fontSize: 15,
+    color: BRAND.PRIMARY.DEFAULT,
   },
-  sectionSubtitle: {
+  accordionSubtitle: {
     fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+    color: BRAND.PRIMARY[400],
+    marginTop: 2,
   },
-  documentItem: {
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+  accordionBody: {
+    padding: 16,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: BRAND.PRIMARY[100],
+    marginTop: 8,
   },
-  docItemHeader: {
+  emptyText: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 14,
+    color: BRAND.PRIMARY[400],
+    fontStyle: 'italic',
+    paddingVertical: 8,
+  },
+
+  /* Document Card */
+  docCard: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: BRAND.PRIMARY[100],
+  },
+  docCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
   },
-  docItemTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
+  docTitle: {
+    fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: BRAND.PRIMARY.DEFAULT,
     marginBottom: 4,
   },
-  docItemDate: {
+  docDate: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 12,
     color: BRAND.PRIMARY[400],
   },
-  docItemTag: {
+  docSourceTag: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: BRAND.PRIMARY[50],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     gap: 4,
   },
-  docItemTagText: {
+  docSourceText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 10,
-    color: BRAND.SECONDARY.DEFAULT,
+    color: BRAND.PRIMARY[600],
   },
-  docItemContent: {
+  docSummaryBox: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    marginTop: 12,
+    paddingLeft: 4,
   },
-  docItemDash: {
-    fontFamily: 'Nunito_700Bold',
-    color: BRAND.SECONDARY.DEFAULT,
+  docSummaryArrow: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 14,
+    color: BRAND.PRIMARY[400],
     marginRight: 8,
   },
-  docItemSummary: {
-    fontFamily: 'Nunito_600SemiBold',
+  docSummaryText: {
+    flex: 1,
+    fontFamily: 'Nunito_400Regular',
     fontSize: 13,
-    color: BRAND.PRIMARY.DEFAULT,
+    lineHeight: 18,
+    color: BRAND.PRIMARY[600],
   },
+
+  /* Bottom CTA */
+  bigOrangeCta: {
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginTop: 24,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bigOrangeCtaTitle: {
+    fontSize: 16,
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  bigOrangeCtaSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Nunito_400Regular',
+    color: 'rgba(255,255,255,0.85)',
+  },
+
+  /* Modal */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(23,17,13,0.6)', // BRAND.PRIMARY[900] with opacity
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -456,7 +620,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -470,31 +634,23 @@ const styles = StyleSheet.create({
     color: BRAND.PRIMARY.DEFAULT,
   },
   modalCloseBtn: {
-    width: 40,
-    height: 40,
+    padding: 8,
+    backgroundColor: BRAND.PRIMARY[100],
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 20,
+    backgroundColor: '#fff',
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    borderRadius: 16,
+    marginBottom: 12,
   },
   actionIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,154,92,0.1)',
+    borderRadius: 14,
+    backgroundColor: BRAND.SECONDARY[100],
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -502,29 +658,29 @@ const styles = StyleSheet.create({
   actionIconBoxDark: {
     width: 48,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(64,50,41,0.05)',
+    borderRadius: 14,
+    backgroundColor: BRAND.PRIMARY[100],
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   actionTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: BRAND.PRIMARY.DEFAULT,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   actionSubtitle: {
     fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: BRAND.PRIMARY[600],
+    fontSize: 13,
+    color: BRAND.PRIMARY[400],
     lineHeight: 18,
   },
   modalFooterText: {
     fontFamily: 'Nunito_400Regular',
-    fontSize: 10,
+    fontSize: 12,
     color: BRAND.PRIMARY[400],
     textAlign: 'center',
     marginTop: 16,
-  }
+  },
 });

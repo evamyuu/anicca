@@ -78,6 +78,7 @@ class RegisterInput:
 
     email: str
     password: str
+    username: Optional[str] = None
     phone: Optional[str] = None
     role: str = "patient"
     crm_number: Optional[str] = None

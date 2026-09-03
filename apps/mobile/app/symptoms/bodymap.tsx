@@ -12,14 +12,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 const CTCAE_GRADES = [
-  { label: 'Sem dor', color: '#3b82f6' }, // Blue
-  { label: 'Grau 1', color: '#a3e635' }, // Light green
-  { label: 'Grau 2', color: '#fbbf24' }, // Yellow
-  { label: 'Grau 3', color: '#f97316' }, // Orange
-  { label: 'Grau 4', color: '#ea580c' }, // Dark Orange
-  { label: 'Grau 4+', color: '#ef4444' }, // Red
+  { label: 'Sem dor', color: BRAND.AUX.BLUE }, // Blue
+  { label: 'Grau 1', color: BRAND.PRIMARY[400] }, // Light green
+  { label: 'Grau 2', color: BRAND.SECONDARY.DEFAULT }, // Yellow
+  { label: 'Grau 3', color: BRAND.SECONDARY[600] }, // Orange
+  { label: 'Grau 4', color: BRAND.SECONDARY[700] }, // Dark Orange
+  { label: 'Grau 4+', color: BRAND.ERROR.DEFAULT }, // Red
 ];
 
 export default function BodyMapScreen() {
@@ -35,7 +36,7 @@ export default function BodyMapScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ChevronLeft size={24} color="#3d2b1f" />
+            <ChevronLeft size={24} color={BRAND.PRIMARY.DEFAULT} />
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Body Map</Text>
@@ -125,7 +126,7 @@ export default function BodyMapScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fbf9f6',
+    backgroundColor: BRAND.BG.LIGHT,
   },
   container: {
     paddingHorizontal: 20,
@@ -147,19 +148,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#3d2b1f',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: '#8c8078',
+    fontSize: 16,
+    color: BRAND.PRIMARY[400],
     marginTop: 2,
   },
   topToggle: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 20,
     padding: 4,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -171,15 +172,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   toggleBtnActiveDark: {
-    backgroundColor: '#4a3931',
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
   },
   toggleBtnText: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#a3988e',
+    color: BRAND.PRIMARY[400],
   },
   toggleBtnTextActiveDark: {
-    color: '#ffffff',
+    color: BRAND.SURFACE.CARD,
   },
   filtersRow: {
     flexDirection: 'row',
@@ -188,11 +189,11 @@ const styles = StyleSheet.create({
   },
   filterGroup: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 24,
     padding: 4,
     borderWidth: 1,
-    borderColor: '#e5e0dc',
+    borderColor: BRAND.SURFACE.BORDER,
     width: '48%',
   },
   filterBtn: {
@@ -202,15 +203,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   filterBtnActive: {
-    backgroundColor: '#efe9e4',
+    backgroundColor: BRAND.PRIMARY[100],
   },
   filterBtnText: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#a3988e',
+    color: BRAND.PRIMARY[400],
   },
   filterBtnTextActive: {
-    color: '#4a3931',
+    color: BRAND.PRIMARY.DEFAULT,
   },
   paletteContainer: {
     flexDirection: 'row',
@@ -228,16 +229,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   paletteLabel: {
-    fontSize: 9,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#8c8078',
+    color: BRAND.PRIMARY[400],
   },
   canvasContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND.SURFACE.CARD,
     borderRadius: 32,
     minHeight: 450,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 15,
@@ -250,19 +251,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
     borderWidth: 2,
-    borderColor: '#efe9e4',
+    borderColor: BRAND.PRIMARY[100],
     borderStyle: 'dashed',
     borderRadius: 24,
   },
   placeholderText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#a3988e',
+    color: BRAND.PRIMARY[400],
     marginBottom: 8,
   },
   placeholderSub: {
-    fontSize: 12,
-    color: '#bdae9f',
+    fontSize: 16,
+    color: BRAND.PRIMARY[300],
     textAlign: 'center',
   },
   bottomNavContainer: {
@@ -270,8 +271,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   hubLinkText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#f28b50',
+    color: BRAND.SECONDARY.DEFAULT,
   }
 });

@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 interface ProgressBarProps {
   currentStep: number;
@@ -41,9 +42,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 8,
-    backgroundColor: '#E8DDD8',
+    backgroundColor: BRAND.PRIMARY[200],
   },
   dotDone: {
-    backgroundColor: '#FF9A5C',
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
   },
 });

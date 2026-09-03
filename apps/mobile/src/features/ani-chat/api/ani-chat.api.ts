@@ -22,6 +22,8 @@ export interface SendMessagePayload {
   text: string;
   /** The channel from which the message originates. */
   channel: 'app' | 'web';
+  /** The chosen Ani personality. */
+  personality?: string;
   /**
    * Optional URL of an uploaded document to pass for OCR analysis.
    * @remarks Triggers the AWS Textract agent in the BFF orchestrator.
@@ -49,11 +51,22 @@ export interface SendMessageResponse {
  * @throws {AxiosError} On network failure or a non-2xx HTTP status.
  */
 export async function sendMessage(payload: SendMessagePayload): Promise<SendMessageResponse> {
-  const response = await httpClient.post<SendMessageResponse>(
+  const response = await httpClient.post<any>(
     API_ENDPOINTS.messages.send,
-    payload
+    {
+      session_id: payload.sessionId,
+      text: payload.text,
+      channel: payload.channel,
+      personality: payload.personality,
+      document_url: payload.documentUrl,
+    }
   );
-  return response.data;
+  
+  return {
+    userMessage: response.data.user_message,
+    aniResponse: response.data.ani_response,
+    sessionId: response.data.session_id,
+  };
 }
 
 /**
@@ -66,10 +79,18 @@ export async function sendMessage(payload: SendMessagePayload): Promise<SendMess
 export async function getConversationHistory(
   sessionId: string
 ): Promise<ConversationMessage[]> {
-  const response = await httpClient.get<ConversationMessage[]>(
+  const response = await httpClient.get<any[]>(
     API_ENDPOINTS.messages.history(sessionId)
   );
-  return response.data;
+  return response.data.map(msg => ({
+    id: msg.id,
+    sessionId: msg.session_id,
+    role: msg.role,
+    text: msg.text,
+    cards: msg.cards || [],
+    channel: msg.channel,
+    createdAt: msg.created_at,
+  }));
 }
 
 /**
@@ -79,8 +100,8 @@ export async function getConversationHistory(
  * @throws {AxiosError} On network failure or a non-2xx HTTP status.
  */
 export async function startSession(): Promise<{ sessionId: string }> {
-  const response = await httpClient.post<{ sessionId: string }>(
+  const response = await httpClient.post<{ session_id: string }>(
     API_ENDPOINTS.messages.startSession
   );
-  return response.data;
+  return { sessionId: response.data.session_id };
 }

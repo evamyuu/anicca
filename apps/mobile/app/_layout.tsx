@@ -74,6 +74,7 @@ function AppContent() {
         <Stack.Screen name="tickets/index" />
         <Stack.Screen name="tickets/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings/index" />
+        <Stack.Screen name="document/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </>

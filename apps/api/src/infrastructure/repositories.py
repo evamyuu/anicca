@@ -294,7 +294,7 @@ def _patient_model_to_entity(model: PatientModel) -> Patient:
     try:
         personality = AniPersonality(model.ani_personality)
     except ValueError:
-        personality = AniPersonality.DEFAULT
+        personality = AniPersonality.MENTOR
 
     return Patient(
         id=model.id,
@@ -415,3 +415,4 @@ def _document_model_to_entity(model: DocumentModel) -> Document:
         summary=model.summary,
         created_at=model.created_at,
     )
+

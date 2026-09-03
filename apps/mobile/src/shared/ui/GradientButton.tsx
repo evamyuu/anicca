@@ -9,6 +9,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export interface GradientButtonProps {
   title: string;
@@ -24,7 +25,7 @@ export function GradientButton({
   title,
   onPress,
   colors,
-  textColor = '#ffffff',
+  textColor = BRAND.SURFACE.CARD,
   style,
   textStyle,
   disabled = false,

@@ -12,10 +12,16 @@ import Constants from 'expo-constants';
 
 import { useAuthStore } from '@/shared/lib/zustand-persist';
 
-/** @internal Resolved API base URL from Expo config or development fallback. */
-const BASE_URL =
+let RAW_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ??
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
   'http://localhost:8000';
+
+if (RAW_BASE_URL.endsWith('/api/v1')) {
+  RAW_BASE_URL = RAW_BASE_URL.replace('/api/v1', '');
+}
+
+const BASE_URL = RAW_BASE_URL;
 
 /** @internal Request timeout in milliseconds. */
 const REQUEST_TIMEOUT_MS = 30_000;

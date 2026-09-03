@@ -103,6 +103,8 @@ export interface OnboardingState {
   diagnosisDate: string | null;
   /** Treatment modality (SUS, etc) */
   careModality: string | null;
+  /** Same as careModality, used in PatientHome */
+  treatmentModality: string | null;
   /** Patient ZIP code */
   zipCode: string | null;
   /** Phase of journey */
@@ -181,19 +183,20 @@ const initialOnboardingState: Omit<
 > = {
   currentStep: 1,
   totalSteps: 7, // Default, will be updated per profile
-  profileType: null,
-  name: null,
+  profileType: 'patient',
+  name: 'Evelin Brandão',
   crmNumber: null,
-  birthYear: null,
-  gender: null,
-  cancerType: null,
-  stage: null,
-  diagnosisDate: null,
-  careModality: null,
-  zipCode: null,
-  journeyPhase: null,
-  treatments: [],
-  concerns: [],
+  birthYear: '1995',
+  gender: 'Feminino',
+  cancerType: 'Câncer de Mama',
+  stage: 'Estádio IIB',
+  diagnosisDate: '15/03/2026',
+  careModality: 'convenio',
+  treatmentModality: 'convenio',
+  zipCode: '01001-000',
+  journeyPhase: 'Tratamento ativo',
+  treatments: ['Quimioterapia', 'Radioterapia', 'Hormonioterapia'],
+  concerns: ['Lidar com sintomas do tratamento'],
   caregiverName: null,
   caregiverRelationship: null,
   doctorSpecialty: null,
@@ -224,6 +227,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       prevStep: () => set({ currentStep: Math.max(get().currentStep - 1, 1) }),
       setProfileType: (type) => set({ profileType: type }),
       setDetails: (details) => set((state) => ({ ...state, ...details })),
+      setAniPersonality: (personality) => set({ aniPersonality: personality }),
       setAvatarConfig: (config) => set({ avatarConfig: { ...get().avatarConfig, ...config } }),
       setConsent: (field, value) => {
         if (field === 'research') {

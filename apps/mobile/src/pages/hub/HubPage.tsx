@@ -10,11 +10,12 @@ import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 
 export function HubPage() {
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#0F0A1A' }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: BRAND.BG.DARK }}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 24 }}
@@ -40,10 +41,10 @@ export function HubPage() {
         <View
           className="mx-4 mt-4 p-4 rounded-2xl"
           style={{
-            backgroundColor: '#1E1433',
+            backgroundColor: BRAND.SURFACE.CARD_DARK,
             borderWidth: 1,
-            borderColor: '#2d2540',
-            shadowColor: '#a855f7',
+            borderColor: BRAND.SURFACE.BORDER_DARK,
+            shadowColor: BRAND.AUX.PURPLE,
             shadowOpacity: 0.15,
             shadowRadius: 12,
             elevation: 4,
@@ -53,7 +54,7 @@ export function HubPage() {
             <Text style={{ fontSize: 24, marginRight: 8 }}>🐱</Text>
             <Text
               className="text-primary-300 font-semibold"
-              style={{ fontFamily: 'Nunito_600SemiBold', color: '#d8b4fe' }}
+              style={{ fontFamily: 'Nunito_600SemiBold', color: BRAND.AUX.PURPLE }}
             >
               Ani
             </Text>
@@ -66,7 +67,7 @@ export function HubPage() {
           </Text>
           <TouchableOpacity
             className="mt-3 py-2 px-4 rounded-xl self-start"
-            style={{ backgroundColor: '#7e22ce' }}
+            style={{ backgroundColor: BRAND.AUX.PURPLE }}
             onPress={() => router.push('/(tabs)/ani')}
             accessibilityRole="button"
             accessibilityLabel="Falar com Ani"
@@ -95,9 +96,9 @@ export function HubPage() {
                 className="rounded-2xl p-4 items-start"
                 style={{
                   width: '47%',
-                  backgroundColor: '#1E1433',
+                  backgroundColor: BRAND.SURFACE.CARD_DARK,
                   borderWidth: 1,
-                  borderColor: '#2d2540',
+                  borderColor: BRAND.SURFACE.BORDER_DARK,
                   minHeight: 100,
                 }}
                 onPress={() => router.push(action.route as `/${string}`)}
@@ -120,9 +121,9 @@ export function HubPage() {
         <View
           className="mx-4 mt-4 p-4 rounded-2xl"
           style={{
-            backgroundColor: '#1E1433',
+            backgroundColor: BRAND.SURFACE.CARD_DARK,
             borderWidth: 1,
-            borderColor: '#22c55e',
+            borderColor: BRAND.SEMANTIC.SUCCESS,
             borderLeftWidth: 4,
           }}
         >
@@ -133,7 +134,7 @@ export function HubPage() {
             >
               ⚖️ Lei dos 60 Dias
             </Text>
-            <View className="px-2 py-1 rounded-full" style={{ backgroundColor: '#14532d' }}>
+            <View className="px-2 py-1 rounded-full" style={{ backgroundColor: BRAND.SEMANTIC.SUCCESS }}>
               <Text className="text-green-300 text-xs" style={{ fontFamily: 'Nunito_600SemiBold' }}>
                 No prazo
               </Text>

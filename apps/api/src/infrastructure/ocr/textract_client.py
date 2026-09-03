@@ -139,3 +139,4 @@ class TextractClient:
 
 textract_client = TextractClient()
 """Module-level singleton instance of :class:`TextractClient`."""
+

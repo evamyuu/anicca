@@ -9,10 +9,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function TicketsPage() {
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#0F0A1A' }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: BRAND.BG.DARK }}>
       <View className="flex-1 px-6 pt-6 items-center justify-center">
         <Text style={{ fontSize: 48, marginBottom: 12 }}>🎫</Text>
         <Text className="text-white text-2xl font-extrabold text-center mb-2" style={{ fontFamily: 'Nunito_800ExtraBold' }}>Seus Chamados</Text>

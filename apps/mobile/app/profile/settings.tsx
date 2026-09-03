@@ -13,6 +13,7 @@ import { ChevronLeft, LogOut, Lock, Moon, Shield, Watch } from 'lucide-react-nat
 import { useAuthStore } from '@/shared/lib/zustand-persist';
 import { useTheme } from '@/shared/providers/ThemeProvider';
 import { ThemeColors } from '@/shared/theme/colors';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function SettingsScreen() {
                 value={isDark}
                 onValueChange={toggleTheme}
                 trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#ffffff"
+                thumbColor={BRAND.SURFACE.CARD}
               />
             </View>
             <View style={styles.divider} />
@@ -137,7 +138,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.textMuted,
     marginBottom: 12,
@@ -148,7 +149,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   cardGroup: {
     backgroundColor: colors.card,
     borderRadius: 24,
-    shadowColor: '#000',
+    shadowColor: BRAND.PRIMARY[900],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 10,

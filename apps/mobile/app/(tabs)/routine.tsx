@@ -1,6 +1,5 @@
 /**
- * @fileoverview Routine Screen for daily patient tracking (Temperature, Meds).
- * Implements the Figma 3 UI design.
+ * @fileoverview Rotina de Hoje — daily patient tracking screen.
  *
  * @module pages/tabs/routine
  * @author Evelin Brandão Cordeiro
@@ -9,13 +8,47 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { Thermometer, Sun, Moon, Check, Droplets, Droplet, Star, Minus, Plus, ChevronRight } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import {
+  Thermometer,
+  Sun,
+  Moon,
+  Check,
+  Droplets,
+  Droplet,
+  Star,
+  Minus,
+  Plus,
+  ChevronRight,
+  Pill,
+  AlertCircle,
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/shared/lib/zustand-persist';
-import { getTodayRoutine, updateTemperature, updateHydration, updateSleep, updateMedications, MedicationItem } from '@/shared/api/routine';
+import {
+  getTodayRoutine,
+  updateTemperature,
+  updateHydration,
+  updateSleep,
+  updateMedications,
+  type MedicationItem,
+} from '@/shared/api/routine';
+import { BRAND } from '@/shared/constants/brand-colors.const';
+
+const HYDRATION_GOAL = 8;
 
 export default function RoutineScreen() {
   const router = useRouter();
@@ -23,7 +56,7 @@ export default function RoutineScreen() {
   const queryClient = useQueryClient();
 
   const [localTemp, setLocalTemp] = useState('');
-  const [localSleepQ, setLocalSleepQ] = useState(5);
+  const [localSleepHours, setLocalSleepHours] = useState(7);
 
   const { data: routine, isLoading } = useQuery({
     queryKey: ['routine', 'today', userId],
@@ -33,268 +66,388 @@ export default function RoutineScreen() {
 
   const tempMutation = useMutation({
     mutationFn: (val: number) => updateTemperature(userId!, val),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] });
-      Alert.alert('Sucesso', 'Temperatura salva!');
-    }
+    onMutate: async (newTemp) => {
+      await queryClient.cancelQueries({ queryKey: ['routine', 'today', userId] });
+      const previous = queryClient.getQueryData(['routine', 'today', userId]);
+      queryClient.setQueryData(['routine', 'today', userId], (old: any) => ({ ...old, temperature: newTemp }));
+      return { previous };
+    },
+    onError: (_err, _val, context) => queryClient.setQueryData(['routine', 'today', userId], context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] }),
   });
 
   const hydraMutation = useMutation({
     mutationFn: (val: number) => updateHydration(userId!, val),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+    onMutate: async (newVal) => {
+      await queryClient.cancelQueries({ queryKey: ['routine', 'today', userId] });
+      const previous = queryClient.getQueryData(['routine', 'today', userId]);
+      queryClient.setQueryData(['routine', 'today', userId], (old: any) => ({ ...old, hydration_glasses: newVal }));
+      return { previous };
+    },
+    onError: (_err, _val, context) => queryClient.setQueryData(['routine', 'today', userId], context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] }),
   });
 
   const sleepMutation = useMutation({
-    mutationFn: ({ hours, quality }: { hours: number, quality: number }) => updateSleep(userId!, hours, quality),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+    mutationFn: ({ hours, quality }: { hours: number; quality: number }) =>
+      updateSleep(userId!, hours, quality),
+    onMutate: async (newSleep) => {
+      await queryClient.cancelQueries({ queryKey: ['routine', 'today', userId] });
+      const previous = queryClient.getQueryData(['routine', 'today', userId]);
+      queryClient.setQueryData(['routine', 'today', userId], (old: any) => ({
+        ...old,
+        sleep_hours: newSleep.hours,
+        sleep_quality: newSleep.quality,
+      }));
+      return { previous };
+    },
+    onError: (_err, _val, context) => queryClient.setQueryData(['routine', 'today', userId], context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] }),
   });
 
   const medsMutation = useMutation({
     mutationFn: (meds: MedicationItem[]) => updateMedications(userId!, meds),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] })
+    onMutate: async (newMeds) => {
+      await queryClient.cancelQueries({ queryKey: ['routine', 'today', userId] });
+      const previous = queryClient.getQueryData(['routine', 'today', userId]);
+      queryClient.setQueryData(['routine', 'today', userId], (old: any) => ({ ...old, medications: newMeds }));
+      return { previous };
+    },
+    onError: (_err, _val, context) => queryClient.setQueryData(['routine', 'today', userId], context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['routine', 'today', userId] }),
   });
 
-  const meds = routine?.medications?.length ? routine.medications : [
-    { name: 'Capecitabina', period: 'morning', taken: true, type: 'Quimio oral', dose: '500mg • 2 comprimidos' },
-    { name: 'Dexametasona', period: 'morning', taken: true, type: 'Anti-náusea', dose: '4mg • 1 comprimido' },
-    { name: 'Ondansetrona', period: 'morning', taken: false, type: 'Anti-náusea', dose: '8mg • 1 comprimido' },
-    { name: 'Omeprazol', period: 'afternoon', taken: false, type: 'Suporte', dose: '20mg • 1 cápsula' },
-  ];
-
-  const hydration = routine?.hydration_glasses || 0;
-  const sleepHours = routine?.sleep_hours || 7;
+  const meds = routine?.medications ?? [];
+  const hydration = routine?.hydration_glasses ?? 0;
+  const sleepHours = routine?.sleep_hours ?? localSleepHours;
+  const sleepQuality = routine?.sleep_quality ?? 5;
   const lastTemp = routine?.temperature;
 
+  const morningMeds = meds.map((m, i) => ({ ...m, i })).filter(m => m.period === 'morning');
+  const afternoonMeds = meds.map((m, i) => ({ ...m, i })).filter(m => m.period === 'afternoon');
+  const eveningMeds = meds.map((m, i) => ({ ...m, i })).filter(m => m.period === 'evening' || m.period === 'night');
+  const checkedCount = meds.filter(m => m.taken).length;
+
   const toggleMed = (index: number) => {
-    const newMeds = [...meds];
-    newMeds[index].taken = !newMeds[index].taken;
-    medsMutation.mutate(newMeds);
+    const updated = meds.map((m, i) =>
+      i === index ? { ...m, taken: !m.taken } : m
+    ) as MedicationItem[];
+    medsMutation.mutate(updated);
   };
 
-  const morningMeds = meds.map((m, i) => ({...m, originalIndex: i})).filter(m => m.period === 'morning');
-  const afternoonMeds = meds.map((m, i) => ({...m, originalIndex: i})).filter(m => m.period === 'afternoon');
-  const checkedCount = meds.filter(m => m.taken).length;
+  const dateStr = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
+  const tempAlert = lastTemp !== undefined && lastTemp !== null && lastTemp >= 37.8;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Header Title */}
-        <View style={styles.header}>
-          <View>
+
+        {/* ── HEADER ── */}
+        <LinearGradient
+          colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Rotina de Hoje</Text>
-            <Text style={styles.headerSubtitle}>Sexta, 23 Mai • Ciclo 2, Dia 8</Text>
+            <Text style={styles.headerDate}>{dateStr}</Text>
           </View>
-          <View style={styles.progressBadge}>
-            <Text style={styles.progressBadgeTextBig}>{checkedCount}/{meds.length}</Text>
-            <Text style={styles.progressBadgeTextSmall}>meds</Text>
-          </View>
+          {meds.length > 0 && (
+            <View style={styles.progressBadge}>
+              <Text style={styles.progressBig}>{checkedCount}</Text>
+              <Text style={styles.progressSmall}>/{meds.length}</Text>
+              <Text style={styles.progressLabel}>meds</Text>
+            </View>
+          )}
+        </LinearGradient>
+
+        {isLoading && (
+          <ActivityIndicator color={BRAND.SECONDARY.DEFAULT} style={{ marginVertical: 32 }} />
+        )}
+
+        {/* ── TEMPERATURA ── */}
+        <View style={styles.sectionLabel}>
+          <Thermometer size={16} color={BRAND.PRIMARY[400]} />
+          <Text style={styles.sectionLabelText}>Temperatura Corporal</Text>
         </View>
 
-        {/* Temperature Card */}
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Thermometer size={20} color="#f28b50" />
-            <Text style={styles.cardTitle}>Temperatura Corporal</Text>
-          </View>
-          
-          <View style={styles.tempInputRow}>
-            <View style={styles.tempInputContainer}>
+          {tempAlert && (
+            <View style={styles.alertBanner}>
+              <AlertCircle size={16} color={BRAND.ERROR.DEFAULT} />
+              <Text style={styles.alertBannerText}>Temperatura acima de 37,8°C — entre em contato com sua equipe médica.</Text>
+            </View>
+          )}
+          <View style={styles.tempRow}>
+            <View style={styles.tempInputWrapper}>
               <Text style={styles.tempUnit}>°C</Text>
-              <TextInput 
+              <TextInput
                 style={styles.tempInput}
                 placeholder={lastTemp ? `Último: ${lastTemp}°C` : 'Ex: 36.5'}
-                placeholderTextColor="#a3988e"
+                placeholderTextColor={BRAND.PRIMARY[300]}
                 keyboardType="decimal-pad"
                 value={localTemp}
                 onChangeText={setLocalTemp}
               />
             </View>
-            <TouchableOpacity 
-              style={styles.saveButton} 
+            <TouchableOpacity
+              style={[styles.saveBtn, !localTemp && styles.saveBtnDisabled]}
               activeOpacity={0.8}
+              disabled={!localTemp || tempMutation.isPending}
               onPress={() => {
-                if (localTemp) {
-                  tempMutation.mutate(parseFloat(localTemp.replace(',','.')));
+                const parsed = parseFloat(localTemp.replace(',', '.'));
+                if (!isNaN(parsed)) {
+                  tempMutation.mutate(parsed);
                   setLocalTemp('');
                 }
               }}
             >
-              {tempMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Salvar</Text>}
+              {tempMutation.isPending
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.saveBtnText}>Salvar</Text>}
             </TouchableOpacity>
           </View>
-          
-          <Text style={styles.lastReadingText}>✓ Última leitura: {lastTemp ? `${lastTemp}°C` : '--'}</Text>
+          {lastTemp !== undefined && lastTemp !== null && (
+            <Text style={styles.lastReading}>✓ Última leitura: {lastTemp}°C</Text>
+          )}
         </View>
 
-        {/* Medications List */}
-        <View style={styles.medsContainer}>
-          <View style={styles.medsHeader}>
-            <Text style={styles.medsTitle}>Medicamentos</Text>
-            <TouchableOpacity>
-              <Text style={styles.symptomsLink}>Ver sintomas →</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Morning Section */}
-          <View style={styles.timeSection}>
-            <View style={styles.timeHeader}>
-              <Sun size={18} color="#8c8078" />
-              <Text style={styles.timeTitle}>Manhã • 08:00</Text>
-            </View>
-            
-            {morningMeds.map(med => (
-              <TouchableOpacity 
-                key={med.originalIndex} 
-                style={[styles.medItem, med.taken && styles.medItemChecked]} 
-                onPress={() => toggleMed(med.originalIndex)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.checkbox, med.taken && styles.checkboxChecked]}>
-                  {med.taken && <Check size={16} color="#ffffff" />}
-                </View>
-                <View style={styles.medTextContainer}>
-                  <View style={styles.medNameRow}>
-                    <Text style={[styles.medName, med.taken && styles.medNameChecked]}>{med.name}</Text>
-                    <Text style={[styles.medType, med.taken && styles.medTypeChecked]}>{med.type || 'Med'}</Text>
-                  </View>
-                  <Text style={[styles.medDose, med.taken && styles.medDoseChecked]}>{med.dose || ''}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Afternoon Section */}
-          <View style={styles.timeSection}>
-            <View style={styles.timeHeader}>
-              <Moon size={18} color="#8c8078" />
-              <Text style={styles.timeTitle}>Tarde • 11:30–14:00</Text>
-            </View>
-            
-            {afternoonMeds.map(med => (
-              <TouchableOpacity 
-                key={med.originalIndex} 
-                style={[styles.medItem, med.taken && styles.medItemChecked]} 
-                onPress={() => toggleMed(med.originalIndex)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.checkbox, med.taken && styles.checkboxChecked]}>
-                  {med.taken && <Check size={16} color="#ffffff" />}
-                </View>
-                <View style={styles.medTextContainer}>
-                  <View style={styles.medNameRow}>
-                    <Text style={[styles.medName, med.taken && styles.medNameChecked]}>{med.name}</Text>
-                    <Text style={[styles.medType, med.taken && styles.medTypeChecked]}>{med.type || 'Med'}</Text>
-                  </View>
-                  <Text style={[styles.medDose, med.taken && styles.medDoseChecked]}>{med.dose || ''}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
+        {/* ── MEDICAMENTOS ── */}
+        <View style={styles.sectionLabel}>
+          <Pill size={16} color={BRAND.PRIMARY[400]} />
+          <Text style={styles.sectionLabelText}>Medicamentos</Text>
         </View>
 
-        {/* Hydration Card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeaderFlex}>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Droplets size={20} color="#8c8078" />
-              <Text style={styles.cardTitle}>Hidratação</Text>
-            </View>
-            <Text style={styles.cardHeaderRightText}>{hydration}/8 copos (200ml)</Text>
-          </View>
-          
-          <View style={styles.dropsRow}>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(drop => (
-              <View key={`drop_${drop}`} style={[styles.dropCircle, drop <= hydration ? styles.dropCircleFilled : styles.dropCircleEmpty]}>
-                <Droplet size={14} color={drop <= hydration ? "#ffffff" : "#a3988e"} fill={drop <= hydration ? "#ffffff" : "transparent"} />
-              </View>
-            ))}
-          </View>
-          
-          <View style={styles.infoBanner}>
-            <Text style={styles.infoBannerText}>
-              Durante a quimio, beba pelo menos 2L por dia para ajudar os rins a eliminar os resíduos do tratamento.
+        {meds.length === 0 && !isLoading ? (
+          <View style={[styles.card, styles.emptyCard]}>
+            <Pill size={32} color={BRAND.PRIMARY[300]} style={{ marginBottom: 12 }} />
+            <Text style={styles.emptyTitle}>Nenhum medicamento cadastrado</Text>
+            <Text style={styles.emptySubtitle}>
+              Peça à sua equipe médica para registrar sua medicação no sistema.
             </Text>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.actionBtnBrown} 
-            activeOpacity={0.8}
-            onPress={() => hydraMutation.mutate(Math.min(8, hydration + 1))}
-          >
-            <Plus size={16} color="#ffffff" style={{marginRight: 8}} />
-            <Text style={styles.actionBtnBrownText}>Bebi mais um copo</Text>
-          </TouchableOpacity>
+        ) : (
+          <View style={styles.card}>
+            {morningMeds.length > 0 && (
+              <View style={styles.periodSection}>
+                <View style={styles.periodHeader}>
+                  <Sun size={16} color={BRAND.SECONDARY.DEFAULT} />
+                  <Text style={styles.periodTitle}>Manhã • 08:00</Text>
+                </View>
+                {morningMeds.map(med => (
+                  <TouchableOpacity
+                    key={med.i}
+                    style={[styles.medRow, med.taken && styles.medRowDone]}
+                    onPress={() => toggleMed(med.i)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.checkbox, med.taken && styles.checkboxDone]}>
+                      {med.taken && <Check size={14} color="#fff" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.medName, med.taken && styles.medNameDone]}>{med.name}</Text>
+                      {med.dose ? <Text style={styles.medDose}>{med.dose}</Text> : null}
+                    </View>
+                    {med.type && (
+                      <View style={styles.medTypeBadge}>
+                        <Text style={styles.medTypeText}>{med.type}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {afternoonMeds.length > 0 && (
+              <View style={styles.periodSection}>
+                <View style={styles.periodHeader}>
+                  <Sun size={16} color={BRAND.PRIMARY[400]} />
+                  <Text style={styles.periodTitle}>Tarde • 14:00</Text>
+                </View>
+                {afternoonMeds.map(med => (
+                  <TouchableOpacity
+                    key={med.i}
+                    style={[styles.medRow, med.taken && styles.medRowDone]}
+                    onPress={() => toggleMed(med.i)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.checkbox, med.taken && styles.checkboxDone]}>
+                      {med.taken && <Check size={14} color="#fff" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.medName, med.taken && styles.medNameDone]}>{med.name}</Text>
+                      {med.dose ? <Text style={styles.medDose}>{med.dose}</Text> : null}
+                    </View>
+                    {med.type && (
+                      <View style={styles.medTypeBadge}>
+                        <Text style={styles.medTypeText}>{med.type}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {eveningMeds.length > 0 && (
+              <View style={styles.periodSection}>
+                <View style={styles.periodHeader}>
+                  <Moon size={16} color={BRAND.PRIMARY[400]} />
+                  <Text style={styles.periodTitle}>Noite • 20:00</Text>
+                </View>
+                {eveningMeds.map(med => (
+                  <TouchableOpacity
+                    key={med.i}
+                    style={[styles.medRow, med.taken && styles.medRowDone]}
+                    onPress={() => toggleMed(med.i)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.checkbox, med.taken && styles.checkboxDone]}>
+                      {med.taken && <Check size={14} color="#fff" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.medName, med.taken && styles.medNameDone]}>{med.name}</Text>
+                      {med.dose ? <Text style={styles.medDose}>{med.dose}</Text> : null}
+                    </View>
+                    {med.type && (
+                      <View style={styles.medTypeBadge}>
+                        <Text style={styles.medTypeText}>{med.type}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── HIDRATAÇÃO ── */}
+        <View style={styles.sectionLabel}>
+          <Droplets size={16} color={BRAND.PRIMARY[400]} />
+          <Text style={styles.sectionLabelText}>Hidratação</Text>
+          <Text style={styles.sectionLabelRight}>{hydration}/{HYDRATION_GOAL} copos</Text>
         </View>
 
-        {/* Sleep Card */}
         <View style={styles.card}>
-          <View style={styles.cardHeaderFlex}>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Moon size={20} color="#8c8078" />
-              <Text style={styles.cardTitle}>Sono</Text>
-            </View>
+          <View style={styles.dropsGrid}>
+            {Array.from({ length: HYDRATION_GOAL }, (_, i) => i + 1).map(drop => (
+              <TouchableOpacity
+                key={drop}
+                onPress={() => hydraMutation.mutate(drop === hydration ? drop - 1 : drop)}
+                style={[styles.dropItem, drop <= hydration && styles.dropItemFilled]}
+              >
+                <Droplet
+                  size={20}
+                  color={drop <= hydration ? '#fff' : BRAND.PRIMARY[300]}
+                  fill={drop <= hydration ? '#fff' : 'transparent'}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
-          
+
+          <View style={styles.hydraHint}>
+            <Text style={styles.hydraHintText}>
+              Durante a quimio, beba pelo menos 2L por dia para ajudar os rins a eliminar resíduos do tratamento.
+            </Text>
+          </View>
+
+          <View style={styles.hydraActions}>
+            <TouchableOpacity
+              style={styles.hydraBtn}
+              activeOpacity={0.8}
+              disabled={hydration <= 0 || hydraMutation.isPending}
+              onPress={() => hydraMutation.mutate(Math.max(0, hydration - 1))}
+            >
+              <Minus size={18} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.hydraCount}>{hydration} copos</Text>
+            <TouchableOpacity
+              style={[styles.hydraBtn, styles.hydraBtnPrimary]}
+              activeOpacity={0.8}
+              disabled={hydration >= HYDRATION_GOAL || hydraMutation.isPending}
+              onPress={() => hydraMutation.mutate(Math.min(HYDRATION_GOAL, hydration + 1))}
+            >
+              {hydraMutation.isPending
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <><Plus size={18} color="#fff" /><Text style={styles.hydraBtnText}>  Bebi mais um</Text></>}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── SONO ── */}
+        <View style={styles.sectionLabel}>
+          <Moon size={16} color={BRAND.PRIMARY[400]} />
+          <Text style={styles.sectionLabelText}>Sono</Text>
+        </View>
+
+        <View style={styles.card}>
           <View style={styles.sleepRow}>
-            <View style={styles.sleepInputBox}>
-              <Text style={styles.sleepInputLabel}>Horas dormidas</Text>
-              <View style={styles.sleepControlRow}>
-                <TouchableOpacity 
-                  onPress={() => sleepMutation.mutate({ hours: Math.max(0, sleepHours - 1), quality: routine?.sleep_quality || 5 })} 
+            <View style={styles.sleepBox}>
+              <Text style={styles.sleepBoxLabel}>Horas dormidas</Text>
+              <View style={styles.sleepControl}>
+                <TouchableOpacity
                   style={styles.sleepControlBtn}
+                  onPress={() => {
+                    const h = Math.max(0, Math.round(sleepHours) - 1);
+                    setLocalSleepHours(h);
+                    sleepMutation.mutate({ hours: h, quality: sleepQuality });
+                  }}
                 >
-                  <Minus size={16} color="#4a3931" />
+                  <Minus size={16} color={BRAND.PRIMARY.DEFAULT} />
                 </TouchableOpacity>
-                <Text style={styles.sleepValue}>{sleepHours}h</Text>
-                <TouchableOpacity 
-                  onPress={() => sleepMutation.mutate({ hours: Math.min(24, sleepHours + 1), quality: routine?.sleep_quality || 5 })} 
+                <Text style={styles.sleepValue}>{Math.round(sleepHours ?? 7)}h</Text>
+                <TouchableOpacity
                   style={styles.sleepControlBtn}
+                  onPress={() => {
+                    const h = Math.min(24, Math.round(sleepHours) + 1);
+                    setLocalSleepHours(h);
+                    sleepMutation.mutate({ hours: h, quality: sleepQuality });
+                  }}
                 >
-                  <Plus size={16} color="#4a3931" />
+                  <Plus size={16} color={BRAND.PRIMARY.DEFAULT} />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.sleepInputBox}>
-              <Text style={styles.sleepInputLabel}>Qualidade</Text>
+            <View style={styles.sleepBox}>
+              <Text style={styles.sleepBoxLabel}>Qualidade</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map(star => (
-                   <TouchableOpacity 
-                     key={`star_${star}`} 
-                     onPress={() => sleepMutation.mutate({ hours: sleepHours, quality: star })}
-                   >
-                     <Star size={16} color={star <= (routine?.sleep_quality || 5) ? "#f28b50" : "#e5e0dc"} />
-                   </TouchableOpacity>
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => sleepMutation.mutate({ hours: Math.round(sleepHours), quality: star })}
+                  >
+                    <Star
+                      size={22}
+                      color={star <= sleepQuality ? BRAND.SECONDARY.DEFAULT : BRAND.SURFACE.BORDER}
+                      fill={star <= sleepQuality ? BRAND.SECONDARY.DEFAULT : 'transparent'}
+                    />
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>
           </View>
-          
-          <View style={styles.infoBanner}>
-            <Text style={styles.infoBannerText}>
-              Bom padrão de sono — continue assim! O descanso acelera a recuperação.
-            </Text>
-          </View>
         </View>
 
-        {/* Large CTA for Body Map */}
-        <TouchableOpacity 
-          style={styles.bigOrangeCta}
-          activeOpacity={0.9}
+        {/* ── CTA BODY MAP ── */}
+        <TouchableOpacity
+          style={styles.ctaCard}
+          activeOpacity={0.88}
           onPress={() => router.push('/(tabs)/body-map')}
         >
-           <View style={{flex: 1}}>
-             <Text style={styles.bigOrangeCtaTitle}>Registrar Sintomas / Body Map</Text>
-             <Text style={styles.bigOrangeCtaSubtitle}>Toque na região do corpo ou use a escala CTCAE</Text>
-           </View>
-           <ChevronRight size={24} color="#ffffff" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.ctaTitle}>Registrar Sintomas</Text>
+            <Text style={styles.ctaSubtitle}>Toque no corpo ou use a escala CTCAE</Text>
+          </View>
+          <ChevronRight size={22} color="#fff" />
         </TouchableOpacity>
 
-        {/* Spacer for bottom tabs */}
-        <View style={{height: 100}} />
-
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -303,323 +456,387 @@ export default function RoutineScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fbf9f6', // Full light background for Routine
+    backgroundColor: BRAND.BG.LIGHT,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingBottom: 40,
   },
+
+  /* Header */
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 20 : 16,
+    paddingBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#3d2b1f',
+    fontSize: 22,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#fff',
     marginBottom: 4,
   },
-  headerSubtitle: {
+  headerDate: {
     fontSize: 14,
-    color: '#8c8078',
+    fontFamily: 'Nunito_400Regular',
+    color: 'rgba(255,255,255,0.75)',
+    textTransform: 'capitalize',
   },
   progressBadge: {
-    backgroundColor: '#f28b50',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center',
+    marginLeft: 16,
   },
-  progressBadgeTextBig: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  progressBig: {
+    fontSize: 22,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#fff',
+    lineHeight: 26,
   },
-  progressBadgeTextSmall: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: -2,
+  progressSmall: {
+    fontSize: 14,
+    fontFamily: 'Nunito_400Regular',
+    color: 'rgba(255,255,255,0.7)',
   },
+  progressLabel: {
+    fontSize: 11,
+    fontFamily: 'Nunito_600SemiBold',
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  /* Section Labels */
+  sectionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  sectionLabelText: {
+    fontSize: 14,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY[400],
+    marginLeft: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  sectionLabelRight: {
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
+    color: BRAND.PRIMARY[400],
+    marginLeft: 'auto',
+  },
+
+  /* Cards */
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+    backgroundColor: BRAND.SURFACE.CARD,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
   },
-  cardHeader: {
-    flexDirection: 'row',
+  emptyCard: {
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 32,
   },
-  cardTitle: {
+  emptyTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#3d2b1f',
-    marginLeft: 8,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY.DEFAULT,
+    marginBottom: 6,
+    textAlign: 'center',
   },
-  tempInputRow: {
+  emptySubtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY[400],
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 260,
+  },
+
+  /* Alert */
+  alertBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: BRAND.ERROR.LIGHT,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  alertBannerText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
+    color: BRAND.ERROR.DEFAULT,
+    lineHeight: 18,
+  },
+
+  /* Temperatura */
+  tempRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 12,
   },
-  tempInputContainer: {
+  tempInputWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#efe9e4',
-    borderRadius: 16,
-    height: 52,
-    paddingHorizontal: 16,
-    marginRight: 12,
+    backgroundColor: BRAND.BG.LIGHT,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 50,
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
   },
   tempUnit: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8c8078',
+    fontSize: 15,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY[400],
     marginRight: 8,
   },
   tempInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#3d2b1f',
-    height: '100%',
+    fontSize: 17,
+    fontFamily: 'Nunito_600SemiBold',
+    color: BRAND.PRIMARY.DEFAULT,
   },
-  saveButton: {
-    backgroundColor: '#f28b50',
-    height: 52,
-    paddingHorizontal: 24,
-    borderRadius: 16,
+  saveBtn: {
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  saveButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+  saveBtnDisabled: {
+    backgroundColor: BRAND.PRIMARY[200],
+  },
+  saveBtnText: {
     fontSize: 15,
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff',
   },
-  lastReadingText: {
-    fontSize: 12,
-    color: '#5a4a42',
-  },
-  medsContainer: {
-    flex: 1,
-  },
-  medsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  medsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3d2b1f',
-  },
-  symptomsLink: {
+  lastReading: {
     fontSize: 13,
-    fontWeight: 'bold',
-    color: '#f28b50',
+    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY[400],
+    marginTop: 10,
   },
-  timeSection: {
-    marginBottom: 24,
+
+  /* Medicamentos */
+  periodSection: {
+    marginBottom: 16,
   },
-  timeHeader: {
+  periodHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+    gap: 6,
   },
-  timeTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8c8078',
-    marginLeft: 8,
+  periodTitle: {
+    fontSize: 13,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY[400],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  medItem: {
+  medRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#efe9e4',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: BRAND.PRIMARY[50],
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    gap: 12,
   },
-  medItemChecked: {
-    backgroundColor: '#ffffff',
+  medRowDone: {
+    backgroundColor: BRAND.SURFACE.CARD,
     borderWidth: 1,
-    borderColor: '#e5e0dc',
+    borderColor: BRAND.SURFACE.BORDER,
   },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: 6,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d5cfc9',
+    borderWidth: 1.5,
+    borderColor: BRAND.PRIMARY[300],
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    backgroundColor: '#fff',
   },
-  checkboxChecked: {
-    backgroundColor: '#8c8078',
-    borderColor: '#8c8078',
-  },
-  medTextContainer: {
-    flex: 1,
-  },
-  medNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+  checkboxDone: {
+    backgroundColor: BRAND.AUX.GREEN,
+    borderColor: BRAND.AUX.GREEN,
   },
   medName: {
     fontSize: 15,
-    fontWeight: 'bold',
-    color: '#3d2b1f',
-    marginRight: 8,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY.DEFAULT,
   },
-  medNameChecked: {
-    color: '#8c8078',
+  medNameDone: {
+    color: BRAND.PRIMARY[300],
     textDecorationLine: 'line-through',
   },
-  medType: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#f28b50',
-  },
-  medTypeChecked: {
-    color: '#a3988e',
-  },
   medDose: {
-    fontSize: 12,
-    color: '#5a4a42',
-    lineHeight: 18,
-  },
-  medDoseChecked: {
-    color: '#a3988e',
-  },
-  cardHeaderFlex: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardHeaderRightText: {
     fontSize: 13,
-    fontWeight: 'bold',
-    color: '#8c8078',
+    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY[400],
+    marginTop: 2,
   },
-  dropsRow: {
+  medTypeBadge: {
+    backgroundColor: BRAND.SECONDARY[100],
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  medTypeText: {
+    fontSize: 11,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.SECONDARY[700],
+  },
+
+  /* Hidratação */
+  dropsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
     marginBottom: 16,
   },
-  dropCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  dropItem: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: BRAND.PRIMARY[100],
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dropCircleFilled: {
-    backgroundColor: '#bdae9f',
+  dropItemFilled: {
+    backgroundColor: BRAND.PRIMARY[300],
   },
-  dropCircleEmpty: {
-    backgroundColor: '#efe9e4',
-  },
-  infoBanner: {
-    backgroundColor: '#fbf9f6',
+  hydraHint: {
+    backgroundColor: BRAND.BG.LIGHT,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
-  infoBannerText: {
-    fontSize: 12,
-    color: '#3d2b1f',
+  hydraHintText: {
+    fontSize: 13,
+    fontFamily: 'Nunito_400Regular',
+    color: BRAND.PRIMARY.DEFAULT,
     lineHeight: 18,
     textAlign: 'center',
   },
-  actionBtnBrown: {
-    backgroundColor: '#a3988e',
-    borderRadius: 16,
-    height: 48,
+  hydraActions: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  hydraBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: BRAND.PRIMARY[300],
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionBtnBrownText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 15,
+  hydraBtnPrimary: {
+    flex: 1,
+    width: undefined,
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
+  hydraBtnText: {
+    fontSize: 15,
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff',
+  },
+  hydraCount: {
+    fontSize: 16,
+    fontFamily: 'Nunito_700Bold',
+    color: BRAND.PRIMARY.DEFAULT,
+    minWidth: 70,
+    textAlign: 'center',
+  },
+
+  /* Sono */
   sleepRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    gap: 12,
   },
-  sleepInputBox: {
-    width: '48%',
-    backgroundColor: '#efe9e4',
-    borderRadius: 16,
-    padding: 16,
+  sleepBox: {
+    flex: 1,
+    backgroundColor: BRAND.BG.LIGHT,
+    borderRadius: 14,
+    padding: 14,
     alignItems: 'center',
   },
-  sleepInputLabel: {
-    fontSize: 11,
-    color: '#8c8078',
+  sleepBoxLabel: {
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
+    color: BRAND.PRIMARY[400],
     marginBottom: 12,
   },
-  sleepControlRow: {
+  sleepControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   sleepControlBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#ffffff',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: BRAND.SURFACE.BORDER,
   },
   sleepValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#3d2b1f',
+    fontSize: 22,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: BRAND.PRIMARY.DEFAULT,
+    minWidth: 40,
+    textAlign: 'center',
   },
   starsRow: {
     flexDirection: 'row',
-    gap: 4,
-    marginTop: 4,
+    gap: 6,
   },
-  bigOrangeCta: {
-    backgroundColor: '#f28b50',
-    borderRadius: 24,
-    padding: 24,
+
+  /* CTA */
+  ctaCard: {
+    backgroundColor: BRAND.SECONDARY.DEFAULT,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginTop: 24,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#f28b50',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  bigOrangeCtaTitle: {
+  ctaTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontFamily: 'Nunito_700Bold',
+    color: '#fff',
     marginBottom: 4,
   },
-  bigOrangeCtaSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-  }
+  ctaSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Nunito_400Regular',
+    color: 'rgba(255,255,255,0.85)',
+  },
 });

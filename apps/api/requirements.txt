@@ -1,4 +1,4 @@
-﻿fastapi==0.115.0
+fastapi==0.115.0
 uvicorn[standard]==0.31.0
 pydantic==2.9.2
 pydantic-settings==2.6.1
@@ -19,6 +19,7 @@ boto3==1.35.0
 # ── AI / LLM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 langchain==0.3.30
 langchain-google-genai==2.1.12
+langchain-anthropic>=0.1.0
 langgraph==1.0.1
 langchain-community==0.3.27
 pgvector>=0.2.1

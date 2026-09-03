@@ -14,6 +14,7 @@ import { BaseStepLayout } from '@/shared/ui/Onboarding/BaseStepLayout';
 import { OptionCard } from '@/shared/ui/Onboarding/OptionCard';
 import { OnboardingInput } from '@/shared/ui/Onboarding/OnboardingInput';
 import { useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { BRAND } from '@/shared/constants/brand-colors.const';
 
 const REGISTRY_OPTIONS = [
   'Médico(a) — CRM',
@@ -81,26 +82,26 @@ export function DoctorCrmStep() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '900',
     fontFamily: 'Nunito_700Bold',
-    color: '#9C8880',
+    color: BRAND.PRIMARY[400],
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 9,
   },
   infoCard: {
-    backgroundColor: '#FFF0E8',
+    backgroundColor: BRAND.PRIMARY[50],
     borderWidth: 1.5,
-    borderColor: '#FF9A5C',
+    borderColor: BRAND.SECONDARY.DEFAULT,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginTop: 8,
   },
   infoText: {
-    fontSize: 12,
-    color: '#403229',
+    fontSize: 16,
+    color: BRAND.PRIMARY.DEFAULT,
     lineHeight: 18,
   }
 });

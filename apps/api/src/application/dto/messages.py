@@ -49,6 +49,7 @@ class SendMessageInput:
     text: str
     channel: str = "app"
     document_url: str | None = None
+    personality: str | None = None
 
 
 @dataclass
