@@ -12,6 +12,7 @@ import { Search, Sparkles, Scale, AlertTriangle, FlaskConical, Pill, Thermometer
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { useAuthStore, useOnboardingStore } from '@/shared/lib/zustand-persist';
 import { getTodayRoutine } from '@/shared/api/routine';
@@ -30,8 +31,29 @@ export function PatientHome() {
     journeyPhase, 
     treatmentModality,
     diagnosisDate,
-    concerns 
+    concerns,
+    setDetails 
   } = useOnboardingStore();
+
+  useEffect(() => {
+    if (!name || name === 'Paciente') {
+      setDetails({
+        profileType: 'patient',
+        name: 'Evelin Brandão',
+        birthYear: '1995',
+        gender: 'Feminino',
+        cancerType: 'Câncer de Mama',
+        stage: 'Estádio IIB',
+        diagnosisDate: '15/03/2026',
+        careModality: 'convenio',
+        treatmentModality: 'convenio',
+        zipCode: '01001-000',
+        journeyPhase: 'Tratamento ativo',
+        treatments: ['Quimioterapia', 'Radioterapia', 'Hormonioterapia'],
+        concerns: ['Lidar com sintomas do tratamento'],
+      });
+    }
+  }, [name, setDetails]);
 
   const patientName = name || 'Paciente';
   
@@ -88,7 +110,7 @@ export function PatientHome() {
               <Text style={styles.nameText}>{patientName}</Text>
               <View style={styles.badge}>
                 <User size={12} color={BRAND.PRIMARY[300]} style={{marginRight: 4}} />
-                <Text style={styles.badgeText}>Paciente • {cancerType || 'Não informado'} • {journeyPhase || 'Não informado'}</Text>
+                <Text style={styles.badgeText}>Paciente • {cancerType || 'Não informado'}</Text>
               </View>
             </View>
           </View>
@@ -339,15 +361,12 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: BRAND.SURFACE.BORDER_DARK, // Darker brown pill
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 2,
   },
   badgeText: {
-    fontSize: 16,
-    color: BRAND.SURFACE.BORDER,
+    fontSize: 14,
+    color: BRAND.PRIMARY[300],
     fontWeight: '600',
   },
   searchBar: {

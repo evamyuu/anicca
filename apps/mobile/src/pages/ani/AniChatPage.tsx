@@ -20,7 +20,7 @@ import {
   UserMessageBubble,
   AniTypingIndicator,
 } from '@/features/ani-chat';
-
+import AniProfileIcon from '../../../assets/images/ani-geral/ani-profile-icon.svg';
 
 export function AniChatPage() {
   const { messages, isTyping, error, send, retry } = useAniChat();
@@ -85,11 +85,10 @@ export function AniChatPage() {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 }}>
             <View style={{
               width: 72, height: 72, borderRadius: 36,
-              backgroundColor: BRAND.PRIMARY[800],
               alignItems: 'center', justifyContent: 'center',
               marginBottom: 20,
             }}>
-              <Text style={{ color: '#fff', fontSize: 22, fontFamily: 'Nunito_800ExtraBold' }}>Ai</Text>
+              <AniProfileIcon width={72} height={72} />
             </View>
             <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 18, color: textColor, textAlign: 'center', marginBottom: 8 }}>
               Olá! Eu sou a Ani.

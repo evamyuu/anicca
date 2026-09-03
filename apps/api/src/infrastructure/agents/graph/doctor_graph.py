@@ -124,19 +124,21 @@ ARTIGOS CIENTÍFICOS RECUPERADOS DO PUBMED:
 
 Responda estruturando em [PENSAMENTO], [RESPOSTA CLÍNICA] e [FONTES E REFERÊNCIAS] conforme suas instruções."""
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.0,
-    )
+    import google.genai as genai
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-    messages = [SystemMessage(content=_SYSTEM_PROMPT)]
+    prompt = _SYSTEM_PROMPT + "\n\n[Histórico do Chat Clínico]\n"
     for msg in chat_history[-6:]:
-        if msg["role"] == "user":
-            messages.append(HumanMessage(content=msg["content"]))
-        else:
-            messages.append(AIMessage(content=msg["content"]))
-    messages.append(HumanMessage(content=augmented_prompt))
+        role = "Doutor" if msg["role"] == "user" else "Ani"
+        prompt += f"{role}: {msg['content']}\n"
+    prompt += "\n" + augmented_prompt
 
-    result = await llm.ainvoke(messages)
-    return result.content
+    try:
+        response = await client.aio.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        print(f"Error in Gemini: {e}")
+        return "Erro de conexão com o provedor de IA Clínica."

@@ -18,6 +18,12 @@ export interface BodyMapEntryCreate {
   description?: string;
 }
 
+export interface BodyMapEntryUpdate {
+  intensity?: number;
+  symptom_types?: string[];
+  description?: string;
+}
+
 export interface BodyMapEntryResponse {
   id: string;
   patient_id: string;
@@ -36,6 +42,15 @@ export interface BodyMapEntryResponse {
 export async function createBodyMapEntry(data: BodyMapEntryCreate): Promise<BodyMapEntryResponse> {
   const response = await api.post('/api/v1/body-map', data);
   return response.data;
+}
+
+export async function updateBodyMapEntry(id: string, data: BodyMapEntryUpdate): Promise<BodyMapEntryResponse> {
+  const response = await api.put(`/api/v1/body-map/${id}`, data);
+  return response.data;
+}
+
+export async function deleteBodyMapEntry(id: string): Promise<void> {
+  await api.delete(`/api/v1/body-map/${id}`);
 }
 
 /**

@@ -126,22 +126,87 @@ function MarkdownText({ text }: { text: string }) {
 }
 
 function AniMessage({ msg }: { msg: ChatMsg }) {
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  
   const p = msg.thinking !== undefined
     ? { thinking: msg.thinking ?? '', clinical: msg.clinical ?? msg.content, sources: msg.sources ?? '' }
     : parseAni(msg.content);
+    
   return (
-    <div className="flex gap-4 items-start mb-8">
-      <div className="w-8 h-8 rounded-full border border-[#e5d8cc] bg-[#fdfaf7] shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
-        <Image src="/images/ani-geral/ani-profile-icon.svg" width={32} height={32} alt="Ani" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm font-bold text-[#3d2b1f]">Ani</span>
-          <span className="text-[10px] text-[#c9bfb8] ml-2">{msg.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+    <>
+      <div className="flex gap-4 items-start mb-8">
+        <div className="w-8 h-8 rounded-full border border-[#e5d8cc] bg-[#fdfaf7] shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
+          <Image src="/images/ani-geral/ani-profile-icon.svg" width={32} height={32} alt="Ani" />
         </div>
-        <MarkdownText text={p.clinical} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-bold text-[#3d2b1f]">Ani</span>
+            <span className="text-[10px] text-[#c9bfb8] ml-2">{msg.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          
+          {p.thinking && (
+            <details className="mb-3 group">
+              <summary className="inline-flex items-center gap-1.5 cursor-pointer list-none text-[12px] font-bold text-[#a3988e] hover:text-[#5a4a42] select-none transition-colors">
+                <Brain size={13} className="text-[#FF9A5C]" /> 
+                <span>Raciocínio Clínico</span>
+                <ChevronDown size={12} className="group-open:rotate-180 transition-transform duration-200" />
+              </summary>
+              <div className="mt-2 pl-4 border-l-2 border-[#e5e0dc] text-[#5a4a42] text-xs">
+                <MarkdownText text={p.thinking} />
+              </div>
+            </details>
+          )}
+          
+          <MarkdownText text={p.clinical} />
+          
+          {p.sources && (
+            <div className="mt-3 flex">
+              <button 
+                onClick={() => setSourcesOpen(true)}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f8f4f0] text-[#8c8078] hover:text-[#3d2b1f] hover:bg-[#e5e0dc] transition-colors text-[13px] font-bold group"
+              >
+                <BookOpen size={14} className="text-[#22c55e]" /> Fontes e Referências
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      
+      {/* SOURCES SIDEBAR MODAL */}
+      {sourcesOpen && (
+        <>
+          {/* Dark Backdrop */}
+          <div className="fixed inset-0 bg-[#3d2b1f]/30 backdrop-blur-sm z-40 animate-in fade-in duration-300" onClick={() => setSourcesOpen(false)} />
+          
+          {/* Large Rounded Drawer */}
+          <div 
+            className="fixed top-0 right-0 bottom-0 w-[520px] max-w-full bg-[#faf7f4] shadow-2xl border-l border-[#e5e0dc] rounded-l-[40px] p-8 z-50 animate-in slide-in-from-right-8 duration-500 overflow-y-auto flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-8 shrink-0">
+              <div className="flex gap-3">
+                <div className="mt-1">
+                  <BookOpen size={24} className="text-[#22c55e]" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-[#3d2b1f] mb-1">Fontes e Referências</h3>
+                  <p className="text-xs text-[#8c8078]">Evidências científicas e bases consultadas</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setSourcesOpen(false)} className="p-2.5 rounded-full bg-white border border-[#e5e0dc] hover:border-[#FF9A5C] text-[#a3988e] hover:text-[#FF9A5C] shadow-sm transition-all">
+                  <X size={18}/>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 text-[13px] text-[#5a4a42] overflow-y-auto pb-10">
+               <MarkdownText text={p.sources} />
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
@@ -186,7 +251,7 @@ function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect
           <div className="bg-[#fef2f2] border border-[#fecaca] p-5 rounded-3xl shadow-sm flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-white/50 rounded-lg flex items-center justify-center text-[#ef4444]"><AlertTriangle size={16}/></div>
-              <p className="text-[11px] font-bold text-[#b91c1c] uppercase tracking-wider">Risco Alto (ML)</p>
+              <p className="text-[11px] font-bold text-[#b91c1c] uppercase tracking-wider">Risco de Abandono</p>
             </div>
             <p className="text-2xl font-bold text-[#b91c1c]">{highRisk.length}</p>
           </div>
@@ -555,9 +620,23 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
           {alerts.length > 0 ? alerts.map((a: any, idx: number) => (
             <div key={idx} className="bg-[#fef2f2] border border-[#fecaca] p-3.5 rounded-xl">
               <p className="text-[13px] text-[#b91c1c] font-medium leading-relaxed mb-1.5">{a.text}</p>
-              <div className="flex items-center justify-between">
+              
+              {a.cv_data && (
+                <div className="mt-2 mb-2 p-2 bg-white/60 rounded-lg border border-[#fecaca] flex gap-3 items-start">
+                  {a.cv_data.photo_url && (
+                    <img src={a.cv_data.photo_url} alt="Anexo" className="w-16 h-16 object-cover rounded-md border border-[#fecaca]" />
+                  )}
+                  <div className="flex-1">
+                    <span className="text-[9px] font-bold text-[#b91c1c] bg-white px-1.5 py-0.5 rounded uppercase flex items-center gap-1 inline-flex mb-1">
+                      <Map size={10}/> Análise Visual (Gemini)
+                    </span>
+                    <p className="text-[11px] text-[#b91c1c] leading-snug">{a.cv_data.classification}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mt-1">
                 <span className="text-[10px] text-[#ef4444] font-bold">{new Date(a.date).toLocaleDateString('pt-BR')}</span>
-                {a.cv_data && <span className="text-[9px] font-bold text-[#b91c1c] bg-white/60 px-1.5 py-0.5 rounded uppercase flex items-center gap-1"><Map size={10}/> IA CV</span>}
               </div>
             </div>
           )) : (
@@ -567,11 +646,11 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
         false
       ),
       risco: mlRisk ? renderCard(
-        'Risco ML',
+        'Risco de Abandono (IA)',
         <Brain size={14} className="text-[#a3988e]" />,
         <div className="flex flex-col gap-2 bg-[#faf7f4] p-4 rounded-xl border border-[#e5e0dc]">
           <div className="flex justify-between items-center">
-            <span className="text-4xl font-bold text-[#3d2b1f] tracking-tight">{(mlRisk.risk_probability * 100).toFixed(0)}%</span>
+            <span className="text-4xl font-bold text-[#3d2b1f] tracking-tight">{isNaN(mlRisk.risk_probability) ? '0' : (mlRisk.risk_probability * 100).toFixed(0)}%</span>
             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${mlRisk.risk_probability > 0.5 ? 'bg-[#fef2f2] text-[#ef4444]' : 'bg-[#f0fdf4] text-[#16a34a]'}`}>
               {mlRisk.risk_probability > 0.5 ? 'ALTO RISCO' : 'BAIXO RISCO'}
             </span>
@@ -760,6 +839,12 @@ export default function ClinicalDashboard() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(false);
+
+  // Ref to track active patient for SSE updates
+  const selectedPatientRef = useRef<Patient | null>(null);
+  useEffect(() => {
+    selectedPatientRef.current = selectedPatient;
+  }, [selectedPatient]);
 
   // All sessions
   const [sessions, setSessions] = useState<Session[]>([]);

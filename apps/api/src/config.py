@@ -48,7 +48,15 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = "development"
     SECRET_KEY: str = "change-me-in-production"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8081"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:8083",
+        "http://localhost:8084",
+        "http://localhost:8085",
+        "http://localhost:19006",
+    ]
     GOOGLE_CLIENT_ID: Optional[str] = None
 
     DATABASE_URL: str = "postgresql+psycopg://anicca:anicca@localhost:5432/anicca_dev"

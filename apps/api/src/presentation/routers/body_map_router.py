@@ -35,6 +35,14 @@ class BodyMapEntryCreate(BaseModel):
     description: Optional[str] = Field(default=None, description="Free-text note")
 
 
+class BodyMapEntryUpdate(BaseModel):
+    """Request body for updating a body map entry."""
+
+    intensity: Optional[int] = Field(ge=0, le=10, default=None, description="Symptom intensity 0–10")
+    symptom_types: Optional[List[str]] = Field(default=None, description="List of symptom descriptors")
+    description: Optional[str] = Field(default=None, description="Free-text note")
+
+
 class BodyMapEntryResponse(BaseModel):
     """Response schema for a body map entry."""
 
@@ -238,5 +246,93 @@ async def attach_photo(
 
     background_tasks.add_task(_process_cv_background, entry_id, file_bytes, content_type)
     return {"message": "Foto recebida e em processamento na IA."}
+
+
+@router.put(
+    "/{entry_id}",
+    summary="Update a body map entry",
+)
+async def update_body_map_entry(
+    entry_id: str,
+    body: BodyMapEntryUpdate,
+    db: AsyncSession = Depends(get_db_session),
+) -> BodyMapEntryResponse:
+    entry = await db.get(BodyMapEntryModel, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    if body.intensity is not None:
+        entry.intensity = body.intensity
+        suggested_ctcae = None
+        if body.intensity >= 7:
+            suggested_ctcae = 3
+        elif body.intensity >= 4:
+            suggested_ctcae = 2
+        elif body.intensity >= 1:
+            suggested_ctcae = 1
+        entry.suggested_ctcae_grade = suggested_ctcae
+
+    if body.symptom_types is not None:
+        entry.symptom_types = body.symptom_types
+
+    if body.description is not None:
+        entry.description = body.description
+
+    await db.commit()
+    await db.refresh(entry)
+
+    try:
+        redis = await create_redis_client()
+        await publish_catalog_event(
+            redis_client=redis,
+            user_id=entry.patient_id,
+            event_type="body_map_updated",
+            payload={"entry_id": entry.id, "action": "update"}
+        )
+    except Exception as e:
+        print(f"Failed to publish catalog event: {e}")
+
+    return BodyMapEntryResponse(
+        id=entry.id,
+        patient_id=entry.patient_id,
+        body_region=entry.body_region,
+        body_view=entry.body_view,
+        intensity=entry.intensity,
+        symptom_types=entry.symptom_types,
+        description=entry.description,
+        suggested_ctcae_grade=entry.suggested_ctcae_grade,
+        registered_at=entry.registered_at,
+    )
+
+
+@router.delete(
+    "/{entry_id}",
+    summary="Delete a body map entry",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_body_map_entry(
+    entry_id: str,
+    db: AsyncSession = Depends(get_db_session),
+):
+    entry = await db.get(BodyMapEntryModel, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    patient_id = entry.patient_id
+    await db.delete(entry)
+    await db.commit()
+
+    try:
+        redis = await create_redis_client()
+        await publish_catalog_event(
+            redis_client=redis,
+            user_id=patient_id,
+            event_type="body_map_updated",
+            payload={"entry_id": entry_id, "action": "delete"}
+        )
+    except Exception as e:
+        print(f"Failed to publish catalog event: {e}")
+
+    return None
 
 

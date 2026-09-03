@@ -138,15 +138,43 @@ async def get_patient_dashboard(patient_id: str, db: AsyncSession = Depends(get_
     )
     body_map_entries = body_map_result.scalars().all()
     
+    import boto3
+    from src.config import settings
+    
+    s3_client = None
+    try:
+        s3_client = boto3.client(
+            "s3", 
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+    except Exception as e:
+        print(f"Failed to initialize S3 client: {e}")
+    
     alerts = []
     for entry in body_map_entries:
         alert_text = f"Sintoma relatado: {', '.join(entry.symptom_types)} na região {entry.body_region} (Intensidade: {entry.intensity}/10)"
         
         cv_data = None
         if entry.cv_classification:
+            cv_notes = entry.cv_classification.get("clinical_notes", "") if isinstance(entry.cv_classification, dict) else str(entry.cv_classification)
+            
+            display_url = entry.photo_url
+            if display_url and "amazonaws.com" in display_url and s3_client:
+                try:
+                    key = display_url.split(".amazonaws.com/")[1]
+                    display_url = s3_client.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': settings.AWS_S3_BUCKET, 'Key': key},
+                        ExpiresIn=3600
+                    )
+                except Exception as e:
+                    print(f"Failed to presign URL: {e}")
+
             cv_data = {
-                "photo_url": entry.photo_url,
-                "classification": entry.cv_classification,
+                "photo_url": display_url,
+                "classification": cv_notes,
             }
             alert_text += " [Análise Visual Concluída]"
             
@@ -162,15 +190,38 @@ async def get_patient_dashboard(patient_id: str, db: AsyncSession = Depends(get_
     # Run ML Model (XGBoost) for Abandonment Risk
     from src.infrastructure.agents.ml.abandonment_model import AbandonmentRiskModel
     ml_data = {
-        "cancer_stage": routine.patient.cancer_stage if routine and hasattr(routine, "patient") else "III" # mock
+        "cancer_stage": "III" # mock (evitando Lazy Load exception em async)
     }
     ml_insights = await AbandonmentRiskModel().predict(ml_data)
+
+    import google.genai as genai
+    from src.config import settings
+    
+    briefing_text = "Nenhum dado clínico recente disponível para análise."
+    try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        
+        prompt = f"""
+        Gere um resumo clínico de no máximo 3 frases para o painel do médico sobre este paciente.
+        Últimos sinais vitais: Temperatura: {vitals.get('temperature')}, PA: {vitals.get('blood_pressure')}.
+        Sintomas e alertas recentes: {', '.join([a['text'] for a in alerts]) if alerts else 'Nenhum'}.
+        Foque nos achados mais importantes e no risco de complicação. Não use markdown, apenas texto puro.
+        """
+        
+        response = await client.aio.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=prompt
+        )
+        briefing_text = response.text.strip()
+    except Exception as e:
+        print(f"Failed to generate briefing: {e}")
+        briefing_text = "Paciente em acompanhamento ativo (Resumo IA indisponível)."
 
     return {
         "vitals": vitals,
         "alerts": alerts,
         "ml_insights": ml_insights,
-        "briefing": "Paciente em acompanhamento ativo. Dados atualizados via aplicativo Anicca e analisados pelo Trust Layer e Visão Computacional."
+        "briefing": briefing_text
     }
 
 @router.post(

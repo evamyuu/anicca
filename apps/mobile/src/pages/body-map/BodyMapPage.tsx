@@ -44,6 +44,7 @@ interface ZoneHitArea {
 }
 
 interface SymptomRecord {
+  id?: string;
   zoneId: string;
   zoneLabel: string;
   intensity: number;
@@ -365,6 +366,7 @@ export function BodyMapPage() {
   });
 
   const records: SymptomRecord[] = history?.map(h => ({
+    id: h.id,
     zoneId: h.body_region,
     zoneLabel: h.body_region,
     intensity: h.intensity,
@@ -515,8 +517,10 @@ export function BodyMapPage() {
               recentRecords.map((r, i) => {
                 const sType = SYMPTOM_TYPES.find(s => s.id === r.type);
                 return (
-                  <View
+                  <TouchableOpacity
                     key={i}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/body-map-details/${r.id}`)}
                     style={{
                       backgroundColor: BRAND.SURFACE.CARD, borderRadius: 16, padding: 14,
                       flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -547,7 +551,7 @@ export function BodyMapPage() {
                         </Text>
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               })
             )}
