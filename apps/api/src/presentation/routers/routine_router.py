@@ -59,6 +59,13 @@ class SleepUpdate(RoutineUpdate):
     quality: int = Field(ge=1, le=5, description="Subjective quality 1–5")
 
 
+class WearableUpdate(RoutineUpdate):
+    """Update wearable health metrics from smartwatch."""
+
+    steps: Optional[int] = Field(default=None, ge=0, description="Daily steps count")
+    hrv: Optional[float] = Field(default=None, ge=0, description="Heart rate variability in ms")
+
+
 class MedicationsUpdate(RoutineUpdate):
     """Update the medications list of the routine."""
 
@@ -226,6 +233,34 @@ async def update_medications(
     target_date = body.date or date.today().isoformat()
     routine = await _get_or_create_routine(body.patient_id, target_date, db)
     routine.medications = [m.model_dump() for m in body.medications]
+    await db.commit()
+    await db.refresh(routine)
+    await _publish_routine_event(body.patient_id)
+    return _to_response(routine)
+
+
+@router.post("/wearables", summary="Sync smartwatch data", status_code=status.HTTP_200_OK)
+async def sync_wearables(
+    body: WearableUpdate,
+    db: AsyncSession = Depends(get_db_session),
+) -> RoutineResponse:
+    """Sync steps and HRV from an external smartwatch or Health Connect.
+
+    Args:
+        body: Wearable update payload.
+        db: Injected async database session.
+
+    Returns:
+        Updated :class:`RoutineResponse`.
+    """
+    target_date = body.date or date.today().isoformat()
+    routine = await _get_or_create_routine(body.patient_id, target_date, db)
+    
+    if body.steps is not None:
+        routine.wearable_steps = body.steps
+    if body.hrv is not None:
+        routine.wearable_hrv = body.hrv
+        
     await db.commit()
     await db.refresh(routine)
     await _publish_routine_event(body.patient_id)

@@ -13,21 +13,40 @@ import { ChevronLeft, Watch, Heart, Moon, Activity, CheckCircle2, AlertCircle } 
 import { useTheme } from '@/shared/providers/ThemeProvider';
 import { ThemeColors } from '@/shared/theme/colors';
 import { BRAND } from '@/shared/constants/brand-colors.const';
+import { useAuthStore } from '@/shared/lib/zustand-persist';
 
 export function WearablesPage() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   
+  const { userId } = useAuthStore();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setIsConnecting(true);
-    setTimeout(() => {
-      setIsConnecting(false);
+    try {
+      // Fake a slight delay for Health Connect local permission UI
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Make actual REST call to the backend we just created!
+      await fetch(`http://10.0.2.2:8000/api/v1/routine/wearables`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: userId || 'mock-user-id',
+          steps: 4230,
+          hrv: 78
+        })
+      });
+      
       setIsConnected(true);
-    }, 2500);
+    } catch (err) {
+      console.error('Wearable sync failed', err);
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   return (
