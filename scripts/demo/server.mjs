@@ -174,7 +174,8 @@ const svgDataUri = (svg) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 
 const PHOTO_HEMOGRAMA = svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#cfc6bd"/><g transform="rotate(-4 160 100)"><rect x="40" y="18" width="240" height="180" rx="4" fill="#fff"/><text x="58" y="48" font-family="Arial" font-size="12" font-weight="700" fill="#403229">HEMOGRAMA COMPLETO</text><rect x="58" y="62" width="170" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="78" width="200" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="94" width="150" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="112" width="110" height="7" rx="3" fill="#ff9a5c"/><rect x="58" y="130" width="190" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="146" width="140" height="6" rx="3" fill="#d9d2cc"/></g></svg>`);
 
-const PHOTO_MAO = svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#efe4da"/><path d="M110 190 C100 140 92 110 96 86 C98 72 112 72 114 86 L120 120 L118 52 C118 36 136 36 136 52 L140 112 L144 40 C144 24 162 24 162 40 L164 112 L170 50 C171 34 188 36 187 52 L184 122 L196 100 C204 86 222 94 214 110 L188 168 C182 182 176 190 170 190 Z" fill="#e8b996" stroke="#b88563" stroke-width="2"/><ellipse cx="152" cy="150" rx="34" ry="24" fill="#e0695a" opacity="0.45"/><ellipse cx="128" cy="62" rx="9" ry="7" fill="#e0695a" opacity="0.4"/><ellipse cx="153" cy="50" rx="9" ry="7" fill="#e0695a" opacity="0.4"/><text x="12" y="20" font-family="Arial" font-size="11" fill="#736760">palma da mão direita</text></svg>`);
+/** Foto de exemplo do simulador (lesão pigmentada de pele), enviada ao app e ao painel como data URI. */
+const PHOTO_LESAO = `data:image/webp;base64,${(await readFile(path.join(HERE, 'assets', 'lesao-pele.webp'))).toString('base64')}`;
 
 /* ════════════════════════════════════════════════════════════════════════════
  * STATE (em memória — reinicia com o servidor ou POST /demo/reset)
@@ -196,6 +197,10 @@ const PUBMED = {
   basch2017: '**Basch E, Deal AM, Dueck AC, et al.** Overall Survival Results of a Trial Assessing Patient-Reported Outcomes for Symptom Monitoring During Routine Cancer Treatment. JAMA, 2017. — PubMed',
   ctcae: '**NCI.** Common Terminology Criteria for Adverse Events (CTCAE) v5.0, 2017. — Diretriz',
   extravasation: '**Pérez Fidalgo JA, García Fabregat L, Cervantes A, et al.** Management of chemotherapy extravasation: ESMO-EONS Clinical Practice Guidelines. Ann Oncol, 2012. — PubMed',
+  swetter: '**Swetter SM, Tsao H, Bichakjian CK, et al.** Guidelines of care for the management of primary cutaneous melanoma. J Am Acad Dermatol, 2019. — PubMed',
+  esmoMelanoma: '**Michielin O, van Akkooi ACJ, Ascierto PA, et al.** Cutaneous melanoma: ESMO Clinical Practice Guidelines for diagnosis, treatment and follow-up. Ann Oncol, 2019. — PubMed',
+  abbasi: '**Abbasi NR, Shaw HM, Rigel DS, et al.** Early diagnosis of cutaneous melanoma: revisiting the ABCD criteria. JAMA, 2004. — PubMed',
+  esteva: '**Esteva A, Kuprel B, Novoa RA, et al.** Dermatologist-level classification of skin cancer with deep neural networks. Nature, 2017. — PubMed',
 };
 
 /** Ani clinical answer in the format the panel parses (raciocínio / resposta / fontes). */
@@ -436,6 +441,9 @@ const BODY_KEYWORDS = [
 
 const BILATERAL = new Set(['ombro', 'peito', 'obliquo', 'antebraco', 'biceps', 'mao', 'coxa', 'panturrilha']);
 
+/** Legenda de foto que fala de pinta/sinal → análise de lesão pigmentada (ABCDE) em vez de toxicidade de pele. */
+const PIGMENTED_RE = /\b(pinta|pintas|sinal|nevo|verruga|mancha (escura|preta|marrom))\b/;
+
 function detectRegion(t) {
   for (const k of BODY_KEYWORDS) {
     if (!k.re.test(t)) continue;
@@ -482,7 +490,7 @@ function addBodyEntry({ region, view, intensity, type, description, source, cv }
     suggested_ctcae_grade: Math.min(4, intensity),
     registered_at: now().toISOString(),
     source,
-    ...(cv ? { photo_url: cv.photo_url, cv_classification: { clinical_notes: cv.notes } } : {}),
+    ...(cv ? { photo_url: cv.photo_url, cv_classification: { clinical_notes: cv.notes, kind: cv.kind } } : {}),
   };
   state.bodyMap.push(entry);
   return entry;
@@ -491,7 +499,7 @@ function addBodyEntry({ region, view, intensity, type, description, source, cv }
 /**
  * Interpreta a mensagem de WhatsApp, altera o estado e devolve as respostas da Ani.
  * @param {string} text
- * @param {{ attachment?: 'hemograma' | 'mao' }} [opts]
+ * @param {{ attachment?: 'hemograma' | 'lesao' | 'photo' | 'exam', image?: string, fileName?: string }} [opts]
  */
 function handleWhatsApp(text, opts = {}) {
   const t = norm(text ?? '');
@@ -518,14 +526,16 @@ function handleWhatsApp(text, opts = {}) {
     events.push(['document_added', { document_id: doc.id, title: doc.title }]);
   }
 
-  /* Foto do corpo: exemplo pronto ("mao") ou qualquer imagem escolhida no computador ("photo"). */
-  if (opts.attachment === 'mao' || opts.attachment === 'photo') {
-    const where = (opts.attachment === 'photo' && detectRegion(t)) || { region: 'mao_dir', view: 'front' };
-    const vision = visionAnalysis(where.region, where.view, text);
+  /* Foto do corpo: exemplo pronto ("lesao", pinta nas costas) ou qualquer imagem escolhida no computador ("photo"). */
+  if (opts.attachment === 'lesao' || opts.attachment === 'photo') {
+    const pigmented = opts.attachment === 'lesao' || PIGMENTED_RE.test(t);
+    const where = (opts.attachment === 'photo' && detectRegion(t))
+      || (pigmented ? { region: 'peito_esq', view: 'back' } : { region: 'mao_dir', view: 'front' });
+    const vision = visionAnalysis(where.region, where.view, text, pigmented);
     const entry = addBodyEntry({
-      region: where.region, view: where.view, intensity: vision.grade, type: 'vermelhidao', source: 'whatsapp',
+      region: where.region, view: where.view, intensity: vision.grade, type: vision.type, source: 'whatsapp',
       description: `${vision.finding} (foto enviada pelo WhatsApp)`,
-      cv: { photo_url: opts.image ?? PHOTO_MAO, notes: vision.note },
+      cv: { photo_url: opts.image ?? PHOTO_LESAO, notes: vision.note, kind: vision.kind },
     });
     const label = regionLabel(where.region, where.view);
     replies.push(
@@ -578,7 +588,7 @@ function handleWhatsApp(text, opts = {}) {
   const symptomType = detectSymptomType(t);
   const nausea = /enjo|nausea|vomit|ansia/.test(t);
   // A photo's caption only locates the region; the photo handler already registered the symptom.
-  const photoHandled = opts.attachment === 'mao' || opts.attachment === 'photo';
+  const photoHandled = opts.attachment === 'lesao' || opts.attachment === 'photo';
   if ((symptomType || nausea) && !photoHandled) {
     const where = detectRegion(t) ?? (nausea ? { region: 'abdomen', view: 'front' } : null);
     if (where) {
@@ -717,16 +727,32 @@ const media = new Map();
 
 /**
  * Simulated computer-vision read of a skin photo + a SOAP-style clinical note draft for the doctor.
- * The finding depends on the body region (the presenter can attach any picture).
+ * The finding depends on the body region (the presenter can attach any picture), or on `pigmented`
+ * for the mole example / captions about a "pinta".
  */
-function visionAnalysis(region, view, caption = '') {
+function visionAnalysis(region, view, caption = '', pigmented = false) {
   const label = regionLabel(region, view);
   const reported = caption.trim() ? `"${caption.trim()}"` : 'Foto enviada sem descrição.';
   const confidence = (0.82 + Math.random() * 0.12).toFixed(2).replace('.', ',');
   const area = 20 + Math.floor(Math.random() * 25);
+  let cvLine = `Visão computacional: área afetada ≈ ${area}% da região; confiança ${confidence}.`;
+  let grade = 1;
+  let type = 'vermelhidao';
+  let kind = 'toxicidade_cutanea';
 
   let finding, assessment, plan, patientText, care;
-  if (/^(mao|panturrilha)/.test(region)) {
+  if (pigmented) {
+    grade = 2;
+    type = 'outro';
+    kind = 'lesao_pigmentada';
+    const diameter = 14 + Math.floor(Math.random() * 6);
+    finding = `Lesão pigmentada de ≈ ${diameter} mm em ${label.toLowerCase()}: assimétrica, bordas irregulares e mal definidas, várias tonalidades de marrom com área central quase negra, sem ulceração`;
+    cvLine = `Visão computacional: classificador de lesões de pele → "lesão melanocítica atípica", confiança ${confidence}; ABCDE 4/5 na imagem (A, B, C, D).`;
+    assessment = 'Lesão melanocítica atípica — suspeita de melanoma até prova em contrário (E: paciente relata crescimento). Não relacionada à toxicidade do AC-T. Triagem automática, não substitui a dermatoscopia.';
+    plan = 'Encaminhar à dermatologia com prioridade para dermatoscopia e biópsia excisional (margem de 1–3 mm). Não adiar o C3 por esse achado. Guardar a foto para comparação e orientar fotoproteção.';
+    patientText = 'é uma *pinta com bordas irregulares e cores diferentes*, maior que 6 mm. Isso não é efeito da quimio, mas uma pinta assim precisa ser examinada por um dermatologista. Já avisei a Dra. Sandra.';
+    care = '*Enquanto isso:*\n• Não coce, não arranque e não passe nada na pinta\n• Se sangrar, cubra com gaze limpa\n• Use protetor solar e evite sol na região\n• Me mande outra foto se ela mudar de cor ou tamanho';
+  } else if (/^(mao|panturrilha)/.test(region)) {
     finding = `Eritema difuso em ${label.toLowerCase()}, sem bolhas ou descamação`;
     assessment = 'Compatível com síndrome mão-pé (eritrodisestesia palmo-plantar) grau 1 — CTCAE v5, associada à Capecitabina.';
     plan = 'Manter dose. Emoliente com ureia 10% 2x/dia, evitar calor e atrito. Nova foto em 72 h; suspender capecitabina se evoluir para grau 2.';
@@ -749,17 +775,18 @@ function visionAnalysis(region, view, caption = '') {
   const note = [
     'NOTA CLÍNICA — rascunho gerado pela Ani (revisar antes de assinar)',
     `S: Paciente relata pelo WhatsApp: ${reported}`,
-    `O: ${finding}. Visão computacional: área afetada ≈ ${area}% da região; confiança ${confidence}.`,
+    `O: ${finding}. ${cvLine}`,
     `A: ${assessment}`,
     `P: ${plan}`,
   ].join('\n');
 
-  return { grade: 1, finding, note, patientText, care };
+  return { grade, type, kind, finding, note, patientText, care };
 }
 
 function processWhatsApp(text, opts = {}) {
   const at = now().toISOString();
   let mediaUrl;
+  if (opts.attachment === 'lesao' && !opts.image) opts.image = PHOTO_LESAO;
   if (opts.image) {
     const id = randomUUID();
     media.set(id, opts.image);
@@ -818,10 +845,12 @@ function rosaDashboard() {
   const entries = [...state.bodyMap].sort((a, b) => b.registered_at.localeCompare(a.registered_at)).slice(0, 5);
   const via = { whatsapp: 'via WhatsApp', app: 'via App', caregiver: 'pelo cuidador' };
 
+  const isMole = (e) => e.cv_classification?.kind === 'lesao_pigmentada';
   const alerts = entries.map((e) => ({
-    text:
-      `Sintoma relatado: ${e.symptom_types.map((s) => SYMPTOM_LABELS[s] ?? s).join(', ')} na região ${regionLabel(e.body_region, e.body_view)} ` +
-      `(Intensidade: ${e.intensity}/5) — ${via[e.source] ?? 'via App'}${e.cv_classification ? ' [Análise Visual Concluída]' : ''}`,
+    text: isMole(e)
+      ? `Foto relatada: lesão pigmentada atípica (ABCDE) na região ${regionLabel(e.body_region, e.body_view)} — ${via[e.source] ?? 'via App'} [Análise Visual Concluída]`
+      : `Sintoma relatado: ${e.symptom_types.map((s) => SYMPTOM_LABELS[s] ?? s).join(', ')} na região ${regionLabel(e.body_region, e.body_view)} ` +
+        `(Intensidade: ${e.intensity}/5) — ${via[e.source] ?? 'via App'}${e.cv_classification ? ' [Análise Visual Concluída]' : ''}`,
     cv_data: e.cv_classification ? { photo_url: e.photo_url, classification: e.cv_classification.clinical_notes } : null,
     date: e.registered_at,
   }));
@@ -860,10 +889,12 @@ function rosaDashboard() {
     fever
       ? `Febre de ${fmtTemp(r.temperature)} relatada há pouco — tratar como neutropenia febril até prova em contrário (hemoculturas + antibiótico em até 60 min).`
       : `Afebril (${fmtTemp(r.temperature)}).`,
-    top
-      ? `Último sintoma: ${SYMPTOM_LABELS[top.symptom_types[0]] ?? 'sintoma'} grau ${top.intensity} em ${regionLabel(top.body_region, top.body_view).toLowerCase()} ${via[top.source] ?? ''}.`
-      : '',
-    entries.some((e) => e.body_region.startsWith('peito') && e.intensity >= 3)
+    top && isMole(top)
+      ? `Último registro: lesão pigmentada atípica (ABCDE) em ${regionLabel(top.body_region, top.body_view).toLowerCase()} ${via[top.source] ?? ''} — encaminhar à dermatologia.`
+      : top
+        ? `Último sintoma: ${SYMPTOM_LABELS[top.symptom_types[0]] ?? 'sintoma'} grau ${top.intensity} em ${regionLabel(top.body_region, top.body_view).toLowerCase()} ${via[top.source] ?? ''}.`
+        : '',
+    entries.some((e) => e.body_region.startsWith('peito') && e.body_view !== 'back' && e.intensity >= 3)
       ? 'Dor torácica em uso de doxorrubicina: considerar ECG, troponina e ecocardiograma.'
       : `Adesão aos medicamentos hoje: ${p.taken}/${p.total}.`,
   ].filter(Boolean).join(' ');
@@ -957,13 +988,18 @@ function doctorAlerts() {
   }
   for (const e of state.bodyMap) {
     const severity = e.intensity >= 4 ? 'alta' : e.intensity >= 3 ? 'media' : 'baixa';
-    const chest = e.body_region.startsWith('peito') && e.intensity >= 3;
+    const chest = e.body_region.startsWith('peito') && e.body_view !== 'back' && e.intensity >= 3;
+    const mole = e.cv_classification?.kind === 'lesao_pigmentada';
     push({
-      id: `bm-${e.id}`, patient_id: ROSA_ID, severity: chest ? 'alta' : severity, category: 'sintoma',
-      title: `${(SYMPTOM_LABELS[e.symptom_types[0]] ?? 'Sintoma').replace(/^./, (c) => c.toUpperCase())} grau ${e.intensity} — ${regionLabel(e.body_region, e.body_view)}`,
+      id: `bm-${e.id}`, patient_id: ROSA_ID, severity: chest || mole ? 'alta' : severity, category: 'sintoma',
+      title: mole
+        ? `Lesão pigmentada atípica (ABCDE) — ${regionLabel(e.body_region, e.body_view)}`
+        : `${(SYMPTOM_LABELS[e.symptom_types[0]] ?? 'Sintoma').replace(/^./, (c) => c.toUpperCase())} grau ${e.intensity} — ${regionLabel(e.body_region, e.body_view)}`,
       description: chest
         ? 'Dor torácica em uso de doxorrubicina: considerar ECG, troponina e ecocardiograma.'
-        : e.description || 'Registrado no Body Map.',
+        : mole
+          ? 'Visão computacional: assimetria, bordas irregulares, várias cores e > 6 mm; paciente relata crescimento. Encaminhar à dermatologia (dermatoscopia + biópsia).'
+          : e.description || 'Registrado no Body Map.',
       source: SOURCE_NAME[e.source] ?? 'App', created_at: e.registered_at,
       ...(e.cv_classification ? { photo_url: e.photo_url, clinical_note: e.cv_classification.clinical_notes } : {}),
     });
@@ -1035,7 +1071,7 @@ function doctorAiAnswer(query) {
     );
   }
   if (/peito|torac|cardio|doxorrub|eco/.test(q)) {
-    const chest = lastEntries.find((e) => e.body_region.startsWith('peito'));
+    const chest = lastEntries.find((e) => e.body_region.startsWith('peito') && e.body_view !== 'back');
     return aniClinical(
       'Dor torácica em paciente sob antraciclina exige excluir cardiotoxicidade e evento tromboembólico. Cruzei o Body Map com os dados do smartwatch.',
       'Solicitar **ECG, troponina e BNP**; **ecocardiograma com FEVE e strain (GLS)** comparando com o basal [1][2]. Se dispneia ou taquicardia, considerar angio-TC para TEP. Queda de FEVE > 10 pontos para < 53% indica cardiotoxicidade — discutir com cardio-oncologia antes do próximo ciclo.',
@@ -1044,6 +1080,22 @@ function doctorAiAnswer(query) {
     );
   }
   const photo = lastEntries.find((e) => e.cv_classification);
+  const mole = [...state.bodyMap].reverse().find((e) => e.cv_classification?.kind === 'lesao_pigmentada');
+  if (/\b(pinta|sinal|nevo|melanoma|dermato\w*|abcde|lesao pigmentada)\b/.test(q) || (/foto|imagem/.test(q) && mole && photo === mole)) {
+    return aniClinical(
+      mole
+        ? 'A foto enviada pelo WhatsApp mostra uma lesão pigmentada que a visão computacional classificou como melanocítica atípica (ABCDE positivo). Não é toxicidade esperada do AC-T; busquei as diretrizes de diagnóstico de melanoma no PubMed.'
+        : 'Ainda não há foto de lesão pigmentada; respondi com os critérios de avaliação de pintas em paciente oncológica.',
+      [
+        '- **Prioridade:** encaminhar à dermatologia (idealmente em até 2 semanas) para **dermatoscopia** e **biópsia excisional** com margem de 1–3 mm; evitar shaving ou biópsia parcial [1][2].',
+        '- **ABCDE na imagem:** assimetria, bordas irregulares, várias cores, diâmetro > 6 mm; a paciente relata crescimento (E) [3].',
+        '- **Não adiar o C3 do AC-T** por esse achado. Se a biópsia confirmar melanoma, estadiar (Breslow, ulceração) e discutir com a oncologia cutânea [2].',
+        '- A classificação automática é **triagem**: redes neurais atingem acurácia de dermatologista em imagens padronizadas, mas foto de celular tem limitações de luz e foco [4].',
+      ].join('\n'),
+      [mole ? `${entryLine(mole)} — análise visual concluída` : 'Body Map: sem foto de pinta', 'Sem histórico de melanoma registrado', 'Protocolo AC-T, ciclo 2 dia 8'],
+      [PUBMED.swetter, PUBMED.esmoMelanoma, PUBMED.abbasi, PUBMED.esteva],
+    );
+  }
   if (/braco|veia|flebite|extravas/.test(q) || (/foto|imagem/.test(q) && photo && /^(biceps|antebraco)/.test(photo.body_region))) {
     return aniClinical(
       'A foto do braço enviada pelo WhatsApp mostra eritema linear no trajeto venoso. Paciente recebe doxorrubicina (vesicante) por acesso periférico: o diferencial importante é extravasamento.',
@@ -1300,7 +1352,7 @@ const routes = [
     send(res, 200, entry);
   }],
   ['POST', /^\/api\/v1\/body-map\/([^/]+)\/photo$/, async (req, res, m) => {
-    const photo = (await readUploadedImage(req)) ?? PHOTO_MAO;
+    const photo = (await readUploadedImage(req)) ?? PHOTO_LESAO;
     const entry = state.bodyMap.find((e) => e.id === m[1]);
     if (entry) {
       entry.photo_url = photo;

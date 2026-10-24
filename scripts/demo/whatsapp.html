@@ -116,7 +116,7 @@
         <div class="attach-menu" id="attachMenu">
           <button type="button" data-pick="photo">🖼️ Foto do corpo (do computador)…</button>
           <button type="button" data-pick="exam">📑 Laudo ou exame (do computador)…</button>
-          <button type="button" data-attach="mao">📷 Exemplo: foto da mão</button>
+          <button type="button" data-attach="lesao">📷 Exemplo: pinta na pele</button>
           <button type="button" data-attach="hemograma">📄 Exemplo: hemograma</button>
         </div>
         <button type="button" class="round clip" id="clip" title="Anexar">📎</button>
@@ -156,7 +156,7 @@ const SCRIPT = [
   { attach: 'hemograma', short: '📄 Exame', title: 'Manda a foto do hemograma', hint: 'OCR + explicação simples · App → Docs ganha o exame' },
   { text: 'Tô sentindo uma dor no peito, lado direito, nota 7', short: '💬 Dor peito', title: 'Sintoma em texto livre', hint: 'App → Body Map pinta o peito (grau 4) · Painel: alerta + risco alto' },
   { pick: 'photo', short: '🖼️ Sua foto', title: 'Foto do corpo — escolha qualquer imagem', hint: 'Escreva onde é (ex: "minha mão tá assim") e escolha a foto · App: Body Map · Painel: foto + nota clínica (S/O/A/P)' },
-  { attach: 'mao', short: '📷 Mão', title: 'Foto da mão (exemplo pronto)', hint: 'Body Map → mão direita · Painel mostra a foto e a análise' },
+  { attach: 'lesao', short: '📷 Pinta', title: 'Foto de pinta na pele (exemplo pronto)', hint: 'Visão computacional: lesão atípica (ABCDE) · Body Map → costas · Painel: alerta alto + foto e nota' },
   { text: 'Estou com febre, 38,2', short: '🌡️ Febre', title: 'Febre durante a neutropenia', hint: 'Protocolo de emergência · Rotina e painel em alerta' },
   { text: 'Dormi mal, umas 4 horas', short: '😴 Sono', title: 'Sono', hint: 'App → Rotina: sono 4h, dica da Ani muda' },
   { text: 'Tô meio triste hoje, com medo da próxima quimio', short: '📓 Emoções', title: 'Emoções → Diário', hint: 'App → Perfil → Meu Diário ganha a entrada · Painel: fator de humor no risco' },
@@ -196,7 +196,7 @@ function bubble(m) {
     el.innerHTML = `<div class="doc-chip">📄 ${esc(m.doc)}</div>`;
     el.style.paddingBottom = '8px';
   } else {
-    const src = m.media && !/pdf/i.test(m.fileName || '') ? m.media : m.attachment === 'mao' ? IMG_MAO : m.attachment === 'hemograma' ? IMG_HEMO : '';
+    const src = m.media && !/pdf/i.test(m.fileName || '') ? m.media : m.attachment === 'hemograma' ? IMG_HEMO : '';
     const file = m.attachment === 'exam' && !src.startsWith('/demo/media') ? `<div class="doc-chip" style="margin-bottom:6px">📑 ${esc(m.fileName || 'documento')}</div>` : '';
     const img = src ? `<img src="${src}" alt="">` : file;
     const caption = m.text || DEFAULT_CAPTION[m.attachment] || '';
@@ -210,7 +210,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const DEFAULT_CAPTION = {
   hemograma: 'Recebi esse exame hoje. Tá tudo bem?',
-  mao: 'Minha mão tá assim desde ontem 😟',
+  lesao: 'Apareceu essa pinta nas costas e acho que ela cresceu 😟',
   photo: 'Olha como está aqui, apareceu desde ontem 😟',
   exam: 'Chegou esse resultado, pode me explicar?',
 };
@@ -328,7 +328,6 @@ async function poll() {
 }
 
 const IMG_HEMO = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#cfc6bd"/><g transform="rotate(-4 160 100)"><rect x="40" y="18" width="240" height="180" rx="4" fill="#fff"/><text x="58" y="48" font-family="Arial" font-size="12" font-weight="700" fill="#403229">HEMOGRAMA COMPLETO</text><rect x="58" y="62" width="170" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="78" width="200" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="94" width="150" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="112" width="110" height="7" rx="3" fill="#ff9a5c"/><rect x="58" y="130" width="190" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="146" width="140" height="6" rx="3" fill="#d9d2cc"/></g></svg>`);
-const IMG_MAO = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#efe4da"/><path d="M110 190 C100 140 92 110 96 86 C98 72 112 72 114 86 L120 120 L118 52 C118 36 136 36 136 52 L140 112 L144 40 C144 24 162 24 162 40 L164 112 L170 50 C171 34 188 36 187 52 L184 122 L196 100 C204 86 222 94 214 110 L188 168 C182 182 176 190 170 190 Z" fill="#e8b996" stroke="#b88563" stroke-width="2"/><ellipse cx="152" cy="150" rx="34" ry="24" fill="#e0695a" opacity="0.45"/><ellipse cx="128" cy="62" rx="9" ry="7" fill="#e0695a" opacity="0.4"/><ellipse cx="153" cy="50" rx="9" ry="7" fill="#e0695a" opacity="0.4"/></svg>`);
 
 setInterval(() => (document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })), 10_000);
 document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
