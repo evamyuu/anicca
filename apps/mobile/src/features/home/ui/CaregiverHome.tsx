@@ -1,434 +1,330 @@
 /**
- * @fileoverview Implementation of CaregiverHome.
+ * @fileoverview Caregiver Hub — matches the "Cuidador" frame in Figma (Startup One / Next).
  *
- * @module features/home/ui/CaregiverHomex
+ * @module features/home/ui/CaregiverHome
  * @author Evelin Brandão Cordeiro
  * @copyright 2026 Anicca. All rights reserved.
  * @license MIT
  */
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, Modal, TextInput, KeyboardAvoidingView, Image } from 'react-native';
-import { Search, Sparkles, AlertTriangle, Pill, Thermometer, FileText, Calendar, Camera, User, X, Mic, CheckCircle2, HeartHandshake } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { useQuery } from '@tanstack/react-query';
 
-import { useAuthStore, useOnboardingStore } from '@/shared/lib/zustand-persist';
+import { useAuthStore } from '@/shared/lib/zustand-persist';
 import { getTodayRoutine } from '@/shared/api/routine';
+import { useTicketSummary } from '../model/useTicketSummary';
 import { BRAND } from '@/shared/constants/brand-colors.const';
+import {
+  DEMO_PATIENT,
+  DEMO_CAREGIVER,
+  DEMO_LABS,
+  DEMO_APPOINTMENT,
+  DEMO_CAREGIVER_TASKS,
+  DEMO_CAREGIVER_TIPS,
+  type CaregiverTask,
+} from '@/shared/mocks/demo-data';
+import {
+  HubHeader,
+  Card,
+  IconBox,
+  ActionTile,
+  AppointmentCard,
+  ScanBanner,
+  AniCommandModal,
+  hubStyles,
+  hubCardStyles,
+} from './HubComponents';
+
+const W = BRAND.WARM;
+
+const TASK_TAG_COLOR: Record<CaregiverTask['tag'], string> = {
+  Médico: BRAND.PRIMARY.DEFAULT,
+  IA: BRAND.SECONDARY.DEFAULT,
+  Rotina: W.TAUPE,
+};
 
 export function CaregiverHome() {
   const router = useRouter();
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
-  const [commandInput, setCommandInput] = useState('');
-  
+  const [tasks, setTasks] = useState(DEMO_CAREGIVER_TASKS);
   const userId = useAuthStore(s => s.userId);
-  const { 
-    name, 
-    caregiverName,
-    cancerType, 
-    journeyPhase, 
-    caregiverPriorities
-  } = useOnboardingStore();
+  const patientName = DEMO_PATIENT.firstName;
 
-  const primaryPriority = caregiverPriorities?.[0];
-  const patientFirstName = name || 'paciente';
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, [])
+  );
 
+  const ticketSummary = useTicketSummary(userId);
   const { data: routine } = useQuery({
     queryKey: ['routine', 'today', userId],
     queryFn: () => getTodayRoutine(userId!),
     enabled: !!userId,
   });
 
+  const { cycle } = DEMO_PATIENT;
+  const scheduledMeds = (routine?.medications ?? []).filter(m => !m.as_needed);
+  const takenMeds = scheduledMeds.filter(m => m.taken).length;
+
+  // The medication check-in task completes itself once the patient logs the dose (app or WhatsApp).
+  const morningOndansetronTaken = scheduledMeds.some(m => m.name === 'Ondansetrona' && m.period === 'morning' && m.taken);
+  const visibleTasks = tasks.map(t => (t.id === 'ondansetrona' && morningOndansetronTaken ? { ...t, done: true } : t));
+  const doneTasks = visibleTasks.filter(t => t.done).length;
+
+  const toggleTask = (id: string) =>
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, done: !t.done } : t)));
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* TOP HEADER */}
-        <LinearGradient 
-          colors={[BRAND.AUX.GREEN, BRAND.AUX.GREEN]} // Different color for Caregiver
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.headerArea}
-        >
-          <View style={styles.profileRow}>
-            <TouchableOpacity 
-              style={[styles.avatarPlaceholder, { backgroundColor: BRAND.AUX.GREEN, borderWidth: 1, borderColor: BRAND.PRIMARY[400] }]} 
-              activeOpacity={0.8}
-              onPress={() => router.push('/profile')}
-            >
-              <User size={24} color={BRAND.PRIMARY[50]} />
-            </TouchableOpacity>
-            <View style={styles.profileTextContainer}>
-              <Text style={styles.greetingText}>OLÁ, CUIDADOR(A)</Text>
-              <Text style={styles.nameText}>{caregiverName || 'Bem-vindo'}</Text>
-              <View style={styles.badge}>
-                <HeartHandshake size={12} color={BRAND.PRIMARY[300]} style={{marginRight: 4}} />
-                <Text style={styles.badgeText}>Apoiando {patientFirstName}</Text>
-              </View>
-            </View>
-          </View>
+    <View style={hubStyles.screen}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <HubHeader
+          name={DEMO_CAREGIVER.firstName}
+          badge={` Cuidador • Apoiando ${patientName}`}
+          badgeIcon="favorite"
+          initials={DEMO_CAREGIVER.initials}
+          searchPlaceholder={`Pergunte sobre ${patientName}...`}
+          progress={{
+            ratio: cycle.day / cycle.length,
+            label: `${patientName} • D${cycle.day}/${cycle.length} • Ciclo ${cycle.current}/${cycle.total}`,
+          }}
+          onAvatarPress={() => router.push('/profile')}
+          onSearchPress={() => setCommandCenterOpen(true)}
+        />
 
-          {/* Search Bar - Triggers Command Center */}
-          <TouchableOpacity 
-            style={styles.searchBar} 
-            activeOpacity={0.9}
-            onPress={() => setCommandCenterOpen(true)}
-          >
-            <Sparkles size={16} color={BRAND.SECONDARY.DEFAULT} style={{marginRight: 8}} />
-            <Text style={styles.searchText}>Pergunte sobre {patientFirstName}...</Text>
-            <Search size={16} color={BRAND.PRIMARY[400]} style={{marginLeft: 'auto'}} />
-          </TouchableOpacity>
-
-        </LinearGradient>
-
-        <View style={styles.bodyArea}>
-          
-          {/* Daily AI Summary Card */}
-          <View style={styles.summaryCard}>
-            <Sparkles size={20} color={BRAND.SECONDARY.DEFAULT} style={{marginTop: 2}} />
-            <Text style={styles.summaryText}>
-              A jornada de cuidado continua. Lembre-se de registrar a rotina de {patientFirstName} para manter a equipe informada.
-            </Text>
-          </View>
-
-          {/* Action Grid (Dynamic highlights based on caregiver priorities) */}
-          <View style={styles.actionGrid}>
-            
-            <TouchableOpacity 
-              style={primaryPriority === 'Acompanhar sintomas e bem-estar' ? styles.actionCardOrange : styles.actionCardWhite} 
-              onPress={() => router.push('/(tabs)/body-map')}
-            >
-              <View style={primaryPriority === 'Acompanhar sintomas e bem-estar' ? styles.iconCircleTranslucentOrange : styles.iconCircleBeige}>
-                <Thermometer size={20} color={primaryPriority === 'Acompanhar sintomas e bem-estar' ? BRAND.SURFACE.CARD : BRAND.PRIMARY.DEFAULT} />
-              </View>
-              <Text style={primaryPriority === 'Acompanhar sintomas e bem-estar' ? styles.actionCardTitleWhite : styles.actionCardTitleDark}>Sintomas</Text>
-              <Text style={primaryPriority === 'Acompanhar sintomas e bem-estar' ? styles.actionCardSubtitleLight : styles.actionCardSubtitle}>De {patientFirstName}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={primaryPriority === 'Organizar rotina de medicamentos' ? styles.actionCardOrange : styles.actionCardWhite} 
+        <View style={hubStyles.body}>
+          <View style={hubStyles.grid}>
+            <ActionTile
+              variant="white"
+              height={119}
+              icon={
+                <View style={styles.tileIconLight}>
+                  <MaterialCommunityIcons name="pill" size={18} color={BRAND.PRIMARY.DEFAULT} />
+                </View>
+              }
+              title={`Meds de ${patientName}`}
+              subtitle={`${takenMeds} de ${scheduledMeds.length} tomados`}
+              progress={scheduledMeds.length ? takenMeds / scheduledMeds.length : 0}
               onPress={() => router.push('/(tabs)/routine')}
-            >
-              <View style={primaryPriority === 'Organizar rotina de medicamentos' ? styles.iconCircleTranslucentOrange : styles.iconCircleBeige}>
-                <Pill size={20} color={primaryPriority === 'Organizar rotina de medicamentos' ? BRAND.SURFACE.CARD : BRAND.PRIMARY.DEFAULT} />
-              </View>
-              <Text style={primaryPriority === 'Organizar rotina de medicamentos' ? styles.actionCardTitleWhite : styles.actionCardTitleDark}>Medicamentos</Text>
-              <Text style={primaryPriority === 'Organizar rotina de medicamentos' ? styles.actionCardSubtitleLight : styles.actionCardSubtitle}>Pendências</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={primaryPriority === 'Encontrar apoio emocional para mim' ? styles.actionCardBrown : styles.actionCardWhite} 
-            >
-              <View style={primaryPriority === 'Encontrar apoio emocional para mim' ? styles.iconCircleTranslucentBrown : styles.iconCircleBeige}>
-                <HeartHandshake size={20} color={primaryPriority === 'Encontrar apoio emocional para mim' ? BRAND.SURFACE.BORDER : BRAND.PRIMARY.DEFAULT} />
-              </View>
-              <Text style={primaryPriority === 'Encontrar apoio emocional para mim' ? styles.actionCardTitleLight : styles.actionCardTitleDark}>Bem-estar</Text>
-              <Text style={primaryPriority === 'Encontrar apoio emocional para mim' ? styles.actionCardSubtitleBrown : styles.actionCardSubtitle}>Apoio ao cuidador</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCardWhite}>
-              <View style={styles.iconCircleBeige}><Calendar size={20} color={BRAND.PRIMARY.DEFAULT} /></View>
-              <Text style={styles.actionCardTitleDark}>Agenda</Text>
-              <Text style={styles.actionCardSubtitle}>Consultas</Text>
-            </TouchableOpacity>
-
+            />
+            <ActionTile
+              variant="blue"
+              height={119}
+              icon={<IconBox name="device-thermostat" color={BRAND.SURFACE.CARD} background="rgba(255,255,255,0.2)" />}
+              title="Sintomas"
+              subtitle={`Registrar por ${patientName}`}
+              onPress={() => router.push('/(tabs)/body-map')}
+            />
+            <ActionTile
+              variant="purple"
+              height={119}
+              icon={<IconBox name="science" color={BRAND.SURFACE.CARD} background="rgba(255,255,255,0.1)" />}
+              title="Exames"
+              subtitle={DEMO_LABS.lastExamSummary}
+              subtitleColor="#FBEBE2"
+              onPress={() => router.push('/(tabs)/docs')}
+            />
+            <ActionTile
+              variant="white"
+              height={119}
+              icon={<IconBox name="assignment" color={W.TAUPE} background={W.BG} />}
+              title="Chamados"
+              subtitle={ticketSummary}
+              onPress={() => router.push('/tickets')}
+            />
           </View>
 
-          {/* Timeline do Paciente */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <View style={styles.iconCircleBeige}><Calendar size={24} color={BRAND.PRIMARY.DEFAULT} /></View>
-              <View style={{flex: 1, marginLeft: 16}}>
-                <Text style={styles.appointmentTitle}>Jornada de {patientFirstName}</Text>
-                <Text style={styles.appointmentDesc}>Fase atual: {journeyPhase || 'Não informado'}</Text>
-              </View>
-              <Text style={{fontSize: 20, color: BRAND.PRIMARY[400], fontWeight: 'bold'}}>{'>'}</Text>
-            </View>
-          </TouchableOpacity>
+          <AppointmentCard
+            title={`Próxima consulta de ${patientName}`}
+            when={DEMO_APPOINTMENT.when}
+            doctor={`${DEMO_APPOINTMENT.doctor} • ${DEMO_APPOINTMENT.specialty}`}
+          />
 
-          <View style={{height: 100}} />
+          {/* Tarefas do cuidador */}
+          <Card style={{ borderColor: 'rgba(166,141,126,0.25)' }}>
+            <View style={[hubCardStyles.rowBetween, { marginBottom: 6 }]}>
+              <View style={[hubCardStyles.row, { gap: 8 }]}>
+                <MaterialIcons name="check-circle-outline" size={16} color={BRAND.PRIMARY.DEFAULT} />
+                <Text style={hubCardStyles.cardTitle}>Suas tarefas de hoje</Text>
+              </View>
+              <View style={styles.countPill}>
+                <Text style={styles.countPillText}>{doneTasks}/{visibleTasks.length} feitas</Text>
+              </View>
+            </View>
+            {visibleTasks.map((task, i) => (
+              <TouchableOpacity
+                key={task.id}
+                activeOpacity={0.7}
+                onPress={() => toggleTask(task.id)}
+                style={[styles.taskRow, i < visibleTasks.length - 1 && styles.taskDivider]}
+              >
+                <View style={[styles.taskCheck, task.done && styles.taskCheckDone]}>
+                  {task.done && <MaterialIcons name="check" size={11} color={BRAND.SURFACE.CARD} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.taskTitle, task.done && styles.taskTitleDone]}>{task.title}</Text>
+                  <View style={[hubCardStyles.row, { gap: 8, marginTop: 4 }]}>
+                    <Text style={[styles.taskTag, { color: task.done ? W.TAUPE : TASK_TAG_COLOR[task.tag] }]}>{task.tag}</Text>
+                    <Text style={styles.taskWhen}>{task.when}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </Card>
+
+          {/* Navegação oncológica (dicas da Ani) */}
+          <LinearGradient
+            colors={['rgba(114,90,193,0.08)', 'rgba(37,92,153,0.06)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.aniCard}
+          >
+            <View style={[hubCardStyles.row, { gap: 8 }]}>
+              <IconBox name="explore" color={BRAND.PRIMARY.DEFAULT} background="rgba(114,90,193,0.15)" size={32} iconSize={17} radius={10} />
+              <View>
+                <Text style={hubCardStyles.cardTitle}>Navegação Oncológica · Ani</Text>
+                <Text style={styles.aniSubtitle}>Orientações personalizadas para você</Text>
+              </View>
+            </View>
+            {DEMO_CAREGIVER_TIPS.map(tip => (
+              <View key={tip.id} style={styles.tip}>
+                <MaterialIcons name={tip.icon} size={15} color={BRAND.PRIMARY.DEFAULT} style={{ marginTop: 2 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tipText}>{tip.text}</Text>
+                  {tip.action && (
+                    <TouchableOpacity
+                      style={[hubCardStyles.row, { gap: 4, marginTop: 6 }]}
+                      onPress={() => router.push({ pathname: '/(tabs)/chat', params: { initialQuery: tip.text } })}
+                    >
+                      <Text style={styles.tipAction}>{tip.action}</Text>
+                      <MaterialIcons name="arrow-forward" size={11} color={BRAND.PRIMARY.DEFAULT} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
+          </LinearGradient>
+
+          <ScanBanner
+            title="Envie um laudo para a Ani"
+            subtitle="Ela explica em linguagem simples e sugere perguntas para o médico"
+            onPress={() => router.push('/(tabs)/docs')}
+          />
         </View>
       </ScrollView>
 
-      {/* Command Center Modal (GenUI) */}
-      <Modal visible={commandCenterOpen} animationType="fade" transparent>
-        <KeyboardAvoidingView style={styles.commandModalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <View style={styles.commandContent}>
-            <View style={styles.commandHeader}>
-              <Text style={styles.commandTitle}>Assistente Ani</Text>
-              <TouchableOpacity onPress={() => { setCommandCenterOpen(false); setCommandInput(''); }} style={styles.commandCloseBtn}>
-                <X size={20} color={BRAND.PRIMARY[400]} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.commandInputRow}>
-              <Sparkles size={20} color={BRAND.SECONDARY.DEFAULT} />
-              <TextInput 
-                style={styles.commandInput}
-                placeholder={`Ex: Quais os efeitos do remédio do ${patientFirstName}?`}
-                placeholderTextColor={BRAND.PRIMARY[400]}
-                autoFocus
-                value={commandInput}
-                onChangeText={setCommandInput}
-              />
-              <TouchableOpacity>
-                <Mic size={20} color={BRAND.PRIMARY[400]} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+      <AniCommandModal
+        visible={commandCenterOpen}
+        title="Assistente Ani"
+        placeholder={`Ex: Quais os efeitos da Capecitabina na ${patientName}?`}
+        onClose={() => setCommandCenterOpen(false)}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: BRAND.AUX.GREEN, // Dark Green
-  },
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: BRAND.BG.LIGHT,
-  },
-  headerArea: {
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 24 : 10,
-    paddingBottom: 40,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: BRAND.PRIMARY[100],
+  tileIconLight: {
+    width: 32,
+    height: 32,
+    borderRadius: 14,
+    backgroundColor: W.BG,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
-  profileTextContainer: {
-    flex: 1,
-  },
-  greetingText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: BRAND.PRIMARY[300],
-    letterSpacing: 1,
-  },
-  nameText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: BRAND.SURFACE.CARD,
-    marginBottom: 4,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: BRAND.SURFACE.CARD_DARK, 
-    alignSelf: 'flex-start',
+  countPill: {
+    height: 19,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(166,141,126,0.12)',
   },
-  badgeText: {
-    fontSize: 16,
-    color: BRAND.SURFACE.BORDER,
-    fontWeight: '600',
+  countPillText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 10,
+    color: W.TEXT_MUTED,
   },
-  searchBar: {
+  taskRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 20,
-    height: 44,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-  },
-  searchText: {
-    color: BRAND.PRIMARY[300],
-    fontSize: 16,
-  },
-  bodyArea: {
-    flex: 1,
-    paddingHorizontal: 24,
-    marginTop: -20,
-  },
-  summaryCard: {
-    flexDirection: 'row',
-    backgroundColor: BRAND.PRIMARY[100],
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
     alignItems: 'flex-start',
+    gap: 12,
+    paddingTop: 10,
+    paddingBottom: 11,
   },
-  summaryText: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: BRAND.PRIMARY.DEFAULT,
-    lineHeight: 20,
-    fontWeight: '500',
+  taskDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
-  card: {
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: BRAND.PRIMARY[900],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  actionCardWhite: {
-    width: '48%',
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: BRAND.PRIMARY[900],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  actionCardOrange: {
-    width: '48%',
-    backgroundColor: BRAND.SECONDARY.DEFAULT,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: BRAND.SECONDARY.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  actionCardBrown: {
-    width: '48%',
-    backgroundColor: BRAND.PRIMARY.DEFAULT,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-  },
-  iconCircleBeige: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: BRAND.PRIMARY[100],
+  taskCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: W.TAUPE,
+    marginTop: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  iconCircleTranslucentOrange: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+  taskCheckDone: {
+    backgroundColor: W.TAN,
+    borderColor: W.TAN,
   },
-  iconCircleTranslucentBrown: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  actionCardTitleDark: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: BRAND.PRIMARY.DEFAULT,
-    marginBottom: 4,
-  },
-  actionCardTitleWhite: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: BRAND.SURFACE.CARD,
-    marginBottom: 4,
-  },
-  actionCardTitleLight: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: BRAND.SURFACE.CARD,
-    marginBottom: 4,
-  },
-  actionCardSubtitle: {
-    fontSize: 16,
-    color: BRAND.PRIMARY[400],
-  },
-  actionCardSubtitleLight: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  actionCardSubtitleBrown: {
-    fontSize: 16,
-    color: BRAND.PRIMARY[300],
-  },
-  appointmentTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: BRAND.PRIMARY.DEFAULT,
-    marginBottom: 2,
-  },
-  appointmentDesc: {
-    fontSize: 16,
-    color: BRAND.PRIMARY[400],
-  },
-  commandModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(74, 57, 49, 0.95)',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  commandContent: {
-    backgroundColor: BRAND.BG.LIGHT,
-    borderRadius: 32,
-    padding: 24,
-  },
-  commandHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  commandTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  taskTitle: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    lineHeight: 15,
     color: BRAND.PRIMARY.DEFAULT,
   },
-  commandCloseBtn: {
-    padding: 4,
+  taskTitleDone: {
+    color: W.TAUPE,
+    textDecorationLine: 'line-through',
   },
-  commandInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: BRAND.SURFACE.CARD,
-    borderRadius: 24,
-    height: 56,
-    paddingHorizontal: 16,
+  taskTag: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 9,
+    lineHeight: 13.5,
+  },
+  taskWhen: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 10,
+    lineHeight: 15,
+    color: W.TEXT_MUTED,
+  },
+  aniCard: {
+    gap: 10,
+    padding: 17,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: BRAND.SURFACE.BORDER,
+    borderColor: 'rgba(114,90,193,0.2)',
   },
-  commandInput: {
-    flex: 1,
-    marginHorizontal: 12,
-    fontSize: 16,
+  aniSubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 10,
+    lineHeight: 15,
+    color: W.TEXT_MUTED,
+  },
+  tip: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+  },
+  tipText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    lineHeight: 17.9,
     color: BRAND.PRIMARY.DEFAULT,
-  }
+  },
+  tipAction: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: BRAND.PRIMARY.DEFAULT,
+  },
 });

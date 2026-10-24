@@ -22,6 +22,7 @@ import {
   RefreshControl,
   LayoutAnimation,
   UIManager,
+  ActivityIndicator,
 } from 'react-native';
 import {
   Plus,
@@ -42,13 +43,15 @@ import {
   FileText,
   MoreHorizontal
 } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 
 import { BRAND } from '@/shared/constants/brand-colors.const';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
-import { listDocuments, type DocumentResponse } from '@/shared/api/documents';
+import { listDocuments, uploadDocument, type DocumentResponse } from '@/shared/api/documents';
+import { notify } from '@/shared/lib/notify';
+import { pickFile } from '@/shared/lib/pick-file';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -115,6 +118,43 @@ export default function DocsScreen() {
     enabled: !!userId,
   });
 
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+
+  const sendToAni = async (uri: string, name: string, type: string, channel: 'camera' | 'upload') => {
+    setUploading(true);
+    try {
+      const doc = await uploadDocument(userId!, uri, name, type, channel);
+      await queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setModalVisible(false);
+      notify('Documento recebido', `A Ani leu e catalogou como "${doc.title ?? humanizeType(doc.document_type)}".${doc.key_finding ? `
+
+${doc.key_finding}` : ''}`);
+    } catch {
+      notify('Erro', 'Não foi possível enviar o documento. Tente novamente.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const asset = result.canceled ? null : result.assets[0];
+    if (asset) {
+      await sendToAni(asset.uri, asset.fileName ?? 'exame.jpg', asset.mimeType ?? 'image/jpeg', 'camera');
+    }
+  };
+
+  const handlePickPdf = async () => {
+    const file = await pickFile('application/pdf,image/*');
+    if (file) await sendToAni(file.uri, file.name, file.type, 'upload');
+  };
+
+  const askAni = (initialQuery: string) => {
+    setModalVisible(false);
+    router.push({ pathname: '/(tabs)/chat', params: { initialQuery } });
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -179,12 +219,7 @@ export default function DocsScreen() {
       >
         
         {/* ── HEADER ── */}
-        <LinearGradient
-          colors={[BRAND.PRIMARY.DEFAULT, BRAND.PRIMARY[400]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
+        <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Meus Documentos</Text>
             <Text style={styles.headerSubtitle}>{documents?.length || 0} documentos organizados pela Ani</Text>
@@ -192,7 +227,7 @@ export default function DocsScreen() {
           <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
             <Plus size={24} color="#fff" />
           </TouchableOpacity>
-        </LinearGradient>
+        </View>
 
         {/* ── AI BANNER ── */}
         <View style={styles.aiBanner}>
@@ -264,7 +299,7 @@ export default function DocsScreen() {
                           key={doc.id} 
                           style={[styles.docCard, idx === catDocs.length - 1 && { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}
                           activeOpacity={0.7}
-                          onPress={() => router.push({ pathname: '/document/[id]', params: { id: doc.id, docData: JSON.stringify(doc) } })}
+                          onPress={() => router.push({ pathname: '/document/[id]', params: { id: doc.id } })}
                         >
                           <View style={styles.docCardHeader}>
                             <View style={{ flex: 1 }}>
@@ -320,7 +355,7 @@ export default function DocsScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7} disabled={uploading} onPress={handlePickImage}>
               <View style={styles.actionIconBox}>
                 <Camera size={20} color={BRAND.SECONDARY.DEFAULT} />
               </View>
@@ -330,7 +365,7 @@ export default function DocsScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7} disabled={uploading} onPress={() => askAni('Quero registrar um documento: ')}>
               <View style={styles.actionIconBoxDark}>
                 <MessageSquare size={20} color={BRAND.PRIMARY.DEFAULT} />
               </View>
@@ -340,7 +375,7 @@ export default function DocsScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7} disabled={uploading} onPress={() => askAni('Fui ao médico hoje e quero registrar a consulta: ')}>
               <View style={styles.actionIconBox}>
                 <Mic size={20} color={BRAND.SECONDARY.DEFAULT} />
               </View>
@@ -350,7 +385,7 @@ export default function DocsScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.actionRow} activeOpacity={0.7} disabled={uploading} onPress={handlePickPdf}>
               <View style={styles.actionIconBoxDark}>
                 <Upload size={20} color={BRAND.PRIMARY.DEFAULT} />
               </View>
@@ -359,6 +394,13 @@ export default function DocsScreen() {
                 <Text style={styles.actionSubtitle}>Resultados de exames em PDF do laboratório</Text>
               </View>
             </TouchableOpacity>
+
+            {uploading && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+                <ActivityIndicator color={BRAND.SECONDARY.DEFAULT} />
+                <Text style={styles.actionSubtitle}>A Ani está lendo o documento...</Text>
+              </View>
+            )}
 
             <Text style={styles.modalFooterText}>
               Todos os documentos são criptografados e armazenados com segurança (LGPD)
@@ -386,7 +428,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 20 : 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   headerLeft: {
     flex: 1,
@@ -394,13 +436,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 22,
-    color: '#fff',
+    color: BRAND.PRIMARY.DEFAULT,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
+    color: BRAND.PRIMARY[400],
   },
   addButton: {
     width: 44,
@@ -418,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 20,
-    marginTop: -16, // overlap
+    marginTop: 8,
   },
   aiBannerTitle: {
     fontFamily: 'Nunito_700Bold',

@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch, Modal, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, User, Camera, ShieldCheck, FileBadge, Stethoscope, HeartHandshake, Scale, Settings, X } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { useOnboardingStore, useAuthStore } from '@/shared/lib/zustand-persist';
 import { httpClient } from '@/shared/api/http-client';
@@ -127,7 +128,29 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Removed internal Modal entirely */}
+          {/* Section: Care tracking (diário, CTCAE, chamados) */}
+          <Text style={styles.sectionTitle}>Meu Acompanhamento</Text>
+          <View style={styles.cardGroup}>
+            {([
+              { icon: 'menu-book', title: 'Meu Diário', sub: 'Humor e emoções do dia a dia', href: '/journaling' },
+              { icon: 'fact-check', title: 'Escala CTCAE', sub: 'Autoavaliação de efeitos colaterais', href: '/symptom/ctcae' },
+              { icon: 'assignment', title: 'Chamados', sub: 'Pedidos ao SUS, convênio e hospital', href: '/tickets' },
+            ] as const).map((item, i) => (
+              <React.Fragment key={item.href}>
+                {i > 0 && <View style={styles.divider} />}
+                <TouchableOpacity style={styles.cardRowAction} activeOpacity={0.7} onPress={() => router.push(item.href)}>
+                  <View style={styles.rowLeft}>
+                    <MaterialIcons name={item.icon} size={20} color={BRAND.SECONDARY.DEFAULT} style={{ marginRight: 12 }} />
+                    <View>
+                      <Text style={styles.connectionTitle}>{item.title}</Text>
+                      <Text style={styles.connectionSub}>{item.sub}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.actionChevron}>{'>'}</Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
 
           {/* Section: Healthcare System & Rights */}
           <Text style={styles.sectionTitle}>Sistema de Saúde e Direitos</Text>

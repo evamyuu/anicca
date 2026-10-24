@@ -8,26 +8,34 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronDown, Trash2, ExternalLink, HelpCircle, FileText, AlertTriangle } from 'lucide-react-native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { BRAND } from '@/shared/constants/brand-colors.const';
-import { deleteDocument, type DocumentResponse } from '@/shared/api/documents';
+import { deleteDocument, listDocuments, type DocumentResponse } from '@/shared/api/documents';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
+import { confirmAction, notify } from '@/shared/lib/notify';
 
 export default function DocumentDetailsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ id: string; docData?: string }>();
   const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.userId);
-  
-  // Parse docData string back to object
-  const doc: DocumentResponse | null = params.docData ? JSON.parse(params.docData as string) : null;
 
-  const isImage = doc?.file_url?.toLowerCase().match(/\.(jpg|jpeg|png|webp)$/);
+  // Photos come back as large data URIs, so the screen looks the document up by id
+  // instead of receiving it in the URL (docData is kept as a fallback).
+  const { data: documents } = useQuery({
+    queryKey: ['documents', userId],
+    queryFn: () => listDocuments(userId!),
+    enabled: !!userId,
+  });
+  const doc: DocumentResponse | null =
+    documents?.find(d => d.id === params.id) ?? (params.docData ? JSON.parse(params.docData) : null);
+
+  const isImage = !!doc?.file_url && (/^data:image\//.test(doc.file_url) || /\.(jpg|jpeg|png|webp)$/i.test(doc.file_url));
 
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -38,7 +46,7 @@ export default function DocumentDetailsScreen() {
       router.back();
     },
     onError: () => {
-      Alert.alert("Erro", "Não foi possível excluir o documento. Tente novamente.");
+      notify("Erro", "Não foi possível excluir o documento. Tente novamente.");
       setIsDeleting(false);
     }
   });
@@ -60,29 +68,22 @@ export default function DocumentDetailsScreen() {
     if (doc.file_url && doc.file_url.startsWith('http')) {
       await Linking.openURL(doc.file_url);
     } else {
-      Alert.alert(
-        "Visualização indisponível", 
-        `No ambiente local, o anexo está em: ${doc.file_url}. Em produção, isso abriria o PDF original.`
+      notify(
+        "Visualização indisponível",
+        "No modo demonstração o arquivo original fica no servidor local. Em produção, isso abriria o PDF original."
       );
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
+  const handleDelete = async () => {
+    const confirmed = await confirmAction(
       "Excluir documento",
       "Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Excluir", 
-          style: "destructive", 
-          onPress: () => {
-            setIsDeleting(true);
-            deleteMutation.mutate(doc.id);
-          }
-        }
-      ]
+      "Excluir"
     );
+    if (!confirmed) return;
+    setIsDeleting(true);
+    deleteMutation.mutate(doc.id);
   };
 
   return (

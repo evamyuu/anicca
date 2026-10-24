@@ -7,6 +7,7 @@
     "dev:web": "turbo run dev --filter=@anicca/web",
     "dev:mobile": "turbo run dev --filter=@anicca/mobile",
     "dev:api": "turbo run dev --filter=@anicca/api",
+    "demo:server": "node scripts/demo/server.mjs",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

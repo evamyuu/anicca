@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, Modal, KeyboardAvoidingView, Platform, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Modal, KeyboardAvoidingView, Platform, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, ShieldAlert, HeartHandshake, UserMinus, X, Plus } from 'lucide-react-native';
+import { ChevronLeft, ShieldAlert, HeartHandshake, UserMinus, X } from 'lucide-react-native';
 import { GradientButton } from '@/shared/ui/GradientButton';
-import { httpClient } from '@/shared/api/http-client';
+import { listCaregivers, linkCaregiver, unlinkCaregiver } from '@/shared/api/care-team';
+import { confirmAction, notify } from '@/shared/lib/notify';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
 import { BRAND } from '@/shared/constants/brand-colors.const';
 
@@ -21,8 +22,7 @@ export default function CaregiverProfileScreen() {
   React.useEffect(() => {
     const fetchCaregivers = async () => {
       try {
-        const response = await httpClient.get(`/auth/caregivers/${userId}`);
-        setCaregivers(response.data);
+        setCaregivers(await listCaregivers(userId!));
       } catch (error) {
         console.error("Failed to fetch caregivers", error);
       }
@@ -32,27 +32,20 @@ export default function CaregiverProfileScreen() {
     }
   }, [userId]);
 
-  const handleUnlink = (id: string) => {
-    Alert.alert(
+  const handleUnlink = async (id: string) => {
+    const confirmed = await confirmAction(
       "Desvincular Cuidador",
       "Tem certeza que deseja remover o acesso deste cuidador aos seus dados de saúde?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sim, Desvincular", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await httpClient.post(`/auth/unlink-caregiver?patient_id=${userId}&caregiver_id=${id}`);
-              setCaregivers(prev => prev.filter(c => c.id !== id));
-              Alert.alert("Sucesso", "Cuidador desvinculado.");
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível desvincular o cuidador.");
-            }
-          }
-        }
-      ]
+      "Sim, Desvincular"
     );
+    if (!confirmed) return;
+    try {
+      await unlinkCaregiver(userId!, id);
+      setCaregivers(prev => prev.filter(c => c.id !== id));
+      notify("Sucesso", "Cuidador desvinculado.");
+    } catch (error) {
+      notify("Erro", "Não foi possível desvincular o cuidador.");
+    }
   };
 
   const handleLink = async () => {
@@ -60,15 +53,14 @@ export default function CaregiverProfileScreen() {
     setLoading(true);
     setFeedback(null);
     try {
-      await httpClient.post(`/auth/link-caregiver?patient_id=${userId}&email=${inputValue.trim()}`);
-      
+      await linkCaregiver(userId!, inputValue.trim());
+
       // Recarregar a lista real
-      const response = await httpClient.get(`/auth/caregivers/${userId}`);
-      setCaregivers(response.data);
-      
+      setCaregivers(await listCaregivers(userId!));
+
       setModalVisible(false);
       setInputValue('');
-      Alert.alert("Sucesso", "Cuidador vinculado com sucesso!");
+      notify("Sucesso", "Cuidador vinculado com sucesso!");
     } catch (error) {
       setFeedback({ 
         text: `Não foi possível vincular. Verifique o e-mail e tente novamente.`, 

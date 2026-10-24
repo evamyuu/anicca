@@ -32,14 +32,20 @@ export interface ChatInputBarProps {
   onSend: (text: string) => void;
   isTyping: boolean;
   placeholder?: string;
+  /** Text to prefill when the screen is opened with a draft (e.g. from Docs or the Hub). */
+  initialText?: string;
 }
 
 export function ChatInputBar({
   onSend,
   isTyping,
   placeholder = 'Escreva uma mensagem...',
+  initialText,
 }: ChatInputBarProps) {
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText ?? '');
+  React.useEffect(() => {
+    if (initialText) setText(initialText);
+  }, [initialText]);
   const [isFocused, setIsFocused] = useState(false);
   const scaleAnim = useRef(new Animated.Value(SCALE_DEFAULT)).current;
 

@@ -6,7 +6,7 @@
  * @copyright 2026 Anicca. All rights reserved.
  * @license MIT
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Watch, Heart, Moon, Activity, CheckCircle2, AlertCircle } from 'lucide-react-native';
@@ -14,12 +14,16 @@ import { useTheme } from '@/shared/providers/ThemeProvider';
 import { ThemeColors } from '@/shared/theme/colors';
 import { BRAND } from '@/shared/constants/brand-colors.const';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
+import { syncWearables } from '@/shared/api/routine';
+import { notify } from '@/shared/lib/notify';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function WearablesPage() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  
+  const queryClient = useQueryClient();
+
   const { userId } = useAuthStore();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -30,20 +34,13 @@ export function WearablesPage() {
       // Fake a slight delay for Health Connect local permission UI
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Make actual REST call to the backend we just created!
-      await fetch(`http://10.0.2.2:8000/api/v1/routine/wearables`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patient_id: userId || 'mock-user-id',
-          steps: 4230,
-          hrv: 78
-        })
-      });
-      
+      await syncWearables(userId!, 4230, 78);
+      queryClient.invalidateQueries({ queryKey: ['routine'] });
+
       setIsConnected(true);
     } catch (err) {
       console.error('Wearable sync failed', err);
+      notify('Erro', 'Não foi possível sincronizar o smartwatch. Tente novamente.');
     } finally {
       setIsConnecting(false);
     }

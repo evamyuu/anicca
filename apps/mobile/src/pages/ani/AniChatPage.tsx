@@ -8,10 +8,10 @@ import { BRAND } from '@/shared/constants/brand-colors.const';
  * @license MIT
  */
 import React from 'react';
-import { View, FlatList, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MoreVertical } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import {
   useAniChat,
@@ -20,11 +20,21 @@ import {
   UserMessageBubble,
   AniTypingIndicator,
 } from '@/features/ani-chat';
-import AniProfileIcon from '../../../assets/images/ani-geral/ani-profile-icon.svg';
+const ANI_AVATAR = require('../../../assets/images/ani-geral/ani-avatar.png');
 
 export function AniChatPage() {
-  const { messages, isTyping, error, send, retry } = useAniChat();
+  const { messages, isTyping, isLoading, error, send, retry } = useAniChat();
   const router = useRouter();
+  const { initialQuery } = useLocalSearchParams<{ initialQuery?: string }>();
+
+  // Questions from the Hub are sent right away; drafts ending in ":" just prefill the input.
+  const isDraft = !!initialQuery && initialQuery.trim().endsWith(':');
+  const sentQueryRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!initialQuery || isDraft || isLoading || sentQueryRef.current === initialQuery) return;
+    sentQueryRef.current = initialQuery;
+    send(initialQuery);
+  }, [initialQuery, isDraft, isLoading, send]);
   
   const bgColor = BRAND.BG.LIGHT;
   const textColor = BRAND.PRIMARY[900];
@@ -40,11 +50,20 @@ export function AniChatPage() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: bgColor }}>
-      {/* Header: only settings icon */}
+      {/* Header: Ani identity + settings */}
       <View
-        className="flex-row items-center justify-end px-4 py-3"
-        style={{ borderBottomWidth: 1, borderBottomColor: headerBorderColor, backgroundColor: bgColor }}
+        className="flex-row items-center px-4 py-3"
+        style={{ borderBottomWidth: 1, borderBottomColor: headerBorderColor, backgroundColor: bgColor, gap: 10 }}
       >
+        <View style={{ width: 36, height: 36, borderRadius: 12, overflow: 'hidden', backgroundColor: BRAND.WARM.CHIP }}>
+          <Image source={ANI_AVATAR} style={{ width: 36, height: 36 }} resizeMode="cover" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: BRAND.PRIMARY.DEFAULT }}>Ani</Text>
+          <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 11, color: BRAND.WARM.TEXT_MUTED }}>
+            online • lembra das conversas do WhatsApp
+          </Text>
+        </View>
         <TouchableOpacity onPress={() => router.push('/ani/settings')} hitSlop={10} style={{ padding: 8 }}>
           <MoreVertical size={24} color={BRAND.PRIMARY[400]} />
         </TouchableOpacity>
@@ -88,7 +107,7 @@ export function AniChatPage() {
               alignItems: 'center', justifyContent: 'center',
               marginBottom: 20,
             }}>
-              <AniProfileIcon width={72} height={72} />
+              <Image source={ANI_AVATAR} style={{ width: 72, height: 72, borderRadius: 24 }} resizeMode="cover" />
             </View>
             <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 18, color: textColor, textAlign: 'center', marginBottom: 8 }}>
               Olá! Eu sou a Ani.
@@ -102,7 +121,7 @@ export function AniChatPage() {
       />
 
       {/* Input bar */}
-      <ChatInputBar onSend={send} isTyping={isTyping} />
+      <ChatInputBar onSend={send} isTyping={isTyping} {...(isDraft ? { initialText: initialQuery } : {})} />
     </SafeAreaView>
   );
 }

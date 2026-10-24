@@ -7,10 +7,11 @@ import { Mail, Lock } from 'lucide-react';
 export default function UniversalLoginScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('dr.roberto@anicca.com');
+  const [password, setPassword] = useState('123456');
   
   const handleAuthAction = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate navigation to the dashboard logic for the doctor for now
     router.push('/dashboard');
   };
 
@@ -72,6 +73,8 @@ export default function UniversalLoginScreen() {
               </div>
               <input 
                 type="text" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="block w-full pl-11 pr-4 h-[52px] border border-[#e5e0dc] rounded-full text-[15px] focus:outline-none focus:ring-1 focus:ring-[#f28b50] focus:border-[#f28b50] bg-white text-[#3d2b1f] placeholder-[#a3988e]" 
                 placeholder="E-mail, telefone ou nome de usuário"
               />
@@ -83,6 +86,8 @@ export default function UniversalLoginScreen() {
               </div>
               <input 
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="block w-full pl-11 pr-4 h-[52px] border border-[#e5e0dc] rounded-full text-[15px] focus:outline-none focus:ring-1 focus:ring-[#f28b50] focus:border-[#f28b50] bg-white text-[#3d2b1f] placeholder-[#a3988e]" 
                 placeholder="Senha"
               />

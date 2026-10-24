@@ -311,7 +311,8 @@ export default function PatientWorkspace() {
     try {
       const res = await axios.post('/api/v1/doctor/ai-chat', {
         query,
-        chat_history: chatHistory.map(m => ({ role: m.role, content: m.content }))
+        chat_history: chatHistory.map(m => ({ role: m.role, content: m.content })),
+        patient_id: patientId
       });
       const raw: string = res.data.response;
       const parsed = parseAniResponse(raw);

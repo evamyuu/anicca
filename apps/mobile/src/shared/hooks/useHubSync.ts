@@ -25,6 +25,9 @@ import { API_ENDPOINTS } from '@/shared/constants/api-endpoints.const';
 /** The base URL of the BFF API. */
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+/** Refresh interval used when the platform has no EventSource (native). */
+const POLL_FALLBACK_MS = 3_000;
+
 /** Typed hub event payload. */
 export interface HubEvent {
   type:
@@ -32,7 +35,9 @@ export interface HubEvent {
     | 'document_added'
     | 'body_map_updated'
     | 'routine_synced'
-    | 'journaling_synced';
+    | 'journaling_synced'
+    | 'tickets_synced'
+    | 'symptoms_synced';
   payload?: Record<string, unknown>;
   user_id?: string;
 }
@@ -43,6 +48,8 @@ const EVENT_QUERY_KEYS: Record<string, string[][]> = {
   body_map_updated: [['body-map']],
   routine_synced: [['routine']],
   journaling_synced: [['journaling']],
+  tickets_synced: [['tickets']],
+  symptoms_synced: [['symptoms']],
 };
 
 /**
@@ -83,6 +90,17 @@ export function useHubSync({ userId, onEvent }: UseHubSyncOptions): void {
       eventSourceRef.current.close();
     }
 
+    // React Native (Hermes) has no EventSource: fall back to polling the same query keys.
+    if (typeof EventSource === 'undefined') {
+      const timer = setInterval(() => {
+        Object.values(EVENT_QUERY_KEYS).flat().forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }, POLL_FALLBACK_MS);
+      eventSourceRef.current = { close: () => clearInterval(timer) } as EventSource;
+      return;
+    }
+
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -95,7 +113,9 @@ export function useHubSync({ userId, onEvent }: UseHubSyncOptions): void {
 
         onEvent?.(event);
 
-        const keysToInvalidate = EVENT_QUERY_KEYS[event.type];
+        // (Re)connected after being in the background: catch up on anything missed meanwhile.
+        const keysToInvalidate =
+          event.type === 'connected' ? Object.values(EVENT_QUERY_KEYS).flat() : EVENT_QUERY_KEYS[event.type];
         if (keysToInvalidate) {
           keysToInvalidate.forEach((queryKey) => {
             queryClient.invalidateQueries({ queryKey });

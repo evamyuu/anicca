@@ -7,6 +7,8 @@
  * @license MIT
  */
 
+import { Platform } from 'react-native';
+
 import { httpClient as api } from './http-client';
 
 export interface DocumentResponse {
@@ -51,11 +53,18 @@ export async function uploadDocument(
   const formData = new FormData();
   formData.append('patient_id', patientId);
   formData.append('source_channel', sourceChannel);
-  formData.append('file', {
-    uri: fileUri,
-    name: fileName,
-    type: fileType,
-  } as any);
+
+  // On web the picker returns blob:/data: URIs, which must be sent as a real File.
+  if (Platform.OS === 'web' && (fileUri.startsWith('blob:') || fileUri.startsWith('data:'))) {
+    const blob = await (await fetch(fileUri)).blob();
+    formData.append('file', new File([blob], fileName, { type: blob.type || fileType }));
+  } else {
+    formData.append('file', {
+      uri: fileUri,
+      name: fileName,
+      type: fileType,
+    } as any);
+  }
 
   const { data } = await api.post(`/api/v1/documents/upload`, formData, {
     headers: {

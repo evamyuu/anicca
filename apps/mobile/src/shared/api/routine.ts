@@ -15,6 +15,10 @@ export interface MedicationItem {
   taken: boolean;
   dose?: string;
   type?: string;
+  /** How to take it, e.g. "Com o café da manhã". */
+  instructions?: string;
+  /** SOS medication ("se náusea") — not counted in the daily total on the Hub. */
+  as_needed?: boolean;
 }
 
 export interface RoutineResponse {
@@ -61,6 +65,14 @@ export async function updateHydration(patientId: string, glasses: number, date?:
  */
 export async function updateSleep(patientId: string, hours: number, quality: number, date?: string): Promise<RoutineResponse> {
   const { data } = await api.post(`/api/v1/routine/sleep`, { patient_id: patientId, hours, quality, date });
+  return data;
+}
+
+/**
+ * Syncs smartwatch data (Health Connect / HealthKit) for today.
+ */
+export async function syncWearables(patientId: string, steps: number, hrv: number): Promise<RoutineResponse> {
+  const { data } = await api.post(`/api/v1/routine/wearables`, { patient_id: patientId, steps, hrv });
   return data;
 }
 

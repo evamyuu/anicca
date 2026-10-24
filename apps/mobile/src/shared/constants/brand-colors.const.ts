@@ -82,6 +82,31 @@ export const BRAND = {
     WARNING: '#FF9A5C',
     INFO:    '#255C99',
   },
+
+  /** Warm neutrals from the Hub / Rotina / Body Map screens in Figma. */
+  WARM: {
+    BG:         '#F5EFEB', // screen background
+    BG_SOFT:    '#F9F7F5', // body map background
+    TEXT_MUTED: '#736760', // secondary text
+    TAUPE:      '#A68D7E', // muted brown accents / inactive icons
+    TAN:        '#D99E79', // warm tan accents / progress fills
+    PEACH:      '#FFDDC8', // inactive tab on the dark nav bar
+    GREY:       '#8B7C73', // body map helper text
+    CHIP:       '#EFE8E2', // selected segmented control
+    BORDER:     'rgba(166,141,126,0.2)',
+    DANGER:     '#CC0000', // emergency protocol title
+    DANGER_ICON:'#FF4444',
+  },
+
+  /** Body map pain scale (legend: Sem dor → Grau 4+). */
+  PAIN: {
+    NONE: '#255C99',
+    G1:   '#B8D08A',
+    G2:   '#FFC972',
+    G3:   '#FF8050',
+    G4:   '#FF5500',
+    G5:   '#FF4444',
+  },
 } as const;
 
 /** Shorthand for the most-used token: primary brand color. */

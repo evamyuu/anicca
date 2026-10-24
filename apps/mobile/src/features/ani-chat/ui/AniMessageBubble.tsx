@@ -8,11 +8,14 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 
 import type { ConversationMessage } from '@anicca/types';
 import { GenUIRenderer, type GenUIButton } from './GenUIRenderer';
 import { BRAND } from '@/shared/constants/brand-colors.const';
+
+/** Same Ani artwork the doctor panel uses (cropped from ani-profile-icon.svg). */
+const ANI_AVATAR = require('../../../../assets/images/ani-geral/ani-avatar.png');
 
 export interface AniMessageBubbleProps {
   message: ConversationMessage;
@@ -25,16 +28,16 @@ export function AniMessageBubble({ message, onButtonPress }: AniMessageBubblePro
         style={{
           width: 32,
           height: 32,
-          borderRadius: 16,
-          backgroundColor: BRAND.PRIMARY[800],
-          alignItems: 'center',
-          justifyContent: 'center',
+          borderRadius: 12,
+          backgroundColor: BRAND.WARM.CHIP,
+          overflow: 'hidden',
           marginRight: 10,
           marginTop: 2,
           flexShrink: 0,
         }}
+        accessibilityLabel="Ani"
       >
-        <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Nunito_800ExtraBold' }}>Ai</Text>
+        <Image source={ANI_AVATAR} style={{ width: 32, height: 32 }} resizeMode="cover" />
       </View>
       <View style={{ flex: 1 }}>
         <View

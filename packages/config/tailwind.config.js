@@ -67,6 +67,28 @@ module.exports = {
           light:   '#fef2f4',
           dark:    '#a8142c',
         },
+        // ── Warm neutrals (Hub / Rotina / Body Map) ───────────────
+        warm: {
+          bg:          '#F5EFEB',
+          'bg-soft':   '#F9F7F5',
+          muted:       '#736760',
+          taupe:       '#A68D7E',
+          tan:         '#D99E79',
+          peach:       '#FFDDC8',
+          grey:        '#8B7C73',
+          chip:        '#EFE8E2',
+          danger:      '#CC0000',
+          'danger-icon': '#FF4444',
+        },
+        // ── Body map pain scale ───────────────────────────────────
+        pain: {
+          none: '#255C99',
+          1:    '#B8D08A',
+          2:    '#FFC972',
+          3:    '#FF8050',
+          4:    '#FF5500',
+          5:    '#FF4444',
+        },
         // ── Semantic aliases ─────────────────────────────────────
         success: { DEFAULT: '#4DA167', light: '#edf7f0', dark: '#357249' },
         warning: { DEFAULT: '#FF9A5C', light: '#fff5ee', dark: '#c66820' },

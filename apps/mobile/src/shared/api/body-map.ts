@@ -8,6 +8,7 @@
  */
 
 import { httpClient as api } from './http-client';
+import { Platform } from 'react-native';
 
 export interface BodyMapEntryCreate {
   patient_id: string;
@@ -34,6 +35,10 @@ export interface BodyMapEntryResponse {
   description?: string;
   suggested_ctcae_grade?: number;
   registered_at: string;
+  /** Where the symptom was reported: app, WhatsApp or the caregiver. */
+  source?: string;
+  photo_url?: string;
+  cv_classification?: { clinical_notes?: string } | string;
 }
 
 /**
@@ -71,7 +76,7 @@ export async function uploadBodyMapPhoto(entryId: string, imageUri: string): Pro
   const match = /\.(\w+)$/.exec(filename);
   const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-  if (typeof window !== 'undefined' && (imageUri.startsWith('blob:') || imageUri.startsWith('data:'))) {
+  if (Platform.OS === 'web' && (imageUri.startsWith('blob:') || imageUri.startsWith('data:'))) {
     const res = await fetch(imageUri);
     const blob = await res.blob();
     const file = new File([blob], filename, { type: blob.type || type });

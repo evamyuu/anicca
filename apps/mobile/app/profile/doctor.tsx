@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, Modal, KeyboardAvoidingView, Platform, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Modal, KeyboardAvoidingView, Platform, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, FileText, Stethoscope, UserMinus, X, Plus } from 'lucide-react-native';
+import { ChevronLeft, FileText, Stethoscope, UserMinus, X } from 'lucide-react-native';
 import { GradientButton } from '@/shared/ui/GradientButton';
-import { httpClient } from '@/shared/api/http-client';
+import { listDoctors, linkDoctor, unlinkDoctor } from '@/shared/api/care-team';
+import { confirmAction, notify } from '@/shared/lib/notify';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
 import { BRAND } from '@/shared/constants/brand-colors.const';
 
@@ -21,8 +22,7 @@ export default function DoctorProfileScreen() {
   React.useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await httpClient.get(`/auth/doctors/${userId}`);
-        setDoctors(response.data);
+        setDoctors(await listDoctors(userId!));
       } catch (error) {
         console.error("Failed to fetch doctors", error);
       }
@@ -32,27 +32,20 @@ export default function DoctorProfileScreen() {
     }
   }, [userId]);
 
-  const handleUnlink = (id: string) => {
-    Alert.alert(
+  const handleUnlink = async (id: string) => {
+    const confirmed = await confirmAction(
       "Desvincular Médico",
       "Tem certeza que deseja desvincular seu perfil desta clínica/médico? Eles perderão acesso aos seus dados no painel clínico.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sim, Desvincular", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await httpClient.post(`/auth/unlink-doctor?patient_id=${userId}&doctor_id=${id}`);
-              setDoctors(prev => prev.filter(d => d.id !== id));
-              Alert.alert("Sucesso", "Médico desvinculado.");
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível desvincular o médico.");
-            }
-          }
-        }
-      ]
+      "Sim, Desvincular"
     );
+    if (!confirmed) return;
+    try {
+      await unlinkDoctor(userId!, id);
+      setDoctors(prev => prev.filter(d => d.id !== id));
+      notify("Sucesso", "Médico desvinculado.");
+    } catch (error) {
+      notify("Erro", "Não foi possível desvincular o médico.");
+    }
   };
 
   const handleLink = async () => {
@@ -60,15 +53,14 @@ export default function DoctorProfileScreen() {
     setLoading(true);
     setFeedback(null);
     try {
-      await httpClient.post(`/auth/link-doctor?patient_id=${userId}&crm=${inputValue.trim()}`);
-      
+      await linkDoctor(userId!, inputValue.trim());
+
       // Recarregar a lista real
-      const response = await httpClient.get(`/auth/doctors/${userId}`);
-      setDoctors(response.data);
-      
+      setDoctors(await listDoctors(userId!));
+
       setModalVisible(false);
       setInputValue('');
-      Alert.alert("Sucesso", "Médico vinculado com sucesso!");
+      notify("Sucesso", "Médico vinculado com sucesso!");
     } catch (error) {
       setFeedback({ 
         text: `Não foi possível vincular. Verifique o CRM e tente novamente.`, 

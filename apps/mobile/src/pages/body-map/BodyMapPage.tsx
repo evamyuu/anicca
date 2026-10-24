@@ -1,8 +1,8 @@
 /**
- * @fileoverview Body Map interativo com silhueta SVG clicável.
- * Permite registrar sintomas por região corporal (frente e costas),
- * com escala de intensidade 0-10, tipo de sintoma e nota livre.
- * Agora com suporte a anexo de imagens (Visão Computacional).
+ * @fileoverview Body Map interativo (Figma "BodyMapScreen").
+ * Cada grupo muscular da silhueta é clicável e fica colorido pelo grau do
+ * sintoma registrado (app, WhatsApp ou cuidador), com anexo de foto para a
+ * análise de visão computacional.
  *
  * @module pages/body-map/BodyMapPage
  * @author Evelin Brandão Cordeiro
@@ -10,158 +10,82 @@
  * @license MIT
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView,
-  Modal, Pressable, TextInput, Alert, ActivityIndicator, Image, RefreshControl,
-  Platform
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Modal, Pressable, TextInput, ActivityIndicator, Image, RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle, G, Rect } from 'react-native-svg';
-import { X, ChevronLeft, ChevronRight, Camera } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useAuthStore } from '@/shared/lib/zustand-persist';
 import { createBodyMapEntry, getBodyMapHistory, uploadBodyMapPhoto } from '@/shared/api/body-map';
 import { BRAND } from '@/shared/constants/brand-colors.const';
 import { GradientButton } from '@/shared/ui/GradientButton';
+import { notify } from '@/shared/lib/notify';
 
-import BodyMapWoman from '../../../assets/images/bodymap/bodymap-woman.svg';
+import { BodyFigure, type BodyRegionId } from './BodyFigure';
+import {
+  LEGEND,
+  SOURCE_LABEL,
+  SYMPTOM_TYPES,
+  intensityColor,
+  regionLabel,
+  type BodySide,
+  type SymptomType,
+} from './body-map-meta';
 
-
-type BodySide = 'front' | 'back';
-type SymptomType = 'dor' | 'dormencia' | 'inchaco' | 'vermelhidao' | 'ferida' | 'formigamento' | 'outro';
-
-interface ZoneHitArea {
-  id: string;
-  label: string;
-  cx: number;
-  cy: number;
-  rx: number;
-  ry: number;
-}
+const W = BRAND.WARM;
 
 interface SymptomRecord {
-  id?: string;
+  id?: string | undefined;
   zoneId: string;
-  zoneLabel: string;
   intensity: number;
   type: SymptomType;
   note: string;
   side: BodySide;
   timestamp: string;
-  imageUri?: string;
+  source?: string | undefined;
+  imageUri?: string | undefined;
 }
 
-
-const SYMPTOM_TYPES: { id: SymptomType; label: string }[] = [
-  { id: 'dor',         label: 'Dor' },
-  { id: 'dormencia',   label: 'Dormência' },
-  { id: 'inchaco',     label: 'Inchaço' },
-  { id: 'vermelhidao', label: 'Vermelhidão' },
-  { id: 'ferida',      label: 'Ferida' },
-  { id: 'formigamento',label: 'Formigamento' },
-  { id: 'outro',       label: 'Outro' },
-];
-
-function intensityColor(v: number): string {
-  if (v === 0) return BRAND.SEMANTIC.INFO; // Blue (Sem dor)
-  if (v === 1) return BRAND.SEMANTIC.SUCCESS; // Green (Grau 1)
-  if (v === 2) return BRAND.SECONDARY[400]; // Yellow (Grau 2)
-  if (v === 3) return BRAND.SECONDARY[600]; // Orange (Grau 3)
-  if (v === 4) return BRAND.SECONDARY[600]; // Dark Orange (Grau 4)
-  return BRAND.ERROR.DEFAULT; // Red (Grau 4+)
-}
-
-const FRONT_ZONES: ZoneHitArea[] = [
-  { id: 'head',          label: 'Cabeça',           cx: 60,  cy: 14,  rx: 14,  ry: 14  },
-  { id: 'neck',          label: 'Pescoço',           cx: 60,  cy: 32,  rx: 8,   ry: 6   },
-  { id: 'chest_left',    label: 'Peito esquerdo',    cx: 46,  cy: 52,  rx: 12,  ry: 12  },
-  { id: 'chest_right',   label: 'Peito direito',     cx: 74,  cy: 52,  rx: 12,  ry: 12  },
-  { id: 'abdomen',       label: 'Abdômen',           cx: 60,  cy: 80,  rx: 18,  ry: 14  },
-  { id: 'pelvis',        label: 'Pelve / Quadril',   cx: 60,  cy: 105, rx: 20,  ry: 12  },
-  { id: 'arm_left',      label: 'Braço esquerdo',    cx: 34,  cy: 72,  rx: 8,   ry: 20  },
-  { id: 'arm_right',     label: 'Braço direito',     cx: 86,  cy: 72,  rx: 8,   ry: 20  },
-  { id: 'leg_left',      label: 'Perna esquerda',    cx: 47,  cy: 155, rx: 12,  ry: 32  },
-  { id: 'leg_right',     label: 'Perna direita',     cx: 73,  cy: 155, rx: 12,  ry: 32  },
-  { id: 'foot_left',     label: 'Pé esquerdo',       cx: 45,  cy: 200, rx: 10,  ry: 8   },
-  { id: 'foot_right',    label: 'Pé direito',        cx: 75,  cy: 200, rx: 10,  ry: 8   },
-];
-
-const BACK_ZONES: ZoneHitArea[] = [
-  { id: 'back_head',     label: 'Nuca / Cabeça',     cx: 60,  cy: 14,  rx: 14,  ry: 14  },
-  { id: 'shoulders',     label: 'Ombros',            cx: 60,  cy: 38,  rx: 26,  ry: 10  },
-  { id: 'upper_back',    label: 'Costas superiores', cx: 60,  cy: 58,  rx: 18,  ry: 14  },
-  { id: 'lower_back',    label: 'Lombar',            cx: 60,  cy: 82,  rx: 18,  ry: 14  },
-  { id: 'gluteus',       label: 'Glúteos',           cx: 60,  cy: 106, rx: 20,  ry: 12  },
-  { id: 'back_arm_left', label: 'Braço esq. (costas)', cx: 34, cy: 72, rx: 8,   ry: 20  },
-  { id: 'back_arm_right',label: 'Braço dir. (costas)', cx: 86, cy: 72, rx: 8,   ry: 20  },
-  { id: 'back_leg_left', label: 'Coxa/Perna esq.',   cx: 47,  cy: 155, rx: 12,  ry: 32  },
-  { id: 'back_leg_right',label: 'Coxa/Perna dir.',   cx: 73,  cy: 155, rx: 12,  ry: 32  },
-];
-
-function BodySvg({
-  side,
-  records,
-  onZonePress,
+function SegmentedPill<T extends string>({
+  options,
+  value,
+  onChange,
 }: {
-  side: BodySide;
-  records: SymptomRecord[];
-  onZonePress: (zone: ZoneHitArea) => void;
+  options: { id: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
 }) {
-  const zones = side === 'front' ? FRONT_ZONES : BACK_ZONES;
-
-  function getZoneColor(zoneId: string) {
-    const rec = records.filter(r => r.zoneId === zoneId && r.side === side);
-    if (rec.length === 0) return 'transparent';
-    const maxIntensity = Math.max(...rec.map(r => r.intensity));
-    return intensityColor(maxIntensity) + '88';
-  }
-
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
-      onPress={() => onZonePress({ id: 'panturrilhas', label: 'Panturrilhas', cx: 60, cy: 100, rx: 10, ry: 10 })}
-      style={{ width: '100%', height: 380, alignItems: 'center', justifyContent: 'center' }}
-    >
-      <BodyMapWoman width="100%" height="100%" style={{ position: 'absolute' }} />
-      <Svg width="100%" height="100%" viewBox="0 -10 120 235" pointerEvents="box-none">
-        {zones.map((zone) => {
-          const fillColor = getZoneColor(zone.id);
-          const hasRecord = records.some(r => r.zoneId === zone.id && r.side === side);
-          return (
-            <G key={zone.id} {...(Platform.OS === 'web' ? { onClick: () => onZonePress(zone) } : { onPress: () => onZonePress(zone) })}>
-              <Path
-                d={`M ${zone.cx - zone.rx},${zone.cy} 
-                    A ${zone.rx},${zone.ry} 0 1,1 ${zone.cx + zone.rx},${zone.cy}
-                    A ${zone.rx},${zone.ry} 0 1,1 ${zone.cx - zone.rx},${zone.cy}`}
-                fill={fillColor}
-                stroke={hasRecord ? intensityColor(Math.max(...records.filter(r => r.zoneId === zone.id && r.side === side).map(r => r.intensity))) : BRAND.PRIMARY.DEFAULT + '66'}
-                strokeWidth={hasRecord ? "1.5" : "0.5"}
-                strokeDasharray={hasRecord ? undefined : "2,2"}
-                opacity={hasRecord ? 0.9 : 0.4}
-              />
-              {hasRecord && (
-                <Circle cx={zone.cx} cy={zone.cy} r={3} fill={BRAND.SURFACE.CARD} opacity={0.9} />
-              )}
-            </G>
-          );
-        })}
-      </Svg>
-    </TouchableOpacity>
+    <View style={styles.segment}>
+      {options.map(o => (
+        <TouchableOpacity
+          key={o.id}
+          onPress={() => onChange(o.id)}
+          style={[styles.segmentItem, value === o.id && styles.segmentItemActive]}
+        >
+          <Text style={[styles.segmentText, value === o.id && styles.segmentTextActive]}>{o.label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 }
 
 function SymptomModal({
-  zone,
+  zoneId,
   side,
+  saving,
   onClose,
   onSave,
 }: {
-  zone: ZoneHitArea | null;
+  zoneId: BodyRegionId | null;
   side: BodySide;
+  saving: boolean;
   onClose: () => void;
   onSave: (record: SymptomRecord) => void;
 }) {
@@ -170,24 +94,30 @@ function SymptomModal({
   const [note, setNote] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  if (!zone) return null;
+  if (!zoneId) return null;
 
   const handlePickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
     });
-    if (!result.canceled) {
+    if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
     }
   };
 
+  const reset = () => {
+    setIntensity(0);
+    setSymptomType(null);
+    setNote('');
+    setImageUri(null);
+  };
+
   const handleSave = () => {
-    if (intensity === 0 || !symptomType) return;
+    if (!symptomType) return;
     onSave({
-      zoneId: zone.id,
-      zoneLabel: zone.label,
+      zoneId,
       intensity,
       type: symptomType,
       note,
@@ -195,124 +125,80 @@ function SymptomModal({
       timestamp: new Date().toISOString(),
       imageUri: imageUri || undefined,
     });
-    setIntensity(0);
-    setSymptomType(null);
-    setNote('');
-    setImageUri(null);
+    reset();
   };
 
   return (
-    <Modal transparent animationType="fade" visible={!!zone} onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(74, 57, 49, 0.6)', justifyContent: 'center', paddingHorizontal: 20 }}
-        onPress={onClose}
-      >
-        <Pressable style={{ backgroundColor: BRAND.SURFACE.CARD, borderRadius: 32, padding: 24, elevation: 10 }}>
-          
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={{ color: BRAND.PRIMARY.DEFAULT, fontFamily: 'Nunito_800ExtraBold', fontSize: 20 }}>
-              {zone.label}
-            </Text>
-            <TouchableOpacity onPress={onClose} accessibilityRole="button" style={{ padding: 4, backgroundColor: BRAND.PRIMARY[50], borderRadius: 20 }}>
-              <X size={20} color={BRAND.PRIMARY[400]} />
+    <Modal transparent animationType="fade" visible={!!zoneId} onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalCard}>
+          <View style={[styles.rowBetween, { marginBottom: 18 }]}>
+            <Text style={styles.modalTitle}>{regionLabel(zoneId, side)}</Text>
+            <TouchableOpacity onPress={onClose} accessibilityRole="button" style={styles.modalClose}>
+              <MaterialIcons name="close" size={18} color={W.TEXT_MUTED} />
             </TouchableOpacity>
           </View>
 
-          {/* Intensity */}
-          <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16, marginBottom: 12 }}>
-            Intensidade / Grau
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Text style={styles.modalLabel}>Intensidade / Grau</Text>
+          <View style={styles.gradeRow}>
+            {LEGEND.map((l, i) => (
               <TouchableOpacity
-                key={i}
+                key={l.label}
                 onPress={() => setIntensity(i)}
-                style={{
-                  flex: 1, height: 44, borderRadius: 12,
-                  alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: intensity === i ? (i === 0 ? BRAND.SEMANTIC.SUCCESS : BRAND.SECONDARY[400]) : BRAND.PRIMARY[50],
-                  borderWidth: 1, borderColor: intensity === i ? 'transparent' : BRAND.SURFACE.BORDER,
-                }}
+                style={[
+                  styles.gradeBtn,
+                  intensity === i && { backgroundColor: l.color, borderColor: l.color },
+                ]}
               >
-                <Text style={{ 
-                  color: intensity === i ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400], 
-                  fontSize: 16, 
-                  fontFamily: 'Nunito_800ExtraBold' 
-                }}>{i}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Type */}
-          <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16, marginBottom: 12 }}>
-            Tipo de Sintoma
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {SYMPTOM_TYPES.map((s) => (
-              <TouchableOpacity
-                key={s.id}
-                onPress={() => setSymptomType(s.id)}
-                style={{
-                  paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20,
-                  backgroundColor: symptomType === s.id ? BRAND.PRIMARY.DEFAULT : BRAND.BG.LIGHT,
-                  borderWidth: 1, borderColor: symptomType === s.id ? 'transparent' : BRAND.SURFACE.BORDER,
-                }}
-              >
-                <Text style={{ 
-                  color: symptomType === s.id ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400], 
-                  fontFamily: 'Nunito_700Bold', 
-                  fontSize: 16 
-                }}>
-                  {s.label}
+                <Text style={[styles.gradeText, intensity === i && { color: BRAND.SURFACE.CARD }]}>
+                  {i === 5 ? '4+' : i}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Note */}
-          <View style={{ position: 'relative' }}>
-            <TextInput
-              placeholder="Observação (opcional)..."
-              placeholderTextColor={BRAND.PRIMARY[200]}
-              value={note}
-              onChangeText={setNote}
-              multiline
-              style={{
-                backgroundColor: BRAND.BG.LIGHT, borderRadius: 16, padding: 16,
-                color: BRAND.PRIMARY.DEFAULT, fontFamily: 'Nunito_600SemiBold', fontSize: 16,
-                minHeight: 80, textAlignVertical: 'top', marginBottom: 24,
-                borderWidth: 1, borderColor: BRAND.SURFACE.BORDER,
-              }}
-            />
-            
-            {/* Photo Attachment (Absolute positioned inside the note area or below it) */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: -12, marginBottom: 24 }}>
-              {imageUri ? (
-                <View style={{ position: 'relative', width: 60, height: 60 }}>
-                  <Image source={{ uri: imageUri }} style={{ width: 60, height: 60, borderRadius: 12 }} />
-                  <TouchableOpacity
-                    onPress={() => setImageUri(null)}
-                    style={{ position: 'absolute', top: -6, right: -6, backgroundColor: BRAND.SURFACE.CARD, borderRadius: 12, padding: 2, elevation: 2 }}
-                  >
-                    <X size={14} color={BRAND.ERROR.DEFAULT} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={handlePickImage}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: BRAND.PRIMARY[50], borderRadius: 12 }}
-                >
-                  <Camera size={16} color={BRAND.PRIMARY[400]} />
-                  <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_600SemiBold', fontSize: 16 }}>Anexar foto</Text>
+          <Text style={styles.modalLabel}>Tipo de sintoma</Text>
+          <View style={styles.typeWrap}>
+            {SYMPTOM_TYPES.map(s => (
+              <TouchableOpacity
+                key={s.id}
+                onPress={() => setSymptomType(s.id)}
+                style={[styles.typeChip, symptomType === s.id && styles.typeChipActive]}
+              >
+                <Text style={[styles.typeChipText, symptomType === s.id && { color: BRAND.SURFACE.CARD }]}>{s.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TextInput
+            placeholder="Observação (opcional)..."
+            placeholderTextColor={W.TAUPE}
+            value={note}
+            onChangeText={setNote}
+            multiline
+            style={styles.noteInput}
+          />
+
+          <View style={styles.photoRow}>
+            {imageUri ? (
+              <View style={{ width: 56, height: 56 }}>
+                <Image source={{ uri: imageUri }} style={{ width: 56, height: 56, borderRadius: 12 }} />
+                <TouchableOpacity onPress={() => setImageUri(null)} style={styles.photoRemove}>
+                  <MaterialIcons name="close" size={12} color={BRAND.ERROR.DEFAULT} />
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={handlePickImage} style={styles.photoBtn}>
+                <MaterialIcons name="photo-camera" size={16} color={W.TEXT_MUTED} />
+                <Text style={styles.photoBtnText}>Anexar foto (visão computacional)</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <GradientButton
-            title="Registrar Sintoma"
+            title={saving ? 'Registrando...' : 'Registrar sintoma'}
             onPress={handleSave}
-            disabled={intensity === 0 || !symptomType}
+            disabled={!symptomType || saving}
             colors={[BRAND.SECONDARY[600], BRAND.SECONDARY[700]]}
           />
         </Pressable>
@@ -323,15 +209,17 @@ function SymptomModal({
 
 export function BodyMapPage() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [side, setSide] = useState<BodySide>('front');
   const [gender, setGender] = useState<'homem' | 'mulher'>('mulher');
   const [viewMode, setViewMode] = useState<'mapa' | 'historico'>('mapa');
-  const [selectedZone, setSelectedZone] = useState<ZoneHitArea | null>(null);
-  
+  const [selectedZone, setSelectedZone] = useState<BodyRegionId | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
+  const lastSeenRef = useRef<string | null>(null);
+
   const userId = useAuthStore(s => s.userId);
   const queryClient = useQueryClient();
-
-  const [refreshing, setRefreshing] = useState(false);
 
   const { data: history, isLoading, refetch } = useQuery({
     queryKey: ['body-map', userId],
@@ -344,6 +232,26 @@ export function BodyMapPage() {
     await refetch();
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // Symptoms reported in another channel (WhatsApp, caregiver) arrive via the hub sync.
+  useEffect(() => {
+    if (!history?.length) return;
+    const newest = [...history].sort((a, b) => b.registered_at.localeCompare(a.registered_at))[0]!;
+    const source = newest.source;
+    if (lastSeenRef.current && newest.registered_at > lastSeenRef.current && source && source !== 'app') {
+      setToast({
+        title: `Novo sintoma ${SOURCE_LABEL[source] ?? ''}`.trim(),
+        body: `${regionLabel(newest.body_region, newest.body_view as BodySide)} • grau ${newest.intensity === 5 ? '4+' : newest.intensity}`,
+      });
+    }
+    lastSeenRef.current = newest.registered_at;
+  }, [history]);
 
   const saveMutation = useMutation({
     mutationFn: async (record: SymptomRecord) => {
@@ -365,192 +273,146 @@ export function BodyMapPage() {
     },
   });
 
-  const records: SymptomRecord[] = history?.map(h => ({
+  const records: SymptomRecord[] = (history ?? []).map(h => ({
     id: h.id,
     zoneId: h.body_region,
-    zoneLabel: h.body_region,
     intensity: h.intensity,
     type: h.symptom_types[0] as SymptomType,
     note: h.description || '',
     side: h.body_view as BodySide,
     timestamp: h.registered_at,
-  })) || [];
+    source: h.source,
+  }));
+
+  const fills: Partial<Record<BodyRegionId, string>> = {};
+  for (const r of records) {
+    if (r.side !== side) continue;
+    const zone = r.zoneId as BodyRegionId;
+    const current = records
+      .filter(o => o.side === side && o.zoneId === zone)
+      .reduce((max, o) => Math.max(max, o.intensity), 0);
+    fills[zone] = intensityColor(current);
+  }
 
   const handleSave = (record: SymptomRecord) => {
     saveMutation.mutate(record, {
       onSuccess: () => {
         setSelectedZone(null);
-        Alert.alert(
-          'Registrado com sucesso!',
-          `Sintoma em ${record.zoneLabel} guardado.`,
-          [{ text: 'OK' }]
-        );
+        setToast({ title: 'Sintoma registrado', body: `${regionLabel(record.zoneId, record.side)} — a Ani já avisou sua equipe.` });
       },
-      onError: (err) => {
-        Alert.alert('Erro', 'Não foi possível salvar o sintoma. Tente novamente.');
+      onError: err => {
+        notify('Erro', 'Não foi possível salvar o sintoma. Tente novamente.');
         console.error(err);
-      }
+      },
     });
   };
 
-  const recentRecords = [...records].reverse();
+  const recentRecords = [...records].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BRAND.BG.LIGHT }}>
-      <ScrollView 
-        contentContainerStyle={{ paddingBottom: 40 }} 
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[BRAND.PRIMARY.DEFAULT]} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[BRAND.PRIMARY.DEFAULT]} />}
       >
-        
-        {/* Header matching Figma */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/')} style={{ marginTop: 6, marginRight: 12 }}>
-              <ChevronLeft size={20} color={BRAND.PRIMARY.DEFAULT} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={{ color: BRAND.PRIMARY.DEFAULT, fontSize: 22, fontFamily: 'Nunito_800ExtraBold' }}>
-                Body Map
-              </Text>
-              <Text style={{ color: BRAND.PRIMARY[400], fontSize: 16, fontFamily: 'Nunito_600SemiBold', marginTop: 2, lineHeight: 18 }}>
-                Toque na região para registrar{`
-`}um sintoma
-              </Text>
-            </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)'))} style={{ paddingVertical: 4 }}>
+            <MaterialIcons name="chevron-left" size={22} color={W.TEXT_MUTED} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Body Map</Text>
+            <Text style={styles.subtitle}>Toque na região para registrar um sintoma</Text>
           </View>
-          
-          {/* Mapa / Histórico Toggle */}
-          <View style={{ flexDirection: 'row', backgroundColor: BRAND.SURFACE.CARD, borderRadius: 24, padding: 4, elevation: 1 }}>
-            <TouchableOpacity 
-              onPress={() => setViewMode('mapa')}
-              style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: viewMode === 'mapa' ? BRAND.PRIMARY.DEFAULT : 'transparent' }}
-            >
-              <Text style={{ color: viewMode === 'mapa' ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Mapa</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setViewMode('historico')}
-              style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: viewMode === 'historico' ? BRAND.PRIMARY.DEFAULT : 'transparent' }}
-            >
-              <Text style={{ color: viewMode === 'historico' ? BRAND.SURFACE.CARD : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Histórico</Text>
-            </TouchableOpacity>
+          <View style={styles.viewToggle}>
+            {(['mapa', 'historico'] as const).map(mode => (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => setViewMode(mode)}
+                style={[styles.viewToggleItem, viewMode === mode && styles.viewToggleItemActive]}
+              >
+                <Text style={[styles.viewToggleText, viewMode === mode && { color: BRAND.SURFACE.CARD }]}>
+                  {mode === 'mapa' ? 'Mapa' : 'Histórico'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* Toggles: Homem/Mulher and Frente/Costas */}
         {viewMode === 'mapa' && (
-          <>
-            <View style={{ flexDirection: 'row', marginHorizontal: 20, marginBottom: 20, gap: 12 }}>
-              {/* Gender Toggle */}
-              <View style={{ flex: 1, flexDirection: 'row', backgroundColor: BRAND.SURFACE.CARD, borderRadius: 24, padding: 4, borderWidth: 1, borderColor: BRAND.PRIMARY[100] }}>
-                <TouchableOpacity 
-                  onPress={() => setGender('homem')}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center', backgroundColor: gender === 'homem' ? BRAND.PRIMARY[100] : 'transparent' }}
-                >
-                  <Text style={{ color: gender === 'homem' ? BRAND.PRIMARY.DEFAULT : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Homem</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => setGender('mulher')}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center', backgroundColor: gender === 'mulher' ? BRAND.PRIMARY[100] : 'transparent' }}
-                >
-                  <Text style={{ color: gender === 'mulher' ? BRAND.PRIMARY.DEFAULT : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Mulher</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Side Toggle */}
-              <View style={{ flex: 1, flexDirection: 'row', backgroundColor: BRAND.SURFACE.CARD, borderRadius: 24, padding: 4, borderWidth: 1, borderColor: BRAND.PRIMARY[100] }}>
-                <TouchableOpacity 
-                  onPress={() => setSide('front')}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center', backgroundColor: side === 'front' ? BRAND.PRIMARY[100] : 'transparent' }}
-                >
-                  <Text style={{ color: side === 'front' ? BRAND.PRIMARY.DEFAULT : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Frente</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => setSide('back')}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center', backgroundColor: side === 'back' ? BRAND.PRIMARY[100] : 'transparent' }}
-                >
-                  <Text style={{ color: side === 'back' ? BRAND.PRIMARY.DEFAULT : BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16 }}>Costas</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={{ paddingHorizontal: 20, gap: 16 }}>
+            <View style={styles.rowBetween}>
+              <SegmentedPill
+                options={[{ id: 'homem', label: 'Homem' }, { id: 'mulher', label: 'Mulher' }]}
+                value={gender}
+                onChange={setGender}
+              />
+              <SegmentedPill
+                options={[{ id: 'front', label: 'Frente' }, { id: 'back', label: 'Costas' }]}
+                value={side}
+                onChange={setSide}
+              />
             </View>
 
-            {/* Legend */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 20 }}>
-              {[
-                { color: BRAND.SEMANTIC.INFO, label: 'Sem dor' },
-                { color: BRAND.SEMANTIC.SUCCESS, label: 'Grau 1' },
-                { color: BRAND.SECONDARY[400], label: 'Grau 2' },
-                { color: BRAND.SECONDARY[600], label: 'Grau 3' },
-                { color: BRAND.SECONDARY[600], label: 'Grau 4' },
-                { color: BRAND.ERROR.DEFAULT, label: 'Grau 4+' },
-              ].map((l) => (
-                <View key={l.label} style={{ alignItems: 'center', flex: 1, paddingHorizontal: 2 }}>
-                  <View style={{ width: '100%', height: 6, borderRadius: 3, backgroundColor: l.color, marginBottom: 6 }} />
-                  <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_700Bold', fontSize: 16, textAlign: 'center' }} numberOfLines={1}>{l.label}</Text>
+            <View style={styles.legend}>
+              {LEGEND.map(l => (
+                <View key={l.label} style={styles.legendItem}>
+                  <View style={[styles.legendBar, { backgroundColor: l.color }]} />
+                  <Text style={styles.legendText} numberOfLines={1}>{l.label}</Text>
                 </View>
               ))}
             </View>
 
-            {/* Map */}
-            <View
-              style={{
-                marginHorizontal: 20,
-                backgroundColor: BRAND.SURFACE.CARD, borderRadius: 24,
-                padding: 16, alignItems: 'center',
-                shadowColor: BRAND.PRIMARY[900], shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3
-              }}
-            >
-              <BodySvg side={side} records={records} onZonePress={setSelectedZone} />
-              {isLoading && <ActivityIndicator style={{ marginTop: 16, position: 'absolute', top: '50%' }} color={BRAND.SECONDARY.DEFAULT} />}
+            <View style={styles.mapCard}>
+              <BodyFigure width={240} height={380} fills={fills} onRegionPress={setSelectedZone} />
+              {isLoading && <ActivityIndicator style={StyleSheet.absoluteFill} color={BRAND.SECONDARY.DEFAULT} />}
             </View>
-          </>
+
+            <TouchableOpacity style={styles.ctcaeLink} activeOpacity={0.85} onPress={() => router.push('/symptom/ctcae')}>
+              <View style={styles.ctcaeIcon}>
+                <MaterialIcons name="fact-check" size={18} color={BRAND.PRIMARY.DEFAULT} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.historyTitle}>Prefere responder por sintoma?</Text>
+                <Text style={styles.historyMeta}>Use a escala CTCAE: náusea, fadiga, diarreia, mucosite...</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={W.TAUPE} />
+            </TouchableOpacity>
+          </View>
         )}
 
-        {/* History Mode */}
         {viewMode === 'historico' && (
-          <View style={{ marginHorizontal: 20, marginTop: 10 }}>
+          <View style={{ paddingHorizontal: 20, gap: 10 }}>
             {recentRecords.length === 0 ? (
-              <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_600SemiBold', textAlign: 'center', marginTop: 40 }}>Nenhum sintoma registrado ainda.</Text>
+              <Text style={styles.emptyText}>Nenhum sintoma registrado ainda.</Text>
             ) : (
-              recentRecords.map((r, i) => {
+              recentRecords.map(r => {
                 const sType = SYMPTOM_TYPES.find(s => s.id === r.type);
+                const color = intensityColor(r.intensity);
+                const time = new Date(r.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
                 return (
                   <TouchableOpacity
-                    key={i}
+                    key={r.id ?? r.timestamp}
                     activeOpacity={0.8}
-                    onPress={() => router.push(`/body-map-details/${r.id}`)}
-                    style={{
-                      backgroundColor: BRAND.SURFACE.CARD, borderRadius: 16, padding: 14,
-                      flexDirection: 'row', alignItems: 'center', gap: 14,
-                      marginBottom: 10, shadowColor: BRAND.PRIMARY[900], shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1
-                    }}
+                    onPress={() => r.id && router.push(`/body-map-details/${r.id}`)}
+                    style={styles.historyRow}
                   >
-                    <View
-                      style={{
-                        width: 44, height: 44, borderRadius: 14, backgroundColor: intensityColor(r.intensity) + '1a',
-                        alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: intensityColor(r.intensity) + '33'
-                      }}
-                    >
-                      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: BRAND.BG.LIGHT, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: BRAND.PRIMARY[400] }}>{sType?.label.charAt(0)}</Text>
-                      </View>
+                    <View style={[styles.historyDot, { backgroundColor: color + '33', borderColor: color }]}>
+                      <Text style={styles.historyDotText}>{r.intensity === 5 ? '4+' : r.intensity}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: BRAND.PRIMARY.DEFAULT, fontFamily: 'Nunito_800ExtraBold', fontSize: 16 }}>
-                        {FRONT_ZONES.find(z => z.id === r.zoneId)?.label || BACK_ZONES.find(z => z.id === r.zoneId)?.label || r.zoneId}
+                      <Text style={styles.historyTitle}>{regionLabel(r.zoneId, r.side)}</Text>
+                      <Text style={styles.historyMeta} numberOfLines={2}>
+                        {sType?.label ?? r.type}
+                        {r.note ? ` — ${r.note}` : ''}
                       </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                        <Text style={{ color: intensityColor(r.intensity), fontFamily: 'Nunito_700Bold', fontSize: 16 }}>
-                          Intensidade {r.intensity}
-                        </Text>
-                        <Text style={{ color: BRAND.PRIMARY[200], fontSize: 16 }}>•</Text>
-                        <Text style={{ color: BRAND.PRIMARY[400], fontFamily: 'Nunito_600SemiBold', fontSize: 16 }} numberOfLines={1}>
-                          {sType?.label} {r.note ? `- ${r.note}` : ''}
-                        </Text>
-                      </View>
+                      <Text style={styles.historyTime}>
+                        {time}
+                        {r.source && SOURCE_LABEL[r.source] ? ` • ${SOURCE_LABEL[r.source]}` : ''}
+                      </Text>
                     </View>
+                    <MaterialIcons name="chevron-right" size={18} color={W.TAUPE} />
                   </TouchableOpacity>
                 );
               })
@@ -558,12 +420,367 @@ export function BodyMapPage() {
           </View>
         )}
       </ScrollView>
+
+      {toast && (
+        <View style={[styles.toast, { top: insets.top + 12 }]} pointerEvents="none">
+          <MaterialIcons name="check-circle" size={20} color={BRAND.SURFACE.CARD} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toastTitle}>{toast.title}</Text>
+            <Text style={styles.toastBody}>{toast.body}</Text>
+          </View>
+        </View>
+      )}
+
       <SymptomModal
-        zone={selectedZone}
+        zoneId={selectedZone}
         side={side}
+        saving={saveMutation.isPending}
         onClose={() => setSelectedZone(null)}
         onSave={handleSave}
       />
-    </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: W.BG_SOFT,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  title: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 20,
+    lineHeight: 30,
+    color: BRAND.PRIMARY.DEFAULT,
+  },
+  subtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: W.GREY,
+    maxWidth: 170,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: BRAND.PRIMARY.DEFAULT,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 30,
+    elevation: 3,
+  },
+  viewToggleItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  viewToggleItemActive: {
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
+  },
+  viewToggleText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: W.GREY,
+  },
+
+  /* Segmented pills */
+  segment: {
+    width: '48.2%',
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 999,
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1.5,
+    elevation: 1,
+  },
+  segmentItem: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
+  segmentItemActive: {
+    backgroundColor: W.CHIP,
+  },
+  segmentText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: W.GREY,
+  },
+  segmentTextActive: {
+    color: BRAND.PRIMARY.DEFAULT,
+  },
+
+  /* Legend */
+  legend: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  legendItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendBar: {
+    width: '100%',
+    height: 8,
+    borderRadius: 999,
+  },
+  legendText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 9,
+    lineHeight: 13.5,
+    color: W.TEXT_MUTED,
+  },
+
+  /* Map */
+  mapCard: {
+    height: 420,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: BRAND.PRIMARY.DEFAULT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+
+  ctcaeLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: W.BORDER,
+    backgroundColor: BRAND.SURFACE.CARD,
+  },
+  ctcaeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: W.BG,
+  },
+
+  /* History */
+  emptyText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: W.TEXT_MUTED,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: BRAND.SURFACE.CARD,
+    shadowColor: BRAND.PRIMARY.DEFAULT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  historyDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyDotText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: BRAND.PRIMARY.DEFAULT,
+  },
+  historyTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 13,
+    lineHeight: 19.5,
+    color: BRAND.PRIMARY.DEFAULT,
+  },
+  historyMeta: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: W.TEXT_MUTED,
+  },
+  historyTime: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 10,
+    lineHeight: 15,
+    color: W.TAUPE,
+    marginTop: 2,
+  },
+
+  /* Toast */
+  toast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
+    shadowColor: BRAND.PRIMARY.DEFAULT,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  toastTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 13,
+    color: BRAND.SURFACE.CARD,
+  },
+  toastBody: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: W.PEACH,
+  },
+
+  /* Modal */
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(64, 50, 41, 0.6)',
+  },
+  modalCard: {
+    padding: 22,
+    borderRadius: 28,
+    backgroundColor: BRAND.SURFACE.CARD,
+    elevation: 10,
+  },
+  modalTitle: {
+    flex: 1,
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 18,
+    color: BRAND.PRIMARY.DEFAULT,
+  },
+  modalClose: {
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: W.BG,
+  },
+  modalLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: W.TEXT_MUTED,
+    marginBottom: 10,
+  },
+  gradeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 20,
+  },
+  gradeBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: W.BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: W.BG,
+  },
+  gradeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: W.TEXT_MUTED,
+  },
+  typeWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 18,
+  },
+  typeChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: W.BORDER,
+    backgroundColor: W.BG,
+  },
+  typeChipActive: {
+    borderColor: BRAND.PRIMARY.DEFAULT,
+    backgroundColor: BRAND.PRIMARY.DEFAULT,
+  },
+  typeChipText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: W.TEXT_MUTED,
+  },
+  noteInput: {
+    minHeight: 72,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: W.BORDER,
+    backgroundColor: W.BG,
+    color: BRAND.PRIMARY.DEFAULT,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    marginBottom: 18,
+  },
+  photoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: W.BG,
+  },
+  photoBtnText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: W.TEXT_MUTED,
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    padding: 3,
+    borderRadius: 10,
+    backgroundColor: BRAND.SURFACE.CARD,
+    elevation: 2,
+  },
+});

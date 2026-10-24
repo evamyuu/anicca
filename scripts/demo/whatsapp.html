@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anicca · Simulador WhatsApp</title>
+<style>
+  :root {
+    --brown: #403229; --muted: #736760; --taupe: #a68d7e; --tan: #d99e79; --orange: #ff9a5c;
+    --bg: #fdf1ea; --card: #ffffff; --line: rgba(166,141,126,.25);
+    --wa-head: #0b6b5a; --wa-bg: #efe7dd; --wa-out: #d9fdd3; --wa-in: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: radial-gradient(1200px 700px at 30% 40%, #ffe6d6, var(--bg));
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; color: var(--brown);
+    display: flex; gap: 40px; align-items: center; justify-content: center; padding: 24px;
+  }
+  /* ── Phone ── */
+  .phone {
+    width: 390px; height: min(800px, calc(100vh - 48px)); min-height: 560px; border-radius: 52px; background: #1d1714; padding: 12px; flex-shrink: 0;
+    box-shadow: 0 30px 60px -20px rgba(64,50,41,.45);
+  }
+  .screen { width: 100%; height: 100%; border-radius: 42px; overflow: hidden; display: flex; flex-direction: column; background: var(--wa-bg); }
+  .wa-head { background: var(--wa-head); color: #fff; padding: 46px 16px 12px; display: flex; align-items: center; gap: 12px; position: relative; }
+  .wa-head .island { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #1d1714; }
+  .wa-head .clock { position: absolute; top: 16px; left: 34px; font-size: 14px; font-weight: 600; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff center/70% no-repeat url(/demo/assets/ani.svg); flex-shrink: 0; }
+  .wa-head b { display: block; font-size: 16px; }
+  .wa-head small { opacity: .8; font-size: 12px; }
+  .chat { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+  .day { align-self: center; background: #fff8; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
+  .msg { max-width: 82%; padding: 8px 10px 18px; border-radius: 10px; font-size: 14px; line-height: 1.38; white-space: pre-wrap; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,.08); animation: pop .18s ease-out; }
+  .msg.in { background: var(--wa-in); align-self: flex-start; border-top-left-radius: 2px; }
+  .msg.out { background: var(--wa-out); align-self: flex-end; border-top-right-radius: 2px; }
+  .msg time { position: absolute; right: 8px; bottom: 3px; font-size: 10.5px; color: #8a8a8a; }
+  .msg.out time::after { content: " ✓✓"; color: #53bdeb; }
+  .msg img { display: block; width: 240px; border-radius: 8px; margin-bottom: 6px; }
+  .msg.doc { background: #fff; padding: 8px; }
+  .doc-chip { display: flex; align-items: center; gap: 8px; background: #fff1e8; border-radius: 8px; padding: 9px 10px; font-size: 13px; font-weight: 600; }
+  .typing { align-self: flex-start; background: #fff; border-radius: 10px; padding: 10px 14px; display: none; }
+  .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #b5aaa3; margin: 0 2px; animation: blink 1s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s } .typing span:nth-child(3) { animation-delay: .3s }
+  .composer { display: flex; gap: 8px; padding: 10px 10px 26px; align-items: center; position: relative; }
+  .composer input { flex: 1; border: 0; border-radius: 24px; padding: 13px 16px; font-size: 15px; outline: none; }
+  .round { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--wa-head); color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+  .clip { background: transparent; color: var(--muted); width: 36px; font-size: 20px; }
+  .attach-menu { position: absolute; bottom: 78px; left: 10px; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px; display: none; }
+  .attach-menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 12px; font-size: 14px; border-radius: 10px; cursor: pointer; }
+  .attach-menu button:hover { background: #f5efeb; }
+  @keyframes pop { from { transform: translateY(4px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes blink { 50% { opacity: .3 } }
+
+  /* ── Painel ── */
+  .panel { width: 470px; max-width: 100%; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .brand img { height: 30px; }
+  .eyebrow { color: var(--orange); letter-spacing: .18em; font-weight: 700; font-size: 13px; text-transform: uppercase; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: 34px; margin: 6px 0 18px; line-height: 1.1; }
+  h1 em { color: var(--orange); font-style: normal; }
+  .status { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .pill { background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 14px rgba(64,50,41,.08); display: flex; gap: 6px; align-items: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #c9c0ba; }
+  .dot.on { background: #34c26b; box-shadow: 0 0 0 4px #34c26b33; }
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; cursor: pointer; text-align: left; font: inherit; color: inherit; transition: transform .1s, box-shadow .1s; }
+  .step:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(64,50,41,.1); }
+  .step.done { opacity: .55; }
+  .num { width: 28px; height: 28px; border-radius: 50%; background: var(--orange); color: #fff; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; font-size: 14px; }
+  .step b { display: block; font-size: 14px; }
+  .step small { color: var(--muted); font-size: 12.5px; }
+  .feed { margin-top: 16px; background: #fff; border-radius: 16px; padding: 12px 14px; border: 1px solid var(--line); min-height: 64px; }
+  .feed h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .feed div { font-size: 13px; padding: 3px 0; }
+  .feed .new { animation: flash 1.2s ease-out; }
+  @keyframes flash { from { background: #ffe1cf } to { background: transparent } }
+  .links { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .links a, .links button { border: 0; background: var(--brown); color: #fff; text-decoration: none; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .links .ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .step .short { display: none; }
+  .reset-btn { border: 1px solid var(--line); cursor: pointer; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; }
+  .reset-btn:hover { color: var(--brown); }
+
+  /* Janela estreita (só o simulador na tela): celular + controles compactos embaixo, sem rolagem. */
+  @media (max-width: 960px) {
+    body { flex-direction: column; justify-content: flex-start; padding: 10px; gap: 10px; min-height: 100vh; }
+    .phone { width: min(390px, 100%); height: max(420px, calc(100vh - 166px)); min-height: 0; padding: 10px; border-radius: 46px; }
+    .screen { border-radius: 38px; }
+    .panel { width: min(390px, 100%); display: flex; flex-direction: column; gap: 8px; }
+    .panel h1, .panel .eyebrow, .panel .brand, .feed, .links { display: none; }
+    .status { margin: 0; gap: 6px; flex-wrap: nowrap; }
+    .status .pill { padding: 6px 10px; font-size: 11.5px; box-shadow: none; border: 1px solid var(--line); white-space: nowrap; }
+    .status .pill:first-child { flex: 1; min-width: 0; overflow: hidden; }
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .step { padding: 4px 6px 4px 4px; border-radius: 999px; gap: 5px; align-items: center; min-width: 0; }
+    .step b, .step small { display: none; }
+    .step .short { display: inline; font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .num { width: 20px; height: 20px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="screen">
+      <div class="wa-head">
+        <div class="island"></div>
+        <div class="clock" id="clock">9:41</div>
+        <div class="avatar"></div>
+        <div><b>Ani</b><small id="presence">online</small></div>
+      </div>
+      <div class="chat" id="chat">
+        <div class="day">HOJE</div>
+        <div class="typing" id="typing"><span></span><span></span><span></span></div>
+      </div>
+      <form class="composer" id="form" autocomplete="off">
+        <div class="attach-menu" id="attachMenu">
+          <button type="button" data-pick="photo">🖼️ Foto do corpo (do computador)…</button>
+          <button type="button" data-pick="exam">📑 Laudo ou exame (do computador)…</button>
+          <button type="button" data-attach="mao">📷 Exemplo: foto da mão</button>
+          <button type="button" data-attach="hemograma">📄 Exemplo: hemograma</button>
+        </div>
+        <button type="button" class="round clip" id="clip" title="Anexar">📎</button>
+        <input id="input" placeholder="Mensagem (vira a legenda da foto)" />
+        <input type="file" id="pickPhoto" accept="image/*" hidden />
+        <input type="file" id="pickExam" accept="image/*,application/pdf" hidden />
+        <button class="round" title="Enviar">➤</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="brand"><img src="/demo/assets/logo.svg" alt="anicca" /></div>
+    <div class="eyebrow">Demo offline · WhatsApp → App → Web</div>
+    <h1>Tudo pode começar <em>pelo WhatsApp.</em></h1>
+
+    <div class="status">
+      <div class="pill"><span class="dot" id="appDot"></span><span id="appCount">App: aguardando conexão</span></div>
+      <div class="pill">🩺 Risco: <span id="risk">—</span></div>
+      <button class="pill reset-btn" id="reset" title="Volta tudo ao estado inicial">↺ Reiniciar</button>
+    </div>
+
+    <div class="steps" id="steps"></div>
+
+    <div class="feed" id="feed"><h3>Sincronização</h3><div style="color:var(--muted)">Os eventos enviados para o app e o painel aparecem aqui.</div></div>
+
+    <div class="links">
+      <a href="http://localhost:8081" target="_blank">📱 Abrir app (8081)</a>
+      <a href="http://localhost:3000/dashboard" target="_blank">🩺 Painel médico (3000)</a>
+    </div>
+  </div>
+
+<script>
+const SCRIPT = [
+  { text: 'Bom dia, Ani! Tomei a Ondansetrona agora', short: '💊 Remédio', title: 'Tomou o remédio pelo WhatsApp', hint: 'App → Rotina passa para 3/6 e a Home para 3 de 5' },
+  { text: 'Bebi 2 copos de água', short: '💧 Água', title: 'Hidratação', hint: 'App → Rotina: 6/8 copos' },
+  { attach: 'hemograma', short: '📄 Exame', title: 'Manda a foto do hemograma', hint: 'OCR + explicação simples · App → Docs ganha o exame' },
+  { text: 'Tô sentindo uma dor no peito, lado direito, nota 7', short: '💬 Dor peito', title: 'Sintoma em texto livre', hint: 'App → Body Map pinta o peito (grau 4) · Painel: alerta + risco alto' },
+  { pick: 'photo', short: '🖼️ Sua foto', title: 'Foto do corpo — escolha qualquer imagem', hint: 'Escreva onde é (ex: "minha mão tá assim") e escolha a foto · App: Body Map · Painel: foto + nota clínica (S/O/A/P)' },
+  { attach: 'mao', short: '📷 Mão', title: 'Foto da mão (exemplo pronto)', hint: 'Body Map → mão direita · Painel mostra a foto e a análise' },
+  { text: 'Estou com febre, 38,2', short: '🌡️ Febre', title: 'Febre durante a neutropenia', hint: 'Protocolo de emergência · Rotina e painel em alerta' },
+  { text: 'Dormi mal, umas 4 horas', short: '😴 Sono', title: 'Sono', hint: 'App → Rotina: sono 4h, dica da Ani muda' },
+  { text: 'Tô meio triste hoje, com medo da próxima quimio', short: '📓 Emoções', title: 'Emoções → Diário', hint: 'App → Perfil → Meu Diário ganha a entrada · Painel: fator de humor no risco' },
+];
+
+const EVENT_LABEL = {
+  routine_synced: '💊 Rotina atualizada no app',
+  body_map_updated: '🧍 Body Map atualizado no app',
+  document_added: '📄 Documentos atualizados no app',
+  journaling_synced: '📓 Diário atualizado no app',
+  tickets_synced: '🎫 Chamados atualizados no app',
+  symptoms_synced: '🩺 Escala CTCAE atualizada no app',
+  agenda_synced: '📅 Agenda do painel atualizada',
+  alerts_synced: '🚨 Alerta revisado no painel',
+  connected: '🔌 App conectado',
+};
+
+const chat = document.getElementById('chat');
+const typing = document.getElementById('typing');
+const input = document.getElementById('input');
+const attachMenu = document.getElementById('attachMenu');
+let rendered = new Set();
+let lastRevision = -1;
+let busy = false;
+
+const hhmm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const bold = (s) => esc(s).replace(/\*([^*]+)\*/g, '<b>$1</b>');
+
+function bubble(m) {
+  if (rendered.has(m.id)) return;
+  rendered.add(m.id);
+  const el = document.createElement('div');
+  const out = m.from === 'patient';
+  el.className = `msg ${out ? 'out' : 'in'}${m.doc ? ' doc' : ''}`;
+  if (m.doc) {
+    el.innerHTML = `<div class="doc-chip">📄 ${esc(m.doc)}</div>`;
+    el.style.paddingBottom = '8px';
+  } else {
+    const src = m.media && !/pdf/i.test(m.fileName || '') ? m.media : m.attachment === 'mao' ? IMG_MAO : m.attachment === 'hemograma' ? IMG_HEMO : '';
+    const file = m.attachment === 'exam' && !src.startsWith('/demo/media') ? `<div class="doc-chip" style="margin-bottom:6px">📑 ${esc(m.fileName || 'documento')}</div>` : '';
+    const img = src ? `<img src="${src}" alt="">` : file;
+    const caption = m.text || DEFAULT_CAPTION[m.attachment] || '';
+    el.innerHTML = `${img}${bold(caption)}<time>${hhmm(m.at)}</time>`;
+  }
+  chat.insertBefore(el, typing);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const DEFAULT_CAPTION = {
+  hemograma: 'Recebi esse exame hoje. Tá tudo bem?',
+  mao: 'Minha mão tá assim desde ontem 😟',
+  photo: 'Olha como está aqui, apareceu desde ontem 😟',
+  exam: 'Chegou esse resultado, pode me explicar?',
+};
+
+async function sendMessage(text, attachment, extra = {}) {
+  if (busy || (!text && !attachment)) return;
+  busy = true;
+  const caption = text || DEFAULT_CAPTION[attachment] || '';
+  const res = await fetch('/demo/whatsapp', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: caption, attachment, ...extra }),
+  }).then((r) => r.json());
+  bubble({ ...res.user, text: caption });
+  document.getElementById('presence').textContent = 'digitando…';
+  for (const reply of res.replies) {
+    typing.style.display = 'block';
+    chat.scrollTop = chat.scrollHeight;
+    await sleep(650 + Math.min(1400, (reply.text || '').length * 9));
+    typing.style.display = 'none';
+    bubble(reply);
+  }
+  document.getElementById('presence').textContent = 'online';
+  busy = false;
+  poll();
+}
+
+document.getElementById('form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  input.value = '';
+  sendMessage(text);
+});
+document.getElementById('clip').onclick = () => (attachMenu.style.display = attachMenu.style.display === 'block' ? 'none' : 'block');
+attachMenu.querySelectorAll('button[data-attach]').forEach((b) => (b.onclick = () => { attachMenu.style.display = 'none'; sendMessage(input.value.trim(), b.dataset.attach); input.value = ''; }));
+attachMenu.querySelectorAll('button[data-pick]').forEach((b) => (b.onclick = () => { attachMenu.style.display = 'none'; pick(b.dataset.pick); }));
+
+/** Shrinks photos in the browser so the demo stays fast (max 900 px, JPEG). */
+function readFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!file.type.startsWith('image/')) return resolve(reader.result);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function pick(kind) {
+  const el = document.getElementById(kind === 'photo' ? 'pickPhoto' : 'pickExam');
+  el.value = '';
+  el.onchange = async () => {
+    const file = el.files[0];
+    if (!file) return;
+    const image = await readFile(file);
+    const caption = input.value.trim();
+    input.value = '';
+    sendMessage(caption, kind, { image, fileName: file.name });
+  };
+  el.click();
+}
+
+const steps = document.getElementById('steps');
+SCRIPT.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.className = 'step';
+  b.title = `${s.title} — ${s.hint}`;
+  b.innerHTML = `<span class="num">${i + 1}</span><span class="short">${esc(s.short)}</span><span><b>${s.attach || s.pick ? '📎 ' : '💬 '}${esc(s.title)}</b><small>${s.text ? `“${esc(s.text)}” — ` : ''}${esc(s.hint)}</small></span>`;
+  b.onclick = async () => {
+    b.classList.add('done');
+    if (s.pick) return pick(s.pick);
+    await sendMessage(s.text || '', s.attach);
+  };
+  steps.appendChild(b);
+});
+
+document.getElementById('reset').onclick = async () => {
+  await fetch('/demo/reset', { method: 'POST' });
+  rendered = new Set();
+  chat.querySelectorAll('.msg').forEach((m) => m.remove());
+  steps.querySelectorAll('.step').forEach((s) => s.classList.remove('done'));
+  lastRevision = -1;
+  poll();
+};
+
+async function poll() {
+  try {
+    const s = await fetch('/demo/state').then((r) => r.json());
+    const on = s.app_clients > 0;
+    document.getElementById('appDot').classList.toggle('on', on);
+    document.getElementById('appCount').textContent = on ? `App ao vivo (${s.app_clients})` : 'App em 2º plano';
+    const risk = document.getElementById('risk');
+    risk.textContent = s.risk;
+    risk.style.color = s.risk === 'Alto' ? '#e5484d' : '#ea580c';
+    if (!busy) s.whatsapp.forEach(bubble);
+    if (s.revision !== lastRevision) {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '<h3>Sincronização</h3>' + (s.feed.length
+        ? s.feed.filter((e) => !e.payload?.reset).slice(0, 6).map((e, i) =>
+            `<div class="${i === 0 && lastRevision !== -1 ? 'new' : ''}">${hhmm(e.at)} · ${EVENT_LABEL[e.type] ?? e.type}${e.payload?.channel ? ` <small style="color:var(--muted)">(origem: ${e.payload.channel === 'whatsapp' ? 'WhatsApp' : 'App'})</small>` : ''}</div>`).join('')
+        : '<div style="color:var(--muted)">Nenhum evento ainda.</div>');
+      lastRevision = s.revision;
+    }
+  } catch {
+    document.getElementById('appCount').textContent = 'Servidor de demo desligado';
+  }
+}
+
+const IMG_HEMO = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#cfc6bd"/><g transform="rotate(-4 160 100)"><rect x="40" y="18" width="240" height="180" rx="4" fill="#fff"/><text x="58" y="48" font-family="Arial" font-size="12" font-weight="700" fill="#403229">HEMOGRAMA COMPLETO</text><rect x="58" y="62" width="170" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="78" width="200" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="94" width="150" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="112" width="110" height="7" rx="3" fill="#ff9a5c"/><rect x="58" y="130" width="190" height="6" rx="3" fill="#d9d2cc"/><rect x="58" y="146" width="140" height="6" rx="3" fill="#d9d2cc"/></g></svg>`);
+const IMG_MAO = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><rect width="320" height="200" fill="#efe4da"/><path d="M110 190 C100 140 92 110 96 86 C98 72 112 72 114 86 L120 120 L118 52 C118 36 136 36 136 52 L140 112 L144 40 C144 24 162 24 162 40 L164 112 L170 50 C171 34 188 36 187 52 L184 122 L196 100 C204 86 222 94 214 110 L188 168 C182 182 176 190 170 190 Z" fill="#e8b996" stroke="#b88563" stroke-width="2"/><ellipse cx="152" cy="150" rx="34" ry="24" fill="#e0695a" opacity="0.45"/><ellipse cx="128" cy="62" rx="9" ry="7" fill="#e0695a" opacity="0.4"/><ellipse cx="153" cy="50" rx="9" ry="7" fill="#e0695a" opacity="0.4"/></svg>`);
+
+setInterval(() => (document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })), 10_000);
+document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>

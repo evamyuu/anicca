@@ -33,11 +33,11 @@ export default function LoginScreen() {
   const { isRegister } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(isRegister === 'true' ? 'register' : 'login');
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('paciente1@anicca.com');
+  const [password, setPassword] = useState('123456');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -82,6 +82,8 @@ export default function LoginScreen() {
     try {
       if (activeTab === 'login') {
         const data = await loginUser(email, password);
+        // The offline demo server also returns the persona profile shown on the Profile screen.
+        if (data.profile) useOnboardingStore.getState().setDetails(data.profile);
         useAuthStore.getState().signIn(data.patient_id || 'unknown', data.role || 'patient', data.access_token);
       } else {
         const obState = useOnboardingStore.getState();

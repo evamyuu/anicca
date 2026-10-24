@@ -7,10 +7,11 @@
  * @license MIT
  */
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/shared/lib/zustand-persist';
-import { httpClient } from '@/shared/api/http-client';
+import { linkCaregiver, linkDoctor } from '@/shared/api/care-team';
+import { notify } from '@/shared/lib/notify';
 import { BRAND } from '@/shared/constants/brand-colors.const';
 
 export function SettingsPage() {
@@ -24,11 +25,11 @@ export function SettingsPage() {
     if (!crm.trim()) return;
     setLoading(true);
     try {
-      await httpClient.post(`/auth/link-doctor?patient_id=${userId}&crm=${crm.trim()}`);
-      Alert.alert('Sucesso', 'Médico vinculado com sucesso!');
+      await linkDoctor(userId!, crm.trim());
+      notify('Sucesso', 'Médico vinculado com sucesso!');
       setCrm('');
     } catch (error) {
-      Alert.alert('Erro', 'Médico não encontrado. Certifique-se de que o CRM está correto e que o médico tem cadastro na plataforma.');
+      notify('Erro', 'Médico não encontrado. Certifique-se de que o CRM está correto e que o médico tem cadastro na plataforma.');
     } finally {
       setLoading(false);
     }
@@ -38,11 +39,11 @@ export function SettingsPage() {
     if (!caregiverEmail.trim()) return;
     setLoadingCaregiver(true);
     try {
-      await httpClient.post(`/auth/link-caregiver?patient_id=${userId}&email=${caregiverEmail.trim()}`);
-      Alert.alert('Sucesso', 'Cuidador vinculado com sucesso! Ele já tem acesso aos seus dados.');
+      await linkCaregiver(userId!, caregiverEmail.trim());
+      notify('Sucesso', 'Cuidador vinculado com sucesso! Ele já tem acesso aos seus dados.');
       setCaregiverEmail('');
     } catch (error) {
-      Alert.alert('Erro', 'Cuidador não encontrado com este E-mail. Certifique-se de que ele já possui cadastro no Anicca.');
+      notify('Erro', 'Cuidador não encontrado com este E-mail. Certifique-se de que ele já possui cadastro no Anicca.');
     } finally {
       setLoadingCaregiver(false);
     }

@@ -13,6 +13,21 @@ import {
   MoreHorizontal, PlusCircle, Paperclip, User, Sparkles, ArrowRight, ArrowUp
 } from 'lucide-react';
 
+import { AgendaView } from './_components/AgendaView';
+import { AlertsView } from './_components/AlertsView';
+import {
+  TYPE_CFG,
+  hhmm,
+  sameDay,
+  timeAgo,
+  type Appointment,
+  type AppointmentInput,
+  type AlertStatus,
+  type ClinicalAlert,
+} from './_components/types';
+
+type NavView = 'dashboard' | 'patients_tab' | 'global_chat' | 'agenda' | 'alerts';
+
 /* ─── TYPES ─── */
 interface Patient {
   id: string;
@@ -221,8 +236,30 @@ function UserMessage({ msg }: { msg: ChatMsg }) {
 }
 
 /* ─── NEW: GLOBAL DASHBOARD (Centro de Comando) ─── */
-function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect: (p: Patient) => void }) {
+function GlobalDashboard({ patients, onSelect, agenda, alerts, onNavigate }: {
+  patients: Patient[];
+  onSelect: (p: Patient) => void;
+  agenda: Appointment[];
+  alerts: ClinicalAlert[];
+  onNavigate: (view: NavView) => void;
+}) {
   const highRisk = patients.filter(p => p.risk_level === 'Alto');
+  const today = new Date();
+  const todayApts = agenda
+    .filter(a => sameDay(new Date(a.start), today) && a.status !== 'cancelado')
+    .sort((a, b) => a.start.localeCompare(b.start));
+  const openAlerts = alerts.filter(a => a.status !== 'resolvido');
+  const priorityAlerts = openAlerts.filter(a => a.severity === 'critica' || a.severity === 'alta');
+  const byId = (id: string) => patients.find(p => p.id === id);
+
+  // Live data from the agenda/alerts endpoints; falls back to the original sample queue when absent.
+  const queue = todayApts.length
+    ? todayApts.map(a => ({ key: a.id, time: hhmm(a.start), type: TYPE_CFG[a.type].label, patient: byId(a.patient_id) }))
+    : [
+        { key: 'q1', time: '09:00', type: 'Retorno', patient: patients[0] },
+        { key: 'q2', time: '10:30', type: 'Primeira Vez', patient: patients[1] },
+        { key: 'q3', time: '11:15', type: 'Análise de Exames', patient: patients[2] },
+      ];
 
   return (
     <div className="flex-1 flex h-full bg-[#fcfaf8] overflow-y-auto">
@@ -231,8 +268,10 @@ function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect
         {/* Banner */}
         <div className="bg-[#fde8d9] rounded-[32px] p-8 flex justify-between items-center relative overflow-hidden shadow-sm">
           <div className="z-10">
-            <h2 className="text-3xl font-bold text-[#c2410c] mb-2">Bom dia, Dra. Renata</h2>
-            <p className="text-sm text-[#e67e22]">Centro de comando clínico atualizado. Você tem 3 alertas prioritários hoje.</p>
+            <h2 className="text-3xl font-bold text-[#c2410c] mb-2">Bom dia, Dra. Sandra</h2>
+            <p className="text-sm text-[#e67e22]">
+              Centro de comando clínico atualizado. Você tem {alerts.length ? priorityAlerts.length : 3} alertas prioritários e {agenda.length ? todayApts.length : 4} atendimentos hoje.
+            </p>
           </div>
           <div className="absolute right-0 bottom-0 opacity-20 pointer-events-none">
             <Stethoscope size={160} className="text-[#c2410c] -mr-8 -mb-8" />
@@ -260,7 +299,7 @@ function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect
               <div className="w-8 h-8 bg-[#f8f4f0] rounded-lg flex items-center justify-center text-[#5a4a42]"><Calendar size={16}/></div>
               <p className="text-[11px] font-bold text-[#8c8078] uppercase tracking-wider">Agenda Hoje</p>
             </div>
-            <p className="text-2xl font-bold text-[#3d2b1f]">4</p>
+            <p className="text-2xl font-bold text-[#3d2b1f]">{agenda.length ? todayApts.length : 4}</p>
           </div>
           <div className="bg-white border border-[#e5e0dc] p-5 rounded-3xl shadow-sm flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-3">
@@ -278,15 +317,11 @@ function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect
           <div className="col-span-7 bg-white border border-[#e5e0dc] rounded-[32px] p-6 shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-[#3d2b1f]">Fila de Atendimento (Hoje)</h3>
-              <button className="text-xs font-bold text-[#FF9A5C] hover:text-[#e67e22]">Ver Agenda Completa</button>
+              <button onClick={() => onNavigate('agenda')} className="text-xs font-bold text-[#FF9A5C] hover:text-[#e67e22]">Ver Agenda Completa</button>
             </div>
             <div className="space-y-3">
-              {[
-                { time: '09:00', type: 'Retorno', patient: patients[0] },
-                { time: '10:30', type: 'Primeira Vez', patient: patients[1] },
-                { time: '11:15', type: 'Análise de Exames', patient: patients[2] }
-              ].map((apt, i) => apt.patient && (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf7f4] border border-[#f3ece5]">
+              {queue.flatMap(q => (q.patient ? [{ ...q, patient: q.patient }] : [])).map(apt => (
+                <div key={apt.key} className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf7f4] border border-[#f3ece5]">
                   <div className="text-center w-12 shrink-0">
                     <p className="text-sm font-bold text-[#3d2b1f]">{apt.time}</p>
                     <p className="text-[9px] text-[#a3988e] uppercase mt-0.5">{apt.type}</p>
@@ -317,18 +352,33 @@ function GlobalDashboard({ patients, onSelect }: { patients: Patient[]; onSelect
                   <AlertTriangle size={18} />
                   <h3 className="text-lg font-bold">Alertas Clínicos (Triagem)</h3>
                 </div>
+                <button onClick={() => onNavigate('alerts')} className="text-xs font-bold text-[#b91c1c] hover:underline">Ver todos</button>
               </div>
               <div className="space-y-3">
-                <div className="bg-white/80 p-4 rounded-2xl border border-[#fecaca]">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs font-bold text-[#3d2b1f]">{patients[0]?.name || 'Paciente'}</span>
-                    <span className="text-[10px] text-[#ef4444] font-bold">Há 2 horas</span>
+                {(priorityAlerts.length ? priorityAlerts : openAlerts).slice(0, 3).map(a => (
+                  <div key={a.id} className="bg-white/80 p-4 rounded-2xl border border-[#fecaca]">
+                    <div className="flex justify-between mb-1 gap-2">
+                      <span className="text-xs font-bold text-[#3d2b1f]">{a.patient_name}</span>
+                      <span className="text-[10px] text-[#ef4444] font-bold shrink-0">{timeAgo(a.created_at)} • {a.source}</span>
+                    </div>
+                    <p className="text-xs text-[#5a4a42] leading-relaxed mb-2"><strong>{a.title}.</strong> {a.description}</p>
+                    <button onClick={() => { const p = byId(a.patient_id); if (p) onSelect(p); }} className="text-[11px] font-bold text-[#b91c1c] flex items-center gap-1 hover:underline">
+                      Abrir Prontuário <ChevronRight size={12}/>
+                    </button>
                   </div>
-                  <p className="text-xs text-[#5a4a42] leading-relaxed mb-2">Relato de dor intensa (9/10) no abdômen via Body Map.</p>
-                  <button onClick={() => patients[0] && onSelect(patients[0])} className="text-[11px] font-bold text-[#b91c1c] flex items-center gap-1 hover:underline">
-                    Abrir Prontuário <ChevronRight size={12}/>
-                  </button>
-                </div>
+                ))}
+                {!openAlerts.length && (
+                  <div className="bg-white/80 p-4 rounded-2xl border border-[#fecaca]">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-bold text-[#3d2b1f]">{patients[0]?.name || 'Paciente'}</span>
+                      <span className="text-[10px] text-[#ef4444] font-bold">Há 2 horas</span>
+                    </div>
+                    <p className="text-xs text-[#5a4a42] leading-relaxed mb-2">Dor no peito relatada pelo WhatsApp + neutrófilos 1.200/mm³ (D8 do AC-T).</p>
+                    <button onClick={() => patients[0] && onSelect(patients[0])} className="text-[11px] font-bold text-[#b91c1c] flex items-center gap-1 hover:underline">
+                      Abrir Prontuário <ChevronRight size={12}/>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -464,7 +514,7 @@ function GlobalChatView({ session, onSendMsg }: { session: Session | null; onSen
         <div className="flex-1 flex flex-col items-center justify-center px-10">
           <div className="flex items-center justify-center gap-4 mb-10">
             <img src="/ani-profile-icon.svg" alt="Ani" className="w-12 h-12 object-cover rounded-xl shadow-sm" />
-            <h1 className="text-[32px] font-serif text-[#3d2b1f]">Bom dia, Dra. Renata. Como posso ajudar?</h1>
+            <h1 className="text-[32px] font-serif text-[#3d2b1f]">Bom dia, Dra. Sandra. Como posso ajudar?</h1>
           </div>
           
           <div className="w-full max-w-3xl mb-8">
@@ -569,7 +619,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
     </div>
   );
 
-  const getCardsData = () => {
+  const getCardsData = (pinned = false) => {
     const alerts = dashboardData?.alerts || [];
     const mlRisk = dashboardData?.ml_insights;
 
@@ -585,7 +635,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
             <Plus size={14} /> Atualizar IA
           </button>
         </div>,
-        false // Will override later
+        pinned
       ),
       protocolo: renderCard(
         'Protocolo',
@@ -596,7 +646,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
             <span className="text-[13px] font-medium text-[#5a4a42]">{patient.protocol || 'Sem protocolo'}</span>
           </div>
         </div>,
-        false
+        pinned
       ),
       sinais: renderCard(
         'Sinais Vitais',
@@ -611,7 +661,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
             <span className="text-[13px] font-bold text-[#FF9A5C]">{dashboardData?.vitals?.blood_pressure || '--'}</span>
           </div>
         </div>,
-        false
+        pinned
       ),
       sintomas: renderCard(
         'Sintomas Recentes',
@@ -624,13 +674,15 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
               {a.cv_data && (
                 <div className="mt-2 mb-2 p-2 bg-white/60 rounded-lg border border-[#fecaca] flex gap-3 items-start">
                   {a.cv_data.photo_url && (
-                    <img src={a.cv_data.photo_url} alt="Anexo" className="w-16 h-16 object-cover rounded-md border border-[#fecaca]" />
+                    <a href={a.cv_data.photo_url} target="_blank" rel="noreferrer" className="shrink-0">
+                      <img src={a.cv_data.photo_url} alt="Foto enviada pela paciente" className="w-28 h-28 object-cover rounded-md border border-[#fecaca]" />
+                    </a>
                   )}
                   <div className="flex-1">
                     <span className="text-[9px] font-bold text-[#b91c1c] bg-white px-1.5 py-0.5 rounded uppercase flex items-center gap-1 inline-flex mb-1">
                       <Map size={10}/> Análise Visual (Gemini)
                     </span>
-                    <p className="text-[11px] text-[#b91c1c] leading-snug">{a.cv_data.classification}</p>
+                    <p className="text-[11px] text-[#b91c1c] leading-snug whitespace-pre-line">{a.cv_data.classification}</p>
                   </div>
                 </div>
               )}
@@ -643,7 +695,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
             <p className="text-[13px] text-[#8c8078] italic">Nenhum sintoma reportado.</p>
           )}
         </div>,
-        false
+        pinned
       ),
       risco: mlRisk ? renderCard(
         'Risco de Abandono (IA)',
@@ -657,7 +709,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
           </div>
           <p className="text-[11px] text-[#8c8078] leading-tight mt-1">{mlRisk.risk_factors?.join(', ')}</p>
         </div>,
-        false
+        pinned
       ) : null
     };
   };
@@ -727,11 +779,11 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-4">
-            {showBlock('resumo') && React.cloneElement(cards.resumo as React.ReactElement, { isPinned: false })}
-            {showBlock('protocolo') && React.cloneElement(cards.protocolo as React.ReactElement, { isPinned: false })}
-            {showBlock('sinais') && React.cloneElement(cards.sinais as React.ReactElement, { isPinned: false })}
-            {showBlock('sintomas') && React.cloneElement(cards.sintomas as React.ReactElement, { isPinned: false })}
-            {showBlock('risco') && cards.risco && React.cloneElement(cards.risco as React.ReactElement, { isPinned: false })}
+            {showBlock('resumo') && cards.resumo}
+            {showBlock('protocolo') && cards.protocolo}
+            {showBlock('sinais') && cards.sinais}
+            {showBlock('sintomas') && cards.sintomas}
+            {showBlock('risco') && cards.risco}
           </div>
         </div>
       </>
@@ -739,7 +791,7 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
   };
 
   const PinnedSidebar = () => {
-    const cards = getCardsData();
+    const cards = getCardsData(true);
     return (
       <aside className="w-[320px] bg-[#faf7f4] border-l border-[#e5e0dc] p-5 shrink-0 overflow-y-auto flex flex-col relative z-20">
         <div className="flex justify-between items-center mb-6 shrink-0">
@@ -755,9 +807,9 @@ function PatientWorkspace({ patient, dashboardData, session, onBack, onSendMsg }
           </button>
         </div>
         <div className="flex-1 space-y-4">
-          {React.cloneElement(cards.resumo as React.ReactElement, { isPinned: true })}
-          {cards.risco && React.cloneElement(cards.risco as React.ReactElement, { isPinned: true })}
-          {React.cloneElement(cards.sintomas as React.ReactElement, { isPinned: true })}
+          {cards.resumo}
+          {cards.risco}
+          {cards.sintomas}
         </div>
       </aside>
     );
@@ -835,7 +887,16 @@ export default function ClinicalDashboard() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [activeNav, setActiveNav] = useState<'dashboard' | 'patients_tab' | 'global_chat'>('dashboard');
+  const [activeNav, setActiveNav] = useState<NavView>('dashboard');
+  const [agenda, setAgenda] = useState<Appointment[]>([]);
+  const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+
+  const loadAgenda = useCallback(async () => {
+    try { setAgenda((await axios.get('/api/v1/doctor/agenda')).data); } catch { /* not available on the real API yet */ }
+  }, []);
+  const loadAlerts = useCallback(async () => {
+    try { setAlerts((await axios.get('/api/v1/doctor/alerts')).data); } catch { /* not available on the real API yet */ }
+  }, []);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -881,7 +942,36 @@ export default function ClinicalDashboard() {
     };
     
     fetchDashboardData();
-  }, []);
+    loadAgenda();
+    loadAlerts();
+  }, [loadAgenda, loadAlerts]);
+
+  // Live refresh: the offline demo server exposes a revision counter that changes on every
+  // WhatsApp/app event. The real API has no such endpoint, so this stays idle there.
+  useEffect(() => {
+    let lastRevision: number | null = null;
+    const timer = setInterval(async () => {
+      try {
+        const { data } = await axios.get('/api/v1/demo/revision');
+        if (lastRevision !== null && data.revision !== lastRevision) {
+          const patientsRes = await axios.get('/api/v1/doctor/patients');
+          setPatients(patientsRes.data);
+          loadAgenda();
+          loadAlerts();
+          const current = selectedPatientRef.current;
+          if (current) {
+            const r = await axios.get(`/api/v1/doctor/patients/${current.id}/dashboard`);
+            setDashboardData(r.data);
+          }
+        }
+        lastRevision = data.revision;
+      } catch {
+        // Servidor reiniciando/fora do ar: segue tentando e força um refresh quando voltar.
+        if (lastRevision !== null) lastRevision = -1;
+      }
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [loadAgenda, loadAlerts]);
 
   const handleSelectPatient = async (p: Patient) => {
     setSelectedPatient(p);
@@ -889,6 +979,36 @@ export default function ClinicalDashboard() {
     try { const r = await axios.get(`/api/v1/doctor/patients/${p.id}/dashboard`); setDashboardData(r.data); }
     catch { setDashboardData(null); }
   };
+
+  const selectPatientById = (id: string) => {
+    const p = patients.find(x => x.id === id);
+    if (p) handleSelectPatient(p);
+  };
+
+  const navigate = (view: NavView) => {
+    setSelectedPatient(null);
+    setActiveSessionId(null);
+    setActiveNav(view);
+  };
+
+  const createAppointment = async (input: AppointmentInput) => {
+    await axios.post('/api/v1/doctor/agenda', input);
+    await loadAgenda();
+  };
+  const updateAppointment = async (id: string, patch: Partial<Appointment>) => {
+    await axios.patch(`/api/v1/doctor/agenda/${id}`, patch);
+    await loadAgenda();
+  };
+  const deleteAppointment = async (id: string) => {
+    await axios.delete(`/api/v1/doctor/agenda/${id}`);
+    await loadAgenda();
+  };
+  const updateAlert = async (id: string, patch: { status?: AlertStatus; note?: string }) => {
+    await axios.patch(`/api/v1/doctor/alerts/${encodeURIComponent(id)}`, patch);
+    await loadAlerts();
+  };
+
+  const newAlerts = alerts.filter(a => a.status === 'novo' && (a.severity === 'critica' || a.severity === 'alta')).length;
 
   const startGlobalChat = () => {
     setSelectedPatient(null);
@@ -968,11 +1088,14 @@ export default function ClinicalDashboard() {
             <Users size={16} />{!collapsed && <span>Pacientes</span>}
           </button>
 
-          <button className={`flex items-center gap-3 w-full rounded-xl transition-all font-medium ${collapsed ? 'justify-center h-10' : 'px-3 py-2 text-[13px]'} text-white/70 hover:bg-white/5 hover:text-white`}>
+          <button onClick={() => navigate('agenda')} className={`flex items-center gap-3 w-full rounded-xl transition-all font-medium ${collapsed ? 'justify-center h-10' : 'px-3 py-2 text-[13px]'} ${!selectedPatient && activeNav === 'agenda' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
             <Calendar size={16} />{!collapsed && <span>Agenda</span>}
           </button>
-          <button className={`flex items-center gap-3 w-full rounded-xl transition-all font-medium ${collapsed ? 'justify-center h-10' : 'px-3 py-2 text-[13px]'} text-white/70 hover:bg-white/5 hover:text-white`}>
+          <button onClick={() => navigate('alerts')} className={`relative flex items-center gap-3 w-full rounded-xl transition-all font-medium ${collapsed ? 'justify-center h-10' : 'px-3 py-2 text-[13px]'} ${!selectedPatient && activeNav === 'alerts' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
             <Bell size={16} />{!collapsed && <span>Alertas</span>}
+            {newAlerts > 0 && (
+              <span className={`${collapsed ? 'absolute top-1 right-1' : 'ml-auto'} min-w-[18px] h-[18px] px-1 rounded-full bg-[#ef4444] text-white text-[10px] font-bold flex items-center justify-center`}>{newAlerts}</span>
+            )}
           </button>
         </div>
 
@@ -1050,12 +1173,23 @@ export default function ClinicalDashboard() {
         ) : activeNav === 'patients_tab' ? (
           <PatientsDirectory patients={patients} onSelect={handleSelectPatient} />
         ) : activeNav === 'global_chat' ? (
-          <GlobalChatView 
-            session={sessions.find(s => s.id === activeSessionId) || null} 
-            onSendMsg={handleSendMsg} 
+          <GlobalChatView
+            session={sessions.find(s => s.id === activeSessionId) || null}
+            onSendMsg={handleSendMsg}
           />
+        ) : activeNav === 'agenda' ? (
+          <AgendaView
+            appointments={agenda}
+            patients={patients.map(p => ({ id: p.id, name: p.name }))}
+            onSelectPatient={selectPatientById}
+            onCreate={createAppointment}
+            onUpdate={updateAppointment}
+            onDelete={deleteAppointment}
+          />
+        ) : activeNav === 'alerts' ? (
+          <AlertsView alerts={alerts} onSelectPatient={selectPatientById} onUpdate={updateAlert} />
         ) : (
-          <GlobalDashboard patients={patients} onSelect={handleSelectPatient} />
+          <GlobalDashboard patients={patients} onSelect={handleSelectPatient} agenda={agenda} alerts={alerts} onNavigate={navigate} />
         )}
       </div>
     </div>
