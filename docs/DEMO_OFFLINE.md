@@ -85,7 +85,10 @@ Windows pausadas (Assistente de foco), zoom do navegador em 100%.
 node scripts/demo/server.mjs
 ```
 
-**Terminal 2 — app** (o `--offline` evita que o Expo tente acessar a internet):
+**Terminal 2 — app** (o `--offline` evita que o Expo tente acessar a internet).
+Se o app não tiver `apps/mobile/.env` (ele não vem no clone), ele roda só com dados mockados e **não sincroniza**
+com o WhatsApp — nesse caso inicie com `EXPO_PUBLIC_API_URL=http://localhost:8000/api/v1` (no PowerShell:
+`$env:EXPO_PUBLIC_API_URL="http://localhost:8000/api/v1"`).
 
 ```bash
 cd apps/mobile; npx expo start --web --offline

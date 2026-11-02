@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR" translate="no">
+<head>
+<meta charset="utf-8" />
+<meta name="google" content="notranslate" />
+<title>Anicca demo stage</title>
+<style>
+  :root { --brown:#403229; --muted:#7a6a60; --orange:#ff9a5c; --bg:#f6eee8; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; width:1920px; height:1080px; overflow:hidden; background:var(--bg);
+    font-family: "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif; color:var(--brown); }
+  .scene { position:absolute; inset:0; transition: opacity .7s ease; }
+  .hidden { opacity:0; pointer-events:none; }
+
+  /* Scene A: three phones */
+  #sceneA { background: radial-gradient(1400px 900px at 60% 40%, #ffe9db, var(--bg)); }
+  .side { position:absolute; left:70px; top:0; bottom:0; width:390px; display:flex; flex-direction:column; justify-content:center; }
+  .logo { font-family: Georgia, serif; font-size:44px; letter-spacing:.02em; color:var(--brown); margin-bottom:34px; }
+  .logo span { color:var(--orange); }
+  .steps { display:flex; flex-direction:column; gap:14px; }
+  .st { display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border-radius:18px; background:#fff8; border:1px solid #a68d7e33;
+        opacity:.38; transition: all .45s ease; transform: translateX(-6px); }
+  .st.on { opacity:1; background:#fff; box-shadow:0 14px 34px -14px rgba(64,50,41,.35); transform:none; }
+  .st.done { opacity:.62; transform:none; }
+  .st .n { width:32px; height:32px; border-radius:50%; background:var(--orange); color:#fff; font-weight:700; display:grid; place-items:center; flex-shrink:0; font-size:15px; }
+  .st b { display:block; font-size:19px; line-height:1.25; }
+  .st small { display:block; font-size:15px; color:var(--muted); margin-top:4px; line-height:1.3; }
+  .phones { position:absolute; left:500px; right:40px; top:0; bottom:0; display:flex; gap:34px; align-items:center; justify-content:center; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .tag { font-size:15px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:flex; gap:8px; align-items:center; }
+  .tag i { font-style:normal; background:var(--brown); color:#fff; border-radius:999px; padding:4px 12px; letter-spacing:.06em; }
+  .tag i.o { background:var(--orange); }
+  .frame { width:437px; height:945px; position:relative; }
+  .frame iframe { position:absolute; left:0; top:0; border:0; transform-origin:0 0; transform:scale(1.12); }
+  .device { border-radius:54px; overflow:hidden; background:#1d1714; padding:12px; box-shadow:0 30px 60px -20px rgba(64,50,41,.45); }
+  .device .inner { width:100%; height:100%; border-radius:42px; overflow:hidden; position:relative; background:#fff; }
+  .flash { animation: flash 1.4s ease-out; }
+  @keyframes flash { 0%{ box-shadow:0 0 0 0 rgba(255,154,92,.9), 0 30px 60px -20px rgba(64,50,41,.45);} 100%{ box-shadow:0 0 0 26px rgba(255,154,92,0), 0 30px 60px -20px rgba(64,50,41,.45);} }
+
+  /* Scene B: doctor panel full screen */
+  #sceneB iframe { position:absolute; left:0; top:0; width:1600px; height:900px; border:0; transform-origin:0 0; transform:scale(1.2); }
+  .pill { position:absolute; left:50%; bottom:34px; transform:translateX(-50%); background:rgba(64,50,41,.94); color:#fff; border-radius:999px;
+          padding:14px 26px; font-size:21px; font-weight:600; display:flex; gap:12px; align-items:center; box-shadow:0 16px 40px rgba(0,0,0,.25);
+          transition: opacity .35s ease; white-space:nowrap; }
+  .pill i { font-style:normal; background:var(--orange); border-radius:999px; padding:3px 12px; font-size:15px; letter-spacing:.08em; text-transform:uppercase; }
+  .cursor { position:absolute; width:26px; height:26px; border-radius:50%; background:rgba(255,154,92,.35); border:2px solid rgba(255,154,92,.95);
+            pointer-events:none; z-index:50; transform:translate(-50%,-50%); transition: left .55s ease, top .55s ease, opacity .3s; opacity:0; }
+  .cursor.click { animation: clk .45s ease-out; }
+  @keyframes clk { 0%{ box-shadow:0 0 0 0 rgba(255,154,92,.8);} 100%{ box-shadow:0 0 0 22px rgba(255,154,92,0);} }
+</style>
+</head>
+<body>
+  <div class="scene" id="sceneA">
+    <div class="side">
+      <div class="logo">anicca<span>.</span></div>
+      <div class="steps">
+        <div class="st" id="s1"><div class="n">1</div><div><b>Rosa avisa pelo WhatsApp que tomou o remédio</b><small>A rotina dela e as tarefas do Lucas se atualizam sozinhas</small></div></div>
+        <div class="st" id="s2"><div class="n">2</div><div><b>Manda a foto de uma pinta</b><small>Visão computacional → Body Map + nota clínica S/O/A/P</small></div></div>
+        <div class="st" id="s3"><div class="n">3</div><div><b>Relata febre de 38,2 °C</b><small>Ani aciona o protocolo de emergência e avisa a equipe</small></div></div>
+        <div class="st" id="s4"><div class="n">4</div><div><b>A médica recebe tudo no painel</b><small>Alertas triados, ficha clínica e IA com fontes</small></div></div>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="col"><div class="tag"><i>Paciente</i> WhatsApp</div><div class="frame" id="fWa"><iframe id="wa" width="390" height="844"></iframe></div></div>
+      <div class="col"><div class="tag"><i>Paciente</i> App · Rosa</div><div class="frame device" id="fRosa"><div class="inner"><iframe id="rosa" width="375" height="837" style="transform:scale(1.1)"></iframe></div></div></div>
+      <div class="col"><div class="tag"><i class="o">Cuidador</i> App · Lucas</div><div class="frame device" id="fLucas"><div class="inner"><iframe id="lucas" width="375" height="837" style="transform:scale(1.1)"></iframe></div></div></div>
+    </div>
+  </div>
+
+  <div class="scene hidden" id="sceneB">
+    <iframe id="doc"></iframe>
+    <div class="pill" id="pill"><i>Médica</i><span id="pillText">Painel da Dra. Sandra</span></div>
+  </div>
+  <div class="cursor" id="cursor"></div>
+</body>
+</html>
